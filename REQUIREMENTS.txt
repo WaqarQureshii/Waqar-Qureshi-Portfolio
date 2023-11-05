@@ -1,0 +1,4 @@
+pandas_ta
+pandas
+yfinance
+mplfinance
