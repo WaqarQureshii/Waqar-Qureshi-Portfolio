@@ -5,9 +5,6 @@ def generate_sp500(start_date):
     sp500 = sp500.drop(["Adj Close"], axis=1)
     return sp500
 
-sp500 = generate_sp500('2008-01-01')
-print(sp500)
-
 def generate_ndx(start_date):
     ndx = yf.download(['^IXIC'], start_date)
     return ndx
