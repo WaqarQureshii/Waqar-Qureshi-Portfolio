@@ -23,13 +23,18 @@ def sp500_bbands(start_date,
     return sp500
 
 def yield_difference(start_date, lt_yield_inp = '30y'):
+    #LONG-TERM YIELD GENERATION
     if lt_yield_inp == '30y':
         lt_yield = generate_db.generate_30yrx(start_date)
     else:
         lt_yield = generate_db.generate_10yrx(start_date)
+    lt_yield.rename(columns={'Close': 'Long Term Yield'}, inplace=True)
+    #SHORT TERM YIELD GENERATION
     
     st_yield = generate_db.generate_3mrx(start_date)
+    st_yield.rename(columns={'Close': 'Short Term Yield'}, inplace=True)
     
-    yield_diff = pd.concat([lt_yield, st_yield], axis=1)
-    yield_diff['yield_diff'] = lt_yield - st_yield
-    return yield_diff
+    #CALCULATING YIELD DIFFERENCE
+    dt_yield_diff = pd.concat([lt_yield, st_yield], axis = 1)
+    dt_yield_diff['Yield Difference'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
+    return dt_yield_diff
