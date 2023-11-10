@@ -33,8 +33,13 @@ def yield_difference(start_date, lt_yield_inp = '30y'):
     
     st_yield = generate_db.generate_3mrx(start_date)
     st_yield.rename(columns={'Close': 'Short Term Yield'}, inplace=True)
-    
+
     #CALCULATING YIELD DIFFERENCE
     dt_yield_diff = pd.concat([lt_yield, st_yield], axis = 1)
     dt_yield_diff['Yield Difference'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
     return dt_yield_diff
+
+test = yield_difference('2023-01-01', lt_yield_inp='30y')
+test
+    
+    

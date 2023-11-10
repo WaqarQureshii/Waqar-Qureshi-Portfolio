@@ -53,4 +53,3 @@ def generate_utility(start_date):
 def generate_consumer(start_date):
     consumer = yf.download(['XLY'], start_date)
     return consumer
-
