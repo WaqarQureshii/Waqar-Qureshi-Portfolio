@@ -20,19 +20,22 @@ def generate_rsp(start_date):
 
 def generate_vix(start_date):
     vix = yf.download(['^VIX'], start_date)
-    vix = vix.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1)
+    vix.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
     return vix
 
 def generate_3mrx(start_date):
     r03m = yf.download(['^IRX'], start_date)
+    r03m.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
     return r03m
 
 def generate_10yrx(start_date):
     r10y = yf.download(['^TNX'], start_date)
+    r10y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
     return r10y
 
 def generate_30yrx(start_date):
     r30y = yf.download(['^TYX'], start_date)
+    r30y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
     return r30y
 
 def generate_hyg(start_date):
