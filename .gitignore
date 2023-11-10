@@ -2,4 +2,3 @@
 /venv*
 .DS_Store
 */__pycache__/*
-functions/scratch_paper.py
