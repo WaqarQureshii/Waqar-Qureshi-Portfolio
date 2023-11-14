@@ -1,11 +1,13 @@
 import yfinance as yf
-import pandas as pd
 
 def generate_sp500(start_date, interval = "1d"):
     sp500 = yf.download(['^GSPC'],
                         start_date,
                         interval = interval)
     sp500 = sp500.drop(["Adj Close"], axis=1)
+    sp500['SP500 % Change'] = sp500['Close'].pct_change() * 100
+    sp500.columns = ['SP500 Open', 'SP500 High', 'SP500 Low', 'SP500 Close', 'SP500 Volume', 'SP500 % Change']
+    sp500.style.format({'SP500 % Change': '{:.2f}%'.format})
     return sp500
 
 def generate_rsp(start_date, interval = "1d"):
@@ -19,6 +21,8 @@ def generate_ndx(start_date, interval = '1d'):
     ndx = yf.download(['^IXIC'],
                       start_date,
                       interval = interval)
+    ndx = ndx.drop(["Adj Close"], axis=1)
+    ndx.columns = ['Nasdaq Open', 'Nasdaq High', 'Nasdaq Low', 'Nasdaq Close', 'Nasdaq Volume']
     return ndx
 
 def generate_rsp(start_date, interval ='1d'):
