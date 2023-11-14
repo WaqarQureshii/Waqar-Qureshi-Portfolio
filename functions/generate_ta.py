@@ -3,6 +3,16 @@ import pandas as pd
 
 import generate_db
 
+def nasdaqvssp500(start_date, interval = '1d'):
+    nasdaq = generate_db.generate_ndx(start_date, interval=interval)
+    nasdaq.drop(['Nasdaq Open', 'Nasdaq High', 'Nasdaq Low', 'Nasdaq Volume'], axis = 1, inplace=True)
+    sp500 = generate_db.generate_sp500(start_date, interval=interval)
+    sp500.drop(['SP500 Open', 'SP500 High', 'SP500 Low', 'SP500 Volume'], axis = 1, inplace=True)
+    ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
+    ndxvssp500['Nasdaq vs SP500 Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
+    ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
+    return ndxvssp500
+
 def sp500_rsi(start_date,
               rsi_lt = 30,
               rsi_mt = 15,
@@ -39,7 +49,7 @@ def yield_difference(start_date, lt_yield_inp = '30y'):
     dt_yield_diff['Yield Difference'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
     return dt_yield_diff
 
-test = yield_difference('2023-01-01', lt_yield_inp='30y')
+test = nasdaqvssp500('2023-01-01')
 test
     
     
