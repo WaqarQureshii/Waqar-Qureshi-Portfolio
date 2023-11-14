@@ -5,19 +5,24 @@ import generate_db
 
 def nasdaqvssp500(start_date, interval = '1d'):
     nasdaq = generate_db.generate_ndx(start_date, interval=interval)
-    nasdaq.drop(['Nasdaq Open', 'Nasdaq High', 'Nasdaq Low', 'Nasdaq Volume'], axis = 1, inplace=True)
+    nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
+    nasdaq.rename(columns)
+
     sp500 = generate_db.generate_sp500(start_date, interval=interval)
-    sp500.drop(['SP500 Open', 'SP500 High', 'SP500 Low', 'SP500 Volume'], axis = 1, inplace=True)
-    ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
-    ndxvssp500['Nasdaq vs SP500 Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
-    ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
-    return ndxvssp500
+    # sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
+    
+    # ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
+    # ndxvssp500['Nasdaq vs SP500 Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
+    # ndxvssp500.drop(['Nasdaq Close', 'SP500 Close', 'SP500 % Change'], axis = 1, inplace=True)
+    
+    return nasdaq
 
 def sp500_rsi(start_date,
               rsi_lt = 30,
               rsi_mt = 15,
-              rsi_st = 5):
-    sp500 = generate_db.generate_sp500(start_date)
+              rsi_st = 5,
+              interval = '1d'):
+    sp500 = generate_db.generate_sp500(start_date, interval = interval)
     sp500[f'rsi_{rsi_lt}'] = ta.rsi(close = sp500.Close, length=rsi_lt)
     sp500[f'rsi_{rsi_mt}'] = ta.rsi(close = sp500.Close, length=rsi_mt)
     sp500[f'rsi_{rsi_st}'] = ta.rsi(close = sp500.Close, length=rsi_st)
@@ -50,6 +55,6 @@ def yield_difference(start_date, lt_yield_inp = '30y'):
     return dt_yield_diff
 
 test = nasdaqvssp500('2023-01-01')
-test
+print(test)
     
     

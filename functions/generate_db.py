@@ -5,38 +5,44 @@ def generate_sp500(start_date, interval = "1d"):
                         start_date,
                         interval = interval)
     sp500 = sp500.drop(["Adj Close"], axis=1)
-    sp500['SP500 % Change'] = sp500['Close'].pct_change() * 100
-    sp500.columns = ['SP500 Open', 'SP500 High', 'SP500 Low', 'SP500 Close', 'SP500 Volume', 'SP500 % Change']
-    sp500.style.format({'SP500 % Change': '{:.2f}%'.format})
+    
+    sp500['% Change'] = sp500['Close'].pct_change() * 100
+    
     return sp500
+
 
 def generate_rsp(start_date, interval = "1d"):
     rsp = yf.download(['RSP'],
                       start_date,
                       interval = interval)
     rsp = rsp.drop(["Adj Close"], axis=1)
+
+    rsp['% Change'] = rsp['Close'].pct_change() * 100
+    
     return rsp
+
 
 def generate_ndx(start_date, interval = '1d'):
     ndx = yf.download(['^IXIC'],
                       start_date,
                       interval = interval)
     ndx = ndx.drop(["Adj Close"], axis=1)
-    ndx.columns = ['Nasdaq Open', 'Nasdaq High', 'Nasdaq Low', 'Nasdaq Close', 'Nasdaq Volume']
+
+    ndx['% Change'] = ndx['Close'].pct_change() * 100
+    
     return ndx
 
-def generate_rsp(start_date, interval ='1d'):
-    rsp = yf.download(['RSP'],
-                      start_date,
-                      interval = interval)
-    return rsp
 
 def generate_vix(start_date, interval = '1d'):
     vix = yf.download(['^VIX'],
                       start_date,
                       interval = interval)
     vix.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
+
+    vix['% Change'] = vix['Close'].pct_change() * 100
+
     return vix
+
 
 def generate_3mrx(start_date, interval = '1d'):
     r03m = yf.download(['^IRX'],
