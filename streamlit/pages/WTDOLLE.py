@@ -1,3 +1,4 @@
+import streamlit as st
 import pandas as pd
 from datetime import datetime
 
@@ -6,5 +7,19 @@ sys.path.append("..")
 
 from functions.generate_db import generate_vix
 
-vix = generate_vix('2008-01-01')
-print(vix)
+
+show_vix = st.checkbox('VIX')
+
+if show_vix == True:
+    show_vix_label = st.radio('Choose Signal Type',
+                              ["VIX level", 'VIX % Change'])
+else:
+    pass
+
+show_vix = st.checkbox('VIX')
+
+if show_vix == True:
+    show_vix_label = st.radio('Choose Signal Type',
+                              ["VIX level", 'VIX % Change'])
+else:
+    pass
