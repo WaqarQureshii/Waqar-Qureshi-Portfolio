@@ -16,10 +16,9 @@ if show_vix == True:
 else:
     pass
 
-show_vix = st.checkbox('VIX')
-
-if show_vix == True:
-    show_vix_label = st.radio('Choose Signal Type',
-                              ["VIX level", 'VIX % Change'])
+show_hyg = st.checkbox('HYG')
+if show_hyg == True:
+    show_hyg_label = st.radio('Choose Signal Type',
+                              ["HYG level", 'HYG % Change'])
 else:
     pass
