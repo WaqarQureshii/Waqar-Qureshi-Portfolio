@@ -9,19 +9,100 @@ st.set_page_config(layout="wide")
 
 from functions.generate_db import generate_vix
 
+
+#Creating the sidebar with the different signal creations
 st.sidebar.subheader("Select which signals you'd like to consider with WTDOLLE")
+sidebar_counter = 0
+column_list = []
 
-with st.sidebar:
-    show_vix = st.checkbox("Volatility - VIX", value=True)
-    st.sidebar.divider()
-    show_hyg = st.checkbox("High Yield Junk Bonds - HYG", value=True)
-    st.sidebar.divider()
-    show_rsi = st.checkbox("Overbought / Oversold - Relative Strength Index (RSI)")
+    #DISPLAY VIX OPTIONS
+show_vix = st.sidebar.checkbox("Volatility - VIX", value=True)
+if show_vix == True:
+        column_list.append("col1")
+        sidebar_counter += 1
+        show_vix_label = st.sidebar.radio('Choose Signal Type',
+                                ['VIX % Change' ,"VIX level"],
+                                index=0)
+        if show_vix_label == 'VIX level':
+            show_vix_label = st.sidebar.text_input("input (<#) or (>#) text", "<20")
+        else:
+            pass
+else:
+        pass
+st.sidebar.divider()
+    
 
+    #DISPLAY HYG OPTIONS
+show_hyg = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=True)
+if show_hyg == True:
+    sidebar_counter += 1
+    column_list.append("col2")
+st.sidebar.divider()
+
+#DISPLAY RSI OPTIONS
+show_rsi = st.sidebar.checkbox("Overbought / Oversold - Relative Strength Index (RSI)", value=True)
+if show_rsi == True:
+    sidebar_counter += 1
+    column_list.append("col3")
+st.sidebar.divider()
+
+#DISPLAY RSP OPTIONS
+show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
+if show_rsp == True:
+    sidebar_counter += 1
+    column_list.append("col4")
+st.sidebar.divider()
+
+#DISPLAY Yield Curve OPTIONS
+show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=True)
+if show_yieldcurve == True:
+    column_list.append("col5")
+    sidebar_counter += 1
+    show_yield_option = st.sidebar.radio('3 month vs',
+                                    ['10-year',
+                                    '30-year'],
+                                    index = 1)
+st.sidebar.divider()        
+
+show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
+if show_consumer == True:
+        column_list.append("col6")
+        sidebar_counter += 1
+
+show_utility = st.sidebar.checkbox("Utility (safe investment index) XLU")
+if show_utility == True:
+        column_list.append("col7")
+        sidebar_counter += 1
+
+show_ndxVSsp = st.sidebar.checkbox("Nasdaq vs S&P500 ratio", value=True)
+if show_ndxVSsp == True:
+        column_list.append("col8")
+        sidebar_counter += 1
+
+
+#Main page of WTDOLLE
 st.write('''
 # WTDOLLE
-## This is what happened today with these variables:
+## This is what happened today with the variables selected on the sidebar:
 ''')
+
+st.text("")
+st.text("")
+
+if sidebar_counter == 0:
+    st.header(f"{sidebar_counter} variables were selected in the sidebar")
+
+elif sidebar_counter == 1:
+    st.header(f"WTDOLLE with {sidebar_counter} selected variable")
+
+else: st.header(f"WTDOLLE with the selected {sidebar_counter} variables")
+
+
+column_list = st.columns(sidebar_counter)
+
+if show_vix == True:
+      if show_vix_label == "VIX level":
+            col1.write("v")
 
 # with st.expander("Variables to include/exclude (select):"):
 #     col1, col2, col3, col4, col5, col6, col7, col8= st.columns(8)
