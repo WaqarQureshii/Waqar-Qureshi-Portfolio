@@ -42,7 +42,7 @@ def generate_vix(start_date, end_date, interval = '1d'):
     vix = yf.download(['^VIX'],
                       start_date,
                       end_date,
-                      interval = interval)
+                      interval)
     vix.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
 
     vix['% Change'] = vix['Close'].pct_change()

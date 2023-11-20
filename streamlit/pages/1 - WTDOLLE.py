@@ -72,26 +72,28 @@ if show_yieldcurve == True:
                                     index = 1)
 st.sidebar.divider()        
 
-show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
-if show_consumer == True:
-        sidebar_counter += 1
+# show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
+# if show_consumer == True:
+#         sidebar_counter += 1
 
-show_utility = st.sidebar.checkbox("Utility (safe investment index) XLU")
-if show_utility == True:
-        sidebar_counter += 1
+# show_utility = st.sidebar.checkbox("Utility (safe investment index) XLU")
+# if show_utility == True:
+#         sidebar_counter += 1
 
-show_ndxVSsp = st.sidebar.checkbox("Nasdaq vs S&P500 ratio", value=True)
-if show_ndxVSsp == True:
-        sidebar_counter += 1
+# show_ndxVSsp = st.sidebar.checkbox("Nasdaq vs S&P500 ratio", value=True)
+# if show_ndxVSsp == True:
+#         sidebar_counter += 1
 
 
 #Main page of WTDOLLE
 st.write('''
 # WTDOLLE
-## This is what happened today with the variables selected on the sidebar:
 ''')
 
 st.text("")
+
+
+
 st.text("")
 
 start_date = '2001-01-01'
@@ -124,20 +126,19 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 with col1:
     if vix_show == True:
         vix_metric = generate_vix(start_date, default_end_date, interval)
-        # vix_metrix_lastday = 
+        vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
+        vix_level = vix_metric["Close"].iloc[-1]
+        
         if vix_show_label == "VIX % Change":
-            vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
             st.metric(label = "VIX % Change", value = vix_pct_change)
         else:
-            vix_level = vix_metric["Close"].iloc[-1]
-
             if vix_comparator_selection == 'Greater than:':
                 vix_boolean = vix_level > int(vix_comparator_value)
-                st.metric(label=f'VIX @ {"{:.0f}".format(vix_level)}  > {vix_comparator_value}', value = vix_boolean)
+                st.metric(label=f'VIX currently @ {"{:.0f}".format(vix_level)}  > {vix_comparator_value}', value = vix_boolean)
 
             else:
                 vix_boolean = vix_level < int(vix_comparator_value)
-                st.metric(label = f'VIX @ {"{:.0f}".format(vix_level)} < {vix_comparator_value}', value = vix_boolean)
+                st.metric(label = f'VIX currently @ {"{:.0f}".format(vix_level)} < {vix_comparator_value}', value = vix_boolean)
 
 
 with col2:
@@ -153,7 +154,7 @@ with col3:
         rsi_level = rsi_metric["rsi"].iloc[-1]
         if rsi_comparator_selection == "Greater than:":
             rsi_boolean = rsi_level > int(rsi_comparator_value)
-            st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} > {rsi_comparator_value}', value = rsi_boolean)
+            st.metric(label=f'RSI currently @ {"{:.0f}".format(rsi_level)} > {rsi_comparator_value}', value = rsi_boolean)
         else:
             rsi_boolean = rsi_level < int(rsi_comparator_value)
-            st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
+            st.metric(label=f'RSI currently @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
