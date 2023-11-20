@@ -1,8 +1,9 @@
 import yfinance as yf
 
-def generate_sp500(start_date, interval = "1d"):
+def generate_sp500(start_date, end_date, interval = "1d"):
     sp500 = yf.download(['^GSPC'],
                         start_date,
+                        end_date,
                         interval = interval)
     sp500 = sp500.drop(["Adj Close"], axis=1)
     
@@ -11,9 +12,10 @@ def generate_sp500(start_date, interval = "1d"):
     return sp500
 
 
-def generate_rsp(start_date, interval = "1d"):
+def generate_rsp(start_date, end_date, interval = "1d"):
     rsp = yf.download(['RSP'],
                       start_date,
+                      end_date,
                       interval = interval)
     rsp = rsp.drop(["Adj Close"], axis=1)
 
@@ -22,9 +24,10 @@ def generate_rsp(start_date, interval = "1d"):
     return rsp
 
 
-def generate_ndx(start_date, interval = '1d'):
+def generate_ndx(start_date, end_date, interval = '1d'):
     ndx = yf.download(['^IXIC'],
                       start_date,
+                      end_date,
                       interval = interval)
     ndx = ndx.drop(["Adj Close"], axis=1)
 
@@ -45,9 +48,10 @@ def generate_vix(start_date, end_date, interval = '1d'):
     return vix
 
 
-def generate_3mrx(start_date, interval = '1d'):
+def generate_3mrx(start_date, end_date, interval = '1d'):
     r03m = yf.download(['^IRX'],
                        start_date,
+                       end_date,
                        interval = interval)
     r03m.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
     
@@ -56,9 +60,10 @@ def generate_3mrx(start_date, interval = '1d'):
     return r03m
 
 
-def generate_10yrx(start_date, interval = '1d'):
+def generate_10yrx(start_date, end_date, interval = '1d'):
     r10y = yf.download(['^TNX'],
                        start_date,
+                       end_date,
                        interval = interval)
     r10y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
     
@@ -67,9 +72,10 @@ def generate_10yrx(start_date, interval = '1d'):
     return r10y
 
 
-def generate_30yrx(start_date, interval = '1d'):
+def generate_30yrx(start_date, end_date, interval = '1d'):
     r30y = yf.download(['^TYX'],
                        start_date,
+                       end_date,
                        interval = interval)
     r30y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
     
@@ -78,9 +84,10 @@ def generate_30yrx(start_date, interval = '1d'):
     return r30y
 
 
-def generate_hyg(start_date, interval = '1d'):
+def generate_hyg(start_date, end_date, interval = '1d'):
     hyg = yf.download(['HYG'],
                       start_date,
+                      end_date,
                       interval = interval)
     
     hyg['% Change'] = hyg['Close'].pct_change()
@@ -88,9 +95,10 @@ def generate_hyg(start_date, interval = '1d'):
     return hyg
 
 
-def generate_energy(start_date, interval = '1d'):
+def generate_energy(start_date, end_date, interval = '1d'):
     energy = yf.download(['XLE'],
                          start_date,
+                         end_date,
                          interval = interval)
     
     energy['% Change'] = energy['Close'].pct_change()
@@ -98,9 +106,10 @@ def generate_energy(start_date, interval = '1d'):
     return energy
 
 
-def generate_utility(start_date, interval = '1d'):
+def generate_utility(start_date, end_date, interval = '1d'):
     utility = yf.download(['XLU'],
                           start_date,
+                          end_date,
                           interval = interval)
     
     utility['% Change'] = utility['Close'].pct_change()
@@ -108,9 +117,10 @@ def generate_utility(start_date, interval = '1d'):
     return utility
 
 
-def generate_consumer(start_date, interval = '1d'):
+def generate_consumer(start_date, end_date, interval = '1d'):
     consumer = yf.download(['XLY'],
                            start_date,
+                           end_date,
                            interval = interval)
     
     consumer['% Change'] = consumer['Close'].pct_change()
