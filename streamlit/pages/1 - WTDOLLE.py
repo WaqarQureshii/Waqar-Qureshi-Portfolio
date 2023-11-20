@@ -7,7 +7,7 @@ sys.path.append("..")
 
 st.set_page_config(layout="wide")
 
-from functions.generate_db import generate_vix
+from functions.generate_db import generate_vix, generate_hyg
 
 
 #Creating the sidebar with the different signal creations
@@ -121,13 +121,16 @@ with col1:
             vix_level = vix_metric["Close"].iloc[-1]
 
             if vix_comparator_selection == 'Greater than:':
-                vix_metric_value = vix_level > int(vix_comparator_value)
-                st.metric(label=f'VIX @ {"{:.0f}".format(   )}  > {vix_comparator_value}', value = vix_metric_value)
+                vix_boolean = vix_level > int(vix_comparator_value)
+                st.metric(label=f'VIX @ {"{:.0f}".format(vix_level)}  > {vix_comparator_value}', value = vix_boolean)
 
             else:
-                vix_metric_value = vix_level < int(vix_comparator_value)
-                st.metric(label = f'VIX @ {"{:.0f}".format(vix_level)} < {vix_comparator_value}', value = vix_metric_value)
+                vix_boolean = vix_level < int(vix_comparator_value)
+                st.metric(label = f'VIX @ {"{:.0f}".format(vix_level)} < {vix_comparator_value}', value = vix_boolean)
 
 
 with col2:
-     
+     if hyg_show == True:
+          hyg_metric = generate_hyg(start_date, default_end_date, interval)
+
+          hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
