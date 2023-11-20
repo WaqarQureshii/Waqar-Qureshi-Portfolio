@@ -7,7 +7,8 @@ sys.path.append("..")
 
 st.set_page_config(layout="wide")
 
-from functions.generate_db import generate_vix, generate_hyg
+# from functions.generate_db import generate_vix, generate_hyg, generate_sp500
+from functions.generate_db import *
 
 
 #Creating the sidebar with the different signal creations
@@ -22,10 +23,10 @@ if vix_show == True:
                                 ['VIX % Change' ,"VIX level"],
                                 index=0)
         if vix_show_label == 'VIX level':
-            vix_comparator_selection = st.sidebar.radio('Choose comparator',
+            vix_comparator_selection = st.sidebar.radio('Choose VIX comparator',
                                                       ['Greater than:', "Less than:"],
-                                                      )
-            vix_comparator_value = st.sidebar.text_input("input integer (##)", "20")
+                                                      index = 1)
+            vix_comparator_value = st.sidebar.text_input("input VIX integer (##)", 20)
         else:
             pass
 else:
@@ -40,9 +41,19 @@ if hyg_show == True:
 st.sidebar.divider()
 
 #DISPLAY RSI OPTIONS
-show_rsi = st.sidebar.checkbox("Overbought / Oversold - Relative Strength Index (RSI)", value=True)
-if show_rsi == True:
+rsi_show = st.sidebar.checkbox("Overbought / Oversold - Relative Strength Index (RSI)", value=True)
+if rsi_show == True:
     sidebar_counter += 1
+    rsi_length = st.sidebar.text_input("Select the # of days for the RSI length", 10)
+
+    rsi_comparator_selection = st.sidebar.radio('Choose RSI comparator',
+                                                ['Greater than:', 'Less than:'],
+                                                index = 1)
+    rsi_comparator_value = st.sidebar.text_input("input RSI integer (##)", 20)
+else:
+     pass
+
+
 st.sidebar.divider()
 
 #DISPLAY RSP OPTIONS
@@ -131,6 +142,18 @@ with col1:
 
 with col2:
      if hyg_show == True:
-          hyg_metric = generate_hyg(start_date, default_end_date, interval)
+        hyg_metric = generate_hyg(start_date, default_end_date, interval)
+        hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
 
-          hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
+        st.metric(label = "HYG % Change", value = hyg_pct_change)
+
+with col3:
+    if rsi_show == True:
+        rsi_metric = sp500_rsi(start_date, default_end_date, int(rsi_length), interval)
+        rsi_level = rsi_metric["rsi"].iloc[-1]
+        if rsi_comparator_selection == "Greater than:":
+            rsi_boolean = rsi_level > int(rsi_comparator_value)
+            st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} > {rsi_comparator_value}', value = rsi_boolean)
+        else:
+            rsi_boolean = rsi_level < int(rsi_comparator_value)
+            st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
