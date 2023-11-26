@@ -9,7 +9,12 @@ st.set_page_config(layout="wide")
 
 # from functions.generate_db import generate_vix, generate_hyg, generate_sp500
 from functions.generate_db import *
+from functions.last_business_date import *
+from datetime import datetime
 
+today_date = datetime.today()
+
+input_end_date = st.date_input(label = 'Choose date', value = today_date)
 
 #Creating the sidebar with the different signal creations
 st.sidebar.subheader("Select which signals you'd like to consider with WTDOLLE")
@@ -86,18 +91,12 @@ st.sidebar.divider()
 
 
 #Main page of WTDOLLE
-st.write('''
-# WTDOLLE
-''')
+st.header(f'WTDOLLE on {input_end_date}')
 
 st.text("")
-
-
-
 st.text("")
 
 start_date = '2001-01-01'
-default_end_date = '2023-11-18'
 interval = "1d"
 
 if sidebar_counter == 0:
@@ -106,13 +105,13 @@ if sidebar_counter == 0:
 elif sidebar_counter == 1:
     st.header(f"WTDOLLE with {sidebar_counter} selected variable")
 
-else: st.header(f"WTDOLLE with the selected {sidebar_counter} variables")
+else: st.subheader(f"WTDOLLE with the selected {sidebar_counter} variables")
 
 st.markdown(
     """
 <style>
 [data-testid="stMetricValue"] {
-    font-size: 25px;
+    font-size: 20px;
 }
 </style>
 """,
@@ -125,7 +124,7 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 #Displaying VIX Column
 with col1:
     if vix_show == True:
-        vix_metric = generate_vix(start_date, default_end_date, interval)
+        vix_metric = generate_vix(start_date, input_end_date, interval)
         vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
         vix_level = vix_metric["Close"].iloc[-1]
         
@@ -143,18 +142,18 @@ with col1:
 
 with col2:
      if hyg_show == True:
-        hyg_metric = generate_hyg(start_date, default_end_date, interval)
+        hyg_metric = generate_hyg(start_date, input_end_date, interval)
         hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
 
         st.metric(label = "HYG % Change", value = hyg_pct_change)
 
 with col3:
     if rsi_show == True:
-        rsi_metric = sp500_rsi(start_date, default_end_date, int(rsi_length), interval)
+        rsi_metric = sp500_rsi(start_date, input_end_date, int(rsi_length), interval)
         rsi_level = rsi_metric["rsi"].iloc[-1]
         if rsi_comparator_selection == "Greater than:":
             rsi_boolean = rsi_level > int(rsi_comparator_value)
-            st.metric(label=f'RSI currently @ {"{:.0f}".format(rsi_level)} > {rsi_comparator_value}', value = rsi_boolean)
+            st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} > {rsi_comparator_value}', value = rsi_boolean)
         else:
             rsi_boolean = rsi_level < int(rsi_comparator_value)
-            st.metric(label=f'RSI currently @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
+            st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
