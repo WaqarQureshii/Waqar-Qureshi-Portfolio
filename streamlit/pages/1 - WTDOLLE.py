@@ -134,18 +134,18 @@ with col1:
 
         #grab the inputted end date's % change
         str_vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
-        vix_pct_change_int = vix_metric["% Change"].iloc[-1]*100
+        int_vix_pct_change = vix_metric["% Change"].iloc[-1]
 
         if vix_show_label == "VIX % Change":
             st.metric(label = "VIX % Change", value = str_vix_pct_change)
-            vix_pct_change_floor = math.floor(vix_pct_change_int)/100
-            vix_pct_change_ciel = math.ceil(vix_pct_change_int)/100
+            vix_pct_change_floor = math.floor(int_vix_pct_change*100)/100
+            vix_pct_change_ceil = math.ceil(int_vix_pct_change*100)/100
 
-            # st.write(vix_pct_change_ciel)
+            st.write(vix_pct_change_floor)
 
-            filtered_vix_metric = vix_metric[(vix_metric['% Change'] >= vix_pct_change_floor) & (vix_metric['% Change'] <= vix_pct_change_ciel)]
+            #Generate filtered dataset with selected parameters
+            filtered_vix_metric = vix_metric[(vix_metric['% Change'] >= vix_pct_change_floor) & (vix_metric['% Change'] <= vix_pct_change_ceil)]
 
-            st.write(f'Floor: {vix_pct_change_floor}, Ciel: {vix_pct_change_ciel}')
         else:
             if vix_comparator_selection == 'Greater than:':
                 vix_boolean = vix_level > vix_comparator_value
@@ -159,10 +159,20 @@ with col1:
 
 with col2:
      if hyg_show == True:
+        #Generate entire VIX db with start, inputted end date and interval
         hyg_metric = generate_hyg(start_date, input_end_date, interval)
-        hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
 
-        st.metric(label = "HYG % Change", value = hyg_pct_change)
+        #Grab the inputted end date's % Change
+        str_hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
+        int_hyg_pct_change = hyg_metric["% Change"].iloc[-1]
+        hyg_pct_change_floor = math.floor(int_hyg_pct_change*100)/100
+        hyg_pct_change_ceil = math.ceil(int_hyg_pct_change*100)/100
+
+        #Generate filtered dataset with selected parameters
+        filtered_hyg_metric = hyg_metric[(hyg_metric['% Change'] >= hyg_pct_change_floor) & (hyg_metric['% Change'] <= hyg_pct_change_ceil)]
+        
+        #Show metric
+        st.metric(label = "HYG % Change", value = str_hyg_pct_change)
 
 with col3:
     if rsi_show == True:
@@ -175,4 +185,4 @@ with col3:
             rsi_boolean = rsi_level < int(rsi_comparator_value)
             st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
 
-st.dataframe(data = filtered_vix_metric)
+# st.dataframe(data = filtered_hyg_metric)
