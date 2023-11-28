@@ -67,6 +67,7 @@ st.sidebar.divider()
 #DISPLAY RSP OPTIONS
 show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
 if show_rsp == True:
+    rsp_ma_length = st.sidebar.text_input("Input Moving Average Length (days)", 50)
     sidebar_counter += 1
 st.sidebar.divider()
 
@@ -142,8 +143,6 @@ with col1:
             vix_pct_change_floor = math.floor(int_vix_pct_change*100)/100
             vix_pct_change_ceil = math.ceil(int_vix_pct_change*100)/100
 
-            st.write(vix_pct_change_floor)
-
             #Generate filtered dataset with selected parameters
             filtered_vix_metric = vix_metric[(vix_metric['% Change'] >= vix_pct_change_floor) & (vix_metric['% Change'] <= vix_pct_change_ceil)]
 
@@ -197,5 +196,17 @@ with col3:
             #Generate filtered dataset with selected parameters
             filtered_rsi_metric = rsi_metric[rsi_metric['rsi'] < rsi_comparator_value]
 
+with col4:
+    if show_rsp == True:
+        
+        #Generate database for selected input
+        rsp_metric = generate_rsp(start_date, input_end_date, interval, ma_length = rsp_ma_length)
 
-st.dataframe(data = filtered_rsi_metric)
+        #Grab inputted date's RSP Price and Moving Average
+        rsp_price = rsp_metric["Close"].iloc[-1]
+        rsp_ma = rsp_metric['ma'].iloc[-1]
+
+        st.write(f'RSP: {rsp_price}; MA: {rsp_ma}')
+
+
+# st.dataframe(data = filtered_rsi_metric)
