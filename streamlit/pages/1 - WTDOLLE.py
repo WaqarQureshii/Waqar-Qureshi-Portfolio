@@ -1,7 +1,8 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 
+import math
+from datetime import datetime
 import sys
 sys.path.append("..")
 
@@ -32,6 +33,7 @@ if vix_show == True:
                                                       ['Greater than:', "Less than:"],
                                                       index = 1)
             vix_comparator_value = st.sidebar.text_input("input VIX integer (##)", 20)
+            vix_comparator_value = int(vix_comparator_value)
         else:
             pass
 else:
@@ -124,21 +126,31 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 #Displaying VIX Column
 with col1:
     if vix_show == True:
+        #Generate entire VIX db with start, inputted end date and interval
         vix_metric = generate_vix(start_date, input_end_date, interval)
-        vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
-        vix_level = vix_metric["Close"].iloc[-1]
         
+        #grab the closing price of the inputted end date
+        vix_level = vix_metric["Close"].iloc[-1]
+
+        #grab the inputted end date's % change
+        str_vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
+        vix_pct_change_int = vix_metric["% Change"].iloc[-1]*100
+
         if vix_show_label == "VIX % Change":
-            st.metric(label = "VIX % Change", value = vix_pct_change)
+            st.metric(label = "VIX % Change", value = str_vix_pct_change)
+            vix_pct_change_floor = math.floor(vix_pct_change_int)/100
+            vix_pct_change_ciel = math.ceil(vix_pct_change_int)/100
+            st.write(f'Floor: {vix_pct_change_floor}, Ciel: {vix_pct_change_ciel}')
         else:
             if vix_comparator_selection == 'Greater than:':
-                vix_boolean = vix_level > int(vix_comparator_value)
-                st.metric(label=f'VIX currently @ {"{:.0f}".format(vix_level)}  > {vix_comparator_value}', value = vix_boolean)
+                vix_boolean = vix_level > vix_comparator_value
+                st.metric(label=f'VIX @ {"{:.0f}".format(vix_level)}  > {vix_comparator_value}', value = vix_boolean)
+                filtered_vix_metric = vix_metric[vix_metric['Close'] > vix_comparator_value]
 
             else:
-                vix_boolean = vix_level < int(vix_comparator_value)
-                st.metric(label = f'VIX currently @ {"{:.0f}".format(vix_level)} < {vix_comparator_value}', value = vix_boolean)
-
+                vix_boolean = vix_level < vix_comparator_value
+                st.metric(label = f'VIX @ {"{:.0f}".format(vix_level)} < {vix_comparator_value}', value = vix_boolean)
+                filtered_vix_metric = vix_metric[vix_metric['Close'] < vix_comparator_value]
 
 with col2:
      if hyg_show == True:
@@ -157,3 +169,4 @@ with col3:
         else:
             rsi_boolean = rsi_level < int(rsi_comparator_value)
             st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
+
