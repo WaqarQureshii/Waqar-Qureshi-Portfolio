@@ -14,13 +14,13 @@ def generate_sp500(start_date, end_date, interval = "1d"):
     return sp500
 
 
-def generate_rsp(start_date, end_date, interval = "1d"):
+def generate_rsp(start_date, end_date, interval = "1d", ma_length = 50):
     rsp = yf.download(['RSP'],
                       start_date,
                       end_date,
                       interval = interval)
     rsp = rsp.drop(["Adj Close"], axis=1)
-
+    rsp['ma'] = ta.sma(close = rsp.Close, length = ma_length)
     rsp['% Change'] = rsp['Close'].pct_change()
     
     return rsp
