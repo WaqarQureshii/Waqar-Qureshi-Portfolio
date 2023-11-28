@@ -153,6 +153,13 @@ def sp500_rsi(start_date,
     sp500[f'rsi'] = ta.rsi(close = sp500.Close, length=rsi_value)
     return sp500
 
+def sp500_ma(start_date,
+             end_date,
+             ma_length = 50,
+             interval = '1d'):
+    sp500 = generate_sp500(start_date, end_date, interval = interval)
+    sp500['ma'] = ta.sma(close = sp500.Close, length=ma_length)
+    return sp500
 
 def sp500_bbands(start_date,
                  bbands_length = 20,
