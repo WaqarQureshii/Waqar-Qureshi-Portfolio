@@ -68,6 +68,7 @@ st.sidebar.divider()
 show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
 if show_rsp == True:
     rsp_ma_length = st.sidebar.text_input("Input Moving Average Length (days)", 50)
+    rsp_ma_length = int(rsp_ma_length)
     sidebar_counter += 1
 st.sidebar.divider()
 
@@ -205,8 +206,8 @@ with col4:
         #Grab inputted date's RSP Price and Moving Average
         rsp_price = rsp_metric["Close"].iloc[-1]
         rsp_ma = rsp_metric['ma'].iloc[-1]
-
-        st.write(f'RSP: {rsp_price}; MA: {rsp_ma}')
+        rsp_boolean = rsp_price > rsp_ma
+        st.metric(label=f'RSP @ {rsp_price}; MA: {rsp_ma}', value = rsp_boolean)
 
 
 # st.dataframe(data = filtered_rsi_metric)
