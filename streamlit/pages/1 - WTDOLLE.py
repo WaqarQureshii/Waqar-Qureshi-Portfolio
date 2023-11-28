@@ -140,6 +140,11 @@ with col1:
             st.metric(label = "VIX % Change", value = str_vix_pct_change)
             vix_pct_change_floor = math.floor(vix_pct_change_int)/100
             vix_pct_change_ciel = math.ceil(vix_pct_change_int)/100
+
+            # st.write(vix_pct_change_ciel)
+
+            filtered_vix_metric = vix_metric[(vix_metric['% Change'] >= vix_pct_change_floor) & (vix_metric['% Change'] <= vix_pct_change_ciel)]
+
             st.write(f'Floor: {vix_pct_change_floor}, Ciel: {vix_pct_change_ciel}')
         else:
             if vix_comparator_selection == 'Greater than:':
@@ -170,3 +175,4 @@ with col3:
             rsi_boolean = rsi_level < int(rsi_comparator_value)
             st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
 
+st.dataframe(data = filtered_vix_metric)
