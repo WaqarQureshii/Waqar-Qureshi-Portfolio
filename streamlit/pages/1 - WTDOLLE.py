@@ -57,6 +57,7 @@ if rsi_show == True:
                                                 ['Greater than:', 'Less than:'],
                                                 index = 1)
     rsi_comparator_value = st.sidebar.text_input("input RSI integer (##)", 20)
+    rsi_comparator_value = int(rsi_comparator_value)
 else:
      pass
 
@@ -176,13 +177,25 @@ with col2:
 
 with col3:
     if rsi_show == True:
+        #Generate RSI metric
         rsi_metric = sp500_rsi(start_date, input_end_date, int(rsi_length), interval)
+        
+        #Grab the inputted end date's metric
         rsi_level = rsi_metric["rsi"].iloc[-1]
+
         if rsi_comparator_selection == "Greater than:":
-            rsi_boolean = rsi_level > int(rsi_comparator_value)
+            rsi_boolean = rsi_level > rsi_comparator_value
             st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} > {rsi_comparator_value}', value = rsi_boolean)
+
+            #Generate filtered dataset with selected parameters
+            filtered_rsi_metric = rsi_metric[rsi_metric['rsi'] > rsi_comparator_value]
+
         else:
-            rsi_boolean = rsi_level < int(rsi_comparator_value)
+            rsi_boolean = rsi_level < rsi_comparator_value
             st.metric(label=f'RSI @ {"{:.0f}".format(rsi_level)} < {rsi_comparator_value}', value = rsi_boolean)
 
-# st.dataframe(data = filtered_hyg_metric)
+            #Generate filtered dataset with selected parameters
+            filtered_rsi_metric = rsi_metric[rsi_metric['rsi'] < rsi_comparator_value]
+
+
+st.dataframe(data = filtered_rsi_metric)
