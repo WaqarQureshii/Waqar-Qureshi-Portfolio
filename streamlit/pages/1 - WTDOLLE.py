@@ -14,8 +14,10 @@ from functions.last_business_date import *
 from datetime import datetime
 
 today_date = datetime.today()
-
-input_end_date = st.date_input(label = 'Choose date', value = today_date)
+start_date = '2001-01-01 00:00:00'
+start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+start_date = st.date_input(label = "Choose start date", value = start_date)
+input_end_date = st.date_input(label = 'Choose end date', value = today_date)
 
 #Creating the sidebar with the different signal creations
 st.sidebar.subheader("Select which signals you'd like to consider with WTDOLLE")
@@ -106,7 +108,6 @@ st.header(f'WTDOLLE on {input_end_date}')
 st.text("")
 st.text("")
 
-start_date = '2001-01-01'
 interval = "1d"
 
 if sidebar_counter == 0:
@@ -233,14 +234,9 @@ with col4:
 
 index_columns = [df.index for df in df_intersection]
 common_index = reduce(lambda left, right: left.intersection(right), index_columns)
-st.write(common_index)
 
-# unindexed_filtered_hyg_metric = filtered_hyg_metric.reset_index()
-# unindexed_filtered_vix_metric = filtered_vix_metric.reset_index()
-# unindexed_filtered_rsp_metric = filtered_rsp_metric.reset_index()
-# dates1 = set(unindexed_filtered_hyg_metric['Date'])
-# dates2 = set(unindexed_filtered_rsp_metric['Date'])
-# dates3 = set(unindexed_filtered_vix_metric['Date'])
+sp500 = generate_sp500(start_date, input_end_date)
+st.line_chart(data = sp500['Close'])
 
 # intersection = dates3, dates2
 # common_dates = dates1.intersection(intersection)
