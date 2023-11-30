@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 
 import math
 from datetime import datetime
@@ -234,9 +235,19 @@ with col4:
 
 index_columns = [df.index for df in df_intersection]
 common_index = reduce(lambda left, right: left.intersection(right), index_columns)
+common_index = common_index.to_list()
 
+# st.write(common_index)
+# generates panda datafrane
 sp500 = generate_sp500(start_date, input_end_date)
-st.line_chart(data = sp500['Close'])
+
+sp500_common = sp500[sp500.index.isin(common_index)]
+fig, ax = plt.subplots()
+ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
+ax.scatter(sp500_common.index, sp500_common['Close'], marker='.', color='red', s = 10)
+st.pyplot(fig)
+
+
 
 # intersection = dates3, dates2
 # common_dates = dates1.intersection(intersection)
