@@ -37,6 +37,16 @@ def generate_ndx(start_date, end_date, interval = '1d'):
     
     return ndx
 
+def generate_rus2k(start_date, end_date, interval = '1d'):
+    rus2k = yf.download(['^RUT'],
+                      start_date,
+                      end_date,
+                      interval = interval)
+    rus2k = rus2k.drop(["Adj Close"], axis=1)
+
+    rus2k['% Change'] = rus2k['Close'].pct_change()
+    
+    return rus2k
 
 def generate_vix(start_date, end_date, interval = '1d'):
     vix = yf.download(['^VIX'],
