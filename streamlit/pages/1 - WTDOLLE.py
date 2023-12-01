@@ -233,19 +233,28 @@ with col4:
             filtered_rsp_metric = rsp_metric[rsp_metric['Close'] < rsp_metric['ma']]
             df_intersection.append(filtered_rsp_metric)
 
-index_columns = [df.index for df in df_intersection]
-common_index = reduce(lambda left, right: left.intersection(right), index_columns)
-common_index = common_index.to_list()
 
-# st.write(common_index)
-# generates panda datafrane
-sp500 = generate_sp500(start_date, input_end_date)
+fig1, fig2, fig3 = st.columns(3)
+with fig1:
+    index_columns = [df.index for df in df_intersection]
+    common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
+    # common_index = common_index.to_list()
 
-sp500_common = sp500[sp500.index.isin(common_index)]
-fig, ax = plt.subplots()
-ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
-ax.scatter(sp500_common.index, sp500_common['Close'], marker='.', color='red', s = 10)
-st.pyplot(fig)
+    # generates panda datafrane
+    sp500 = generate_sp500(start_date, input_end_date)
+
+    sp500_common = sp500[sp500.index.isin(common_index)]
+
+    fig, ax = plt.subplots()
+    ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
+    ax.scatter(sp500_common.index, sp500_common['Close'], marker='.', color='red', s = 10)
+    st.pyplot(fig)
+
+with fig2:
+    pass
+
+with fig3:
+    pass
 
 
 
