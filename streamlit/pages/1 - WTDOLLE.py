@@ -256,16 +256,26 @@ with fig1:
     ax.scatter(sp500_common.index, sp500_common['Close'], marker='.', color='red', s = 10)
     st.pyplot(fig)
 
+    average_sp500_return = sp500_common['% Change Sel Interval'].mean()
+    sp500_number_of_occurrences = len(sp500_common['% Change Sel Interval'])
+    sp500_number_of_positives = (sp500_common['% Change Sel Interval'] > 0).sum()
+    sp500_positive_percentage = sp500_number_of_positives/sp500_number_of_occurrences
+    sp500_positive_percentage = '{:.2%}'.format(sp500_positive_percentage)
 
-    st.table(data=sp500)
+    st.write(f'This occurred {sp500_number_of_occurrences} of time(s) and is {sp500_positive_percentage} positive in {sp500_interval_selection} days.' )
+    st.write('{:.2%}'.format(average_sp500_return))
+    # st.table(data=sp500)
 
 
 with fig2:
+    nasdaq_interval_selection = int(st.text_input("Input # of intervals to calculate Nasdaq return:", 10))
+    
     index_columns = [df.index for df in df_intersection]
     common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
 
     # generates panda datafrane
     ndx = generate_ndx(start_date, input_end_date)
+    ndx['% Change Sel Interval'] = ndx['Close'].pct_change(nasdaq_interval_selection).shift(-nasdaq_interval_selection)
 
     ndx_common = ndx[ndx.index.isin(common_index)]
 
@@ -275,6 +285,14 @@ with fig2:
     ax.scatter(ndx_common.index, ndx_common['Close'], marker='.', color='red', s = 10)
     st.pyplot(fig)
 
+    average_ndx_return = ndx_common['% Change Sel Interval'].mean()
+    ndx_number_of_occurrences = len(ndx_common['% Change Sel Interval'])
+    ndx_number_of_positives = (ndx_common['% Change Sel Interval'] > 0).sum()
+    ndx_positive_percentage = ndx_number_of_positives/ndx_number_of_occurrences
+    ndx_positive_percentage = '{:.2%}'.format(ndx_positive_percentage)
+
+    st.write(f'This occurred {ndx_number_of_occurrences} time(s) and is {ndx_positive_percentage} positive in {nasdaq_interval_selection} days.' )
+    st.write('{:.2%}'.format(average_ndx_return))
 
 with fig3:
     index_columns = [df.index for df in df_intersection]
