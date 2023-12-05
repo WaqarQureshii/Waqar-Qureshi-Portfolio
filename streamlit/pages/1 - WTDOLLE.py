@@ -51,7 +51,7 @@ if hyg_show == True:
 st.sidebar.divider()
 
 #DISPLAY RSI OPTIONS
-rsi_show = st.sidebar.checkbox("Overbought / Oversold - Relative Strength Index (RSI)", value=True)
+rsi_show = st.sidebar.checkbox("Overbought / Oversold - S&P500 Relative Strength Index (RSI)", value=True)
 if rsi_show == True:
     sidebar_counter += 1
     rsi_length = st.sidebar.text_input("Select the # of days for the RSI length", 10)
@@ -233,28 +233,63 @@ with col4:
             filtered_rsp_metric = rsp_metric[rsp_metric['Close'] < rsp_metric['ma']]
             df_intersection.append(filtered_rsp_metric)
 
+st.write("")
+st.write("")
 
 fig1, fig2, fig3 = st.columns(3)
 with fig1:
+    sp500_interval_selection = int(st.text_input("Input # of intervals to calculate s&p 500 return:", 10))
+
     index_columns = [df.index for df in df_intersection]
     common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
     # common_index = common_index.to_list()
 
     # generates panda datafrane
     sp500 = generate_sp500(start_date, input_end_date)
+    sp500['% Change Sel Interval'] = sp500['Close'].pct_change(sp500_interval_selection).shift(-sp500_interval_selection)
 
     sp500_common = sp500[sp500.index.isin(common_index)]
 
     fig, ax = plt.subplots()
+    ax.set_title('S&P500')
     ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
     ax.scatter(sp500_common.index, sp500_common['Close'], marker='.', color='red', s = 10)
     st.pyplot(fig)
 
+
+    st.table(data=sp500)
+
+
 with fig2:
-    pass
+    index_columns = [df.index for df in df_intersection]
+    common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
+
+    # generates panda datafrane
+    ndx = generate_ndx(start_date, input_end_date)
+
+    ndx_common = ndx[ndx.index.isin(common_index)]
+
+    fig, ax = plt.subplots()
+    ax.set_title('Nasdaq 100')
+    ax.plot(ndx.index, ndx['Close'], linewidth = 0.5, color='black')
+    ax.scatter(ndx_common.index, ndx_common['Close'], marker='.', color='red', s = 10)
+    st.pyplot(fig)
+
 
 with fig3:
-    pass
+    index_columns = [df.index for df in df_intersection]
+    common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
+
+    # generates panda datafrane
+    rus2k = generate_rus2k(start_date, input_end_date)
+
+    rus2k_common = rus2k[rus2k.index.isin(common_index)]
+
+    fig, ax = plt.subplots()
+    ax.set_title('Russel 2000')
+    ax.plot(rus2k.index, rus2k['Close'], linewidth = 0.5, color='black')
+    ax.scatter(rus2k_common.index, rus2k_common['Close'], marker='.', color='red', s = 10)
+    st.pyplot(fig)
 
 
 
