@@ -238,11 +238,18 @@ st.write("")
 
 fig1, fig2, fig3 = st.columns(3)
 with fig1:
-    sp500_interval_selection = int(st.text_input("Input # of intervals to calculate s&p 500 return:", 10))
+    fig1col1, fig1col2, fig1col3 = st.columns(3)
+    with fig1col1:
+        sp500_interval_selection = int(st.text_input("Input # of intervals to calculate s&p 500 return:", 10))
+    with fig1col2:
+        sp500rsishow = st.checkbox("Overbought/Oversold RSI Indicator for S&P500", value=False)
+        pass
+    with fig1col3:
+        if sp500rsishow == True:
+            sp500_rsi_length = st.text_input("Select the S&P RSI length (in days)", 10)
 
     index_columns = [df.index for df in df_intersection]
     common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
-    # common_index = common_index.to_list()
 
     # generates panda datafrane
     sp500 = generate_sp500(start_date, input_end_date)
@@ -268,7 +275,15 @@ with fig1:
 
 
 with fig2:
-    nasdaq_interval_selection = int(st.text_input("Input # of intervals to calculate Nasdaq return:", 10))
+    fig2col1, fig2col2, fig2col3 = st.columns(3)
+    with fig2col1:
+        nasdaq_interval_selection = int(st.text_input("Input # of intervals to calculate Nasdaq return:", 10))
+    with fig2col2:
+        ndxrsishow = st.checkbox("Overbought/Oversold RSI Indicator for Nasdaq", value=False)
+        pass
+    with fig2col3:
+        if ndxrsishow == True:
+            ndx_rsi_length = st.text_input("Select the Nasdaq RSI length (in days)", 10)
     
     index_columns = [df.index for df in df_intersection]
     common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
@@ -295,11 +310,22 @@ with fig2:
     st.write('{:.2%}'.format(average_ndx_return))
 
 with fig3:
+    fig3col1, fig3col2, fig3col3 = st.columns(3)
+    with fig3col1:
+        rus2k_interval_selection = int(st.text_input("Input # of intervals to calculate Russel 2000 return:", 10))
+    with fig3col2:
+        rus2krsishow = st.checkbox("Overbought/Oversold RSI Indicator for Russel 2000", value=False)
+        pass
+    with fig3col3:
+        if rus2krsishow == True:
+            rus2k_rsi_length = st.text_input("Select the Russel 2000 RSI length (in days)", 10)
+    
     index_columns = [df.index for df in df_intersection]
     common_index = reduce(lambda left, right: left.intersection(right), index_columns).to_list()
 
     # generates panda datafrane
     rus2k = generate_rus2k(start_date, input_end_date)
+    rus2k['% Change Sel Interval'] = rus2k['Close'].pct_change(rus2k_interval_selection).shift(-rus2k_interval_selection)
 
     rus2k_common = rus2k[rus2k.index.isin(common_index)]
 
@@ -309,12 +335,11 @@ with fig3:
     ax.scatter(rus2k_common.index, rus2k_common['Close'], marker='.', color='red', s = 10)
     st.pyplot(fig)
 
+    average_rus2k_return = rus2k_common['% Change Sel Interval'].mean()
+    rus2k_number_of_occurrences = len(rus2k_common['% Change Sel Interval'])
+    rus2k_number_of_positives = (rus2k_common['% Change Sel Interval'] > 0).sum()
+    rus2k_positive_percentage = rus2k_number_of_positives/rus2k_number_of_occurrences
+    rus2k_positive_percentage = '{:.2%}'.format(rus2k_positive_percentage)
 
-
-# intersection = dates3, dates2
-# common_dates = dates1.intersection(intersection)
-
-# st.write(common_dates)
-# printer = filtered_hyg_metric.columns
-# st.write(printer)
-# st.dataframe(data = unindexed_filtered_hyg_metric)
+    st.write(f'This occurred {rus2k_number_of_occurrences} of time(s) and is {rus2k_positive_percentage} positive in {rus2k_interval_selection} days.' )
+    st.write('{:.2%}'.format(average_rus2k_return))
