@@ -14,17 +14,36 @@ from functions.generate_db import *
 from functions.last_business_date import *
 from datetime import datetime
 
+# -------- DATE SELECTION SECTION --------
+    # --- DATE SELECTION ---
 today_date = datetime.today()
+header_col1, header_col2 = st.columns(2)
 start_date = '2001-01-01 00:00:00'
 start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
-start_date = st.date_input(label = "Choose start date", value = start_date)
-input_end_date = st.date_input(label = 'Choose end date', value = today_date)
+start_date = header_col1.date_input(label = "Choose start date", value = start_date)
+input_end_date = header_col1.date_input(label = 'Choose end date', value = today_date)
+
+    # --- INDEX PARAMETERS
+interval_selection = header_col2.radio("Select Interval",
+                                       options =['Daily', 'Weekly', 'Monthly'],
+                                       index = 0,
+                                       key = "interval_selection")
+
+if interval_selection == 'Daily':
+    interval_input = '1d'
+elif interval_selection == 'Weekly':
+    interval_input = '1wk'
+elif interval_selection == 'Monthly':
+    interval_input = '1mo'
+
 
 #Creating the sidebar with the different signal creations
 st.sidebar.subheader("Select which signals you'd like to consider with WTDOLLE")
 sidebar_counter = 0
 
-    #DISPLAY VIX OPTIONS
+
+# ------- SIDEBAR SELECTIONS ---------
+    # --- VIX OPTIONS ---
 vix_show = st.sidebar.checkbox("Volatility - VIX", value=True)
 if vix_show == True:
         sidebar_counter += 1
@@ -44,13 +63,13 @@ else:
 st.sidebar.divider()
     
 
-    #DISPLAY HYG OPTIONS
+    # --- HYG OPTIONS ---
 hyg_show = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=True)
 if hyg_show == True:
     sidebar_counter += 1
 st.sidebar.divider()
 
-#DISPLAY RSI OPTIONS
+    # --- RSI OPTIONS ---
 rsi_show = st.sidebar.checkbox("Overbought / Oversold - S&P500 Relative Strength Index (RSI)", value=True)
 if rsi_show == True:
     sidebar_counter += 1
@@ -67,7 +86,7 @@ else:
 
 st.sidebar.divider()
 
-#DISPLAY RSP OPTIONS
+    # --- RSP OPTIONS ---
 show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
 if show_rsp == True:
     rsp_ma_length = st.sidebar.text_input("Input Moving Average Length (days)", 50)
@@ -80,7 +99,7 @@ else:
     pass
 st.sidebar.divider()
 
-#DISPLAY Yield Curve OPTIONS
+    # --- YIELD CURVE ---
 show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=True)
 if show_yieldcurve == True:
     sidebar_counter += 1
@@ -108,8 +127,6 @@ st.header(f'WTDOLLE on {input_end_date}')
 
 st.text("")
 st.text("")
-
-interval = "1d"
 
 if sidebar_counter == 0:
     st.header(f"{sidebar_counter} variables were selected in the sidebar")
@@ -139,7 +156,7 @@ df_intersection = []
 with col1:
     if vix_show == True:
         #Generate entire VIX db with start, inputted end date and interval
-        vix_metric = generate_vix(start_date, input_end_date, interval)
+        vix_metric = generate_vix(start_date, input_end_date, interval_input)
         
         #grab the closing price of the inputted end date
         vix_level = vix_metric["Close"].iloc[-1]
@@ -172,7 +189,7 @@ with col1:
 with col2:
      if hyg_show == True:
         #Generate entire VIX db with start, inputted end date and interval
-        hyg_metric = generate_hyg(start_date, input_end_date, interval)
+        hyg_metric = generate_hyg(start_date, input_end_date, interval_input)
 
         #Grab the inputted end date's % Change
         str_hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
@@ -190,7 +207,7 @@ with col2:
 with col3:
     if rsi_show == True:
         #Generate RSI metric
-        rsi_metric = sp500_rsi(start_date, input_end_date, int(rsi_length), interval)
+        rsi_metric = sp500_rsi(start_date, input_end_date, int(rsi_length), interval_input)
         
         #Grab the inputted end date's metric
         rsi_level = rsi_metric["rsi"].iloc[-1]
@@ -215,7 +232,7 @@ with col4:
     if show_rsp == True:
         
         #Generate database for selected input
-        rsp_metric = generate_rsp(start_date, input_end_date, interval, ma_length = rsp_ma_length)
+        rsp_metric = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
 
         #Grab inputted date's RSP Price and Moving Average
         rsp_price = rsp_metric["Close"].iloc[-1]
