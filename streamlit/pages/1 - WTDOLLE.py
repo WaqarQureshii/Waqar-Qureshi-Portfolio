@@ -100,7 +100,7 @@ else:
 st.sidebar.divider()
 
     # --- YIELD CURVE ---
-show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=True)
+show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False)
 if show_yieldcurve == True:
     sidebar_counter += 1
     show_yield_option = st.sidebar.radio('3 month vs',
@@ -122,12 +122,14 @@ st.sidebar.divider()
 #         sidebar_counter += 1
 
 
-#Main page of WTDOLLE
+# --- MAIN PAGE OF WTDOLLE - CHARTS AND PARAMETERS
+    # -------------------- HEADER -------------------------
 st.header(f'WTDOLLE on {input_end_date}')
 
 st.text("")
 st.text("")
 
+    # ------------------ SUB HEADER -----------------------
 if sidebar_counter == 0:
     st.header(f"{sidebar_counter} variables were selected in the sidebar")
 
@@ -136,6 +138,7 @@ elif sidebar_counter == 1:
 
 else: st.subheader(f"WTDOLLE with the selected {sidebar_counter} variables")
 
+# ---------MODIFYING THE METRIC FORMAT ------------------
 st.markdown(
     """
 <style>
@@ -147,16 +150,21 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-column_list = st.columns(sidebar_counter)
+
+# ----- SELECTED VARIABLES COLUMNS ---------
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
+# --- DATAFRAMES SET UP ---
 df_intersection = []
+sp500_intersection = []
+nasdaq_intersection = []
+rus2k_intersection = []
+vix_metric = generate_vix(start_date, input_end_date, interval_input)
+
 
 #Displaying VIX Column
 with col1:
     if vix_show == True:
-        #Generate entire VIX db with start, inputted end date and interval
-        vix_metric = generate_vix(start_date, input_end_date, interval_input)
         
         #grab the closing price of the inputted end date
         vix_level = vix_metric["Close"].iloc[-1]
