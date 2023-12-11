@@ -160,9 +160,8 @@ rus2k_intersection = []
 vix_metric = generate_vix(start_date, input_end_date, interval_input)
 hyg_metric = generate_hyg(start_date, input_end_date, interval_input)
 rsi_metric = sp500_rsi(start_date, input_end_date, int(rsi_length), interval_input)
-rsp_metric = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
-sp500 = generate_sp500(start_date, input_end_date)
-ndx = generate_ndx(start_date, input_end_date)
+sp500 = generate_sp500(start_date, input_end_date, interval_input)
+ndx = generate_ndx(start_date, input_end_date, interval_input)
 
 
 # ----- SELECTED VARIABLES COLUMNS ---------
@@ -239,9 +238,9 @@ with col3:
             #Generate filtered dataset with selected parameters
             filtered_rsi_metric = rsi_metric[rsi_metric['rsi'] > rsi_comparator_value]
             df_intersection.append(filtered_rsi_metric)
-            sp500_intersection.append(filtered_hyg_metric)
-            nasdaq_intersection.append(filtered_hyg_metric)
-            rus2k_intersection.append(filtered_hyg_metric)
+            sp500_intersection.append(filtered_rsi_metric)
+            nasdaq_intersection.append(filtered_rsi_metric)
+            rus2k_intersection.append(filtered_rsi_metric)
 
         else:
             rsi_boolean = rsi_level < rsi_comparator_value
@@ -250,17 +249,18 @@ with col3:
             #Generate filtered dataset with selected parameters
             filtered_rsi_metric = rsi_metric[rsi_metric['rsi'] < rsi_comparator_value]
             df_intersection.append(filtered_rsi_metric)
-            sp500_intersection.append(filtered_hyg_metric)
-            nasdaq_intersection.append(filtered_hyg_metric)
-            rus2k_intersection.append(filtered_hyg_metric)
+            sp500_intersection.append(filtered_rsi_metric)
+            nasdaq_intersection.append(filtered_rsi_metric)
+            rus2k_intersection.append(filtered_rsi_metric)
 
 with col4:
     if show_rsp == True:
 
         #Grab inputted date's RSP Price and Moving Average
+        rsp_metric = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
         rsp_price = rsp_metric["Close"].iloc[-1]
         rsp_ma = rsp_metric['ma'].iloc[-1]
-
+        
         if rsp_comparator_selection == 'Price greater than MA':
             rsp_boolean = rsp_price > rsp_ma
             st.metric(label=f'Price > MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
