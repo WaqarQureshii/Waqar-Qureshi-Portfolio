@@ -2,24 +2,23 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
+from datetime import datetime
 import math
 from datetime import datetime
 import sys
 from functools import reduce
 sys.path.append("..")
 
-st.set_page_config(layout="wide")
-
 from functions.generate_db import *
-from functions.last_business_date import *
-from datetime import datetime
+
+st.set_page_config(layout="wide")
 
 # -------- DATE SELECTION SECTION --------
     # --- DATE SELECTION ---
 today_date = datetime.today()
-header_col1, header_col2 = st.columns(2)
 start_date = '2001-01-01 00:00:00'
 start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+header_col1, header_col2 = st.columns(2)
 start_date = header_col1.date_input(label = "Choose start date", value = start_date)
 input_end_date = header_col1.date_input(label = 'Choose end date', value = today_date)
 
