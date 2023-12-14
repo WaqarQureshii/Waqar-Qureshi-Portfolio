@@ -81,7 +81,7 @@ else:
     pass
 st.sidebar.divider()
 
-    # --- YIELD CURVE ---
+    # --- YIELD CURVE --- TODO Implement Yield Curve implementation
 show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False)
 if show_yieldcurve == True:
     sidebar_counter += 1
@@ -99,6 +99,7 @@ st.sidebar.divider()
 # if show_utility == True:
 #         sidebar_counter += 1
 
+#TODO Implement Index Ratio parameter
 # show_ndxVSsp = st.sidebar.checkbox("Nasdaq vs S&P500 ratio", value=True)
 # if show_ndxVSsp == True:
 #         sidebar_counter += 1
