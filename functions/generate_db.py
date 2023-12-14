@@ -7,12 +7,10 @@ def generate_sp500(start_date,
                    end_date,
                    interval = "1d",
                    rsi_value = 22):
-    #--- GENERATING DEFAULT YFINANCE SP500 TABLE ---
     sp500 = yf.download(['^GSPC'],
                         start_date,
                         end_date,
                         interval)
-    #--- MODIFYING SP500 TABLE ---
     sp500 = sp500.drop(["Adj Close"], axis=1)
     sp500['% Change'] = sp500['Close'].pct_change()
     sp500['rsi'] = ta.rsi(close = sp500.Close,
@@ -26,12 +24,10 @@ def generate_rsp(start_date,
                  interval = "1d",
                  ma_length = 50,
                  rsi_value = 22):
-    #--- GENERATING DEFAULT YFINANCE RSP TABLE ---
     rsp = yf.download(['RSP'],
                       start_date,
                       end_date,
                       interval)
-    #--- MODIFYING RSP TABLE ---
     rsp = rsp.drop(["Adj Close"], axis=1)
     rsp['ma'] = ta.sma(close = rsp.Close, length = ma_length)
     rsp['% Change'] = rsp['Close'].pct_change()
@@ -44,12 +40,10 @@ def generate_ndx(start_date,
                  end_date,
                  interval = '1d',
                  rsi_value = 22):
-    #---GENERATING DEFAULT YFINANCE NASDAQ TABLE
     ndx = yf.download(['^IXIC'],
                       start_date,
                       end_date,
                       interval)
-    #--- MODIFYING NASDAQ TABLE
     ndx = ndx.drop(["Adj Close"], axis=1)
     ndx['% Change'] = ndx['Close'].pct_change()
     ndx['rsi'] = ta.rsi(close = ndx.Close,
@@ -61,12 +55,10 @@ def generate_rus2k(start_date,
                    end_date,
                    interval = '1d',
                    rsi_value = 22):
-    #--- GENERATING DEFAULT YFINANCE RUSSEL 2000 TABLE
     rus2k = yf.download(['^RUT'],
                       start_date,
                       end_date,
                       interval)
-    #---MODIFYING RUSSEL 2000 TABLE
     rus2k = rus2k.drop(["Adj Close"], axis=1)
     rus2k['% Change'] = rus2k['Close'].pct_change()
     rus2k['rsi'] = ta.rsi(close = rus2k.Close,
