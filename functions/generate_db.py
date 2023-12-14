@@ -35,7 +35,7 @@ def generate_rsp(start_date,
     rsp = rsp.drop(["Adj Close"], axis=1)
     rsp['ma'] = ta.sma(close = rsp.Close, length = ma_length)
     rsp['% Change'] = rsp['Close'].pct_change()
-    rsp['rsi'] = ta.rsp(close = rsp.Close,
+    rsp['rsi'] = ta.rsi(close = rsp.Close,
                         length=rsi_value)
     return rsp
 
