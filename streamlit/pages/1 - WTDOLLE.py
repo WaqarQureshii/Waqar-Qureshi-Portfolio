@@ -37,7 +37,7 @@ elif interval_selection == 'Monthly':
 
 
 #Creating the sidebar with the different signal creations
-st.sidebar.subheader("Select which signals you'd like to consider with WTDOLLE")
+st.sidebar.subheader("Global Parameters used with WTDOLLE")
 sidebar_counter = 0
 
 
@@ -71,12 +71,35 @@ st.sidebar.divider()
     # --- RSP OPTIONS ---
 show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
 if show_rsp == True:
-    rsp_ma_length = st.sidebar.text_input("Input Moving Average Length (days)", 50)
-    rsp_ma_length = int(rsp_ma_length)
-    sidebar_counter += 1
-    rsp_comparator_selection = st.sidebar.radio('Choose RSP comparator',
-                                                ['Price greater than MA', "Price less than MA"],
-                                                index = 0)
+    rspMAorRSI = st.sidebar.multiselect(
+        'Choose your RSP parameters',
+        ['Moving Average (MA)', 'RSI (Relative Strength Index)']
+    )
+    st.sidebar.write("")
+    if 'Moving Average (MA)' in rspMAorRSI:
+        st.sidebar.subheader('RSP Moving Average')
+        sidebar_counter += 1
+        rsp_ma_length = int(st.sidebar.text_input("Input Moving Average Length (interval)", 50, key='rsp ma length'))
+        rsp_comparator_selection = st.sidebar.radio('Choose RSP comparator',
+                                                    ['Price greater than MA', "Price less than MA"],
+                                                    index = 0)
+        
+        st.sidebar.write("")
+    
+    if 'RSI (Relative Strength Index)' in rspMAorRSI:
+        st.sidebar.subheader('RSP RSI')
+        sidebar_counter += 1
+        rsp_rsi_length = int(st.sidebar.text_input('Input RSI length', 22, key = 'rsp rsi length'))
+        rsp_rsi_comparator = st.sidebar.radio('Choose RSP RSI comparator',
+                                            ['Greater than', 'Less than'],
+                                            index=0,
+                                            key = 'rsp rsi comparator')
+        #TODO build query development in same place as selection to include value.
+        rsp_rsi_value_selection = int(st.sidebar.text_input("Input RSI value to compare against",
+                                              70,
+                                              key='rsp rsi value selection'))
+
+
 else:
     pass
 st.sidebar.divider()
@@ -202,31 +225,51 @@ with col2:
 
 with col3:
     if show_rsp == True:
+        if 'Moving Average (MA)' in rspMAorRSI:
+            rsp_metric = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
+            rsp_price = rsp_metric["Close"].iloc[-1]
+            rsp_ma = rsp_metric['ma'].iloc[-1]
+            if rsp_comparator_selection == 'Price greater than MA':
+                rsp_boolean = rsp_price > rsp_ma
+                st.metric(label=f'Price > ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
+                filtered_rsp_metric = rsp_metric[rsp_metric['Close'] > rsp_metric['ma']]
+                sp500_intersection.append(filtered_rsp_metric)
+                nasdaq_intersection.append(filtered_rsp_metric)
+                rus2k_intersection.append(filtered_rsp_metric)
 
-        #Grab inputted date's RSP Price and Moving Average
-        rsp_metric = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
-        rsp_price = rsp_metric["Close"].iloc[-1]
-        rsp_ma = rsp_metric['ma'].iloc[-1]
+            else:
+                rsp_boolean = rsp_price < rsp_ma
+                st.metric(label=f'Price < ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
+                filtered_rsp_ma_metric = rsp_metric[rsp_metric['Close'] < rsp_metric['ma']]
+                sp500_intersection.append(filtered_rsp_ma_metric)
+                nasdaq_intersection.append(filtered_rsp_ma_metric)
+                rus2k_intersection.append(filtered_rsp_ma_metric)
+
+with col4:
+    if show_rsp == True:
+        if 'RSI (Relative Strength Index)' in rspMAorRSI:
+            rsp_metric = generate_rsp(start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
+            rsp_rsi_level = rsp_metric['rsi'].iloc[-1]
+            if rsp_rsi_comparator == 'Greater than':
+                    rsp_rsi_boolean = rsp_rsi_level > rsp_rsi_value_selection
+                    st.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_level)}')
+                    filtered_rsp_rsi_metric = rsp_metric[rsp_metric['rsi'] > rsp_rsi_value_selection]
+                    sp500_intersection.append(filtered_rsp_rsi_metric)
+                    nasdaq_intersection.append(filtered_rsp_rsi_metric)
+                    rus2k_intersection.append(filtered_rsp_rsi_metric)
+
+            else:
+                rsp_rsi_boolean = rsp_rsi_level < rsp_rsi_value_selection
+                st.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_level)}')
+                filtered_rsp_rsi_metric = rsp_metric[rsp_metric['rsi'] < rsp_rsi_value_selection]
+                sp500_intersection.append(filtered_rsp_rsi_metric)
+                nasdaq_intersection.append(filtered_rsp_rsi_metric)
+                rus2k_intersection.append(filtered_rsp_rsi_metric)
+
+st.write("")
+st.write("")
+
         
-        if rsp_comparator_selection == 'Price greater than MA':
-            rsp_boolean = rsp_price > rsp_ma
-            st.metric(label=f'Price > MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
-            filtered_rsp_metric = rsp_metric[rsp_metric['Close'] > rsp_metric['ma']]
-            sp500_intersection.append(filtered_rsp_metric)
-            nasdaq_intersection.append(filtered_rsp_metric)
-            rus2k_intersection.append(filtered_rsp_metric)
-
-        else:
-            rsp_boolean = rsp_price < rsp_ma
-            st.metric(label=f'Price < MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
-            filtered_rsp_metric = rsp_metric[rsp_metric['Close'] < rsp_metric['ma']]
-            sp500_intersection.append(filtered_rsp_metric)
-            nasdaq_intersection.append(filtered_rsp_metric)
-            rus2k_intersection.append(filtered_rsp_metric)
-
-st.write("")
-st.write("")
-
 #--- PLOTTING GRAPH ---
 col1, col2, col3 = st.columns(3)
 graph1, graph2, graph3= st.columns(3)
