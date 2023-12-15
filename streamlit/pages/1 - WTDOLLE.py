@@ -82,13 +82,21 @@ else:
 st.sidebar.divider()
 
     # --- YIELD CURVE --- TODO Implement Yield Curve implementation
-show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False)
+show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False, key='show yield curve')
 if show_yieldcurve == True:
     sidebar_counter += 1
     show_yield_option = st.sidebar.radio('3 month vs',
                                     ['10-year',
                                     '30-year'],
-                                    index = 1)
+                                    index = 1,
+                                    key = 'show yield option')
+    yieldcurve_comparator_selection = st.sidebar.radio('Choose Yield Curve comparator',
+                                                       ['Diff greater than', 'Diff less than'],
+                                                       index = 0)
+    yieldcurve_level = float(st.sidebar.text_input("Input Yield Difference to compare",
+                                                 1.2,
+                                                 key = 'Yield Curve level'))
+    
 st.sidebar.divider()        
 
 # show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
@@ -223,6 +231,33 @@ with col3:
             sp500_intersection.append(filtered_rsp_metric)
             nasdaq_intersection.append(filtered_rsp_metric)
             rus2k_intersection.append(filtered_rsp_metric)
+
+with col5:
+    if show_yieldcurve == True:
+        if show_yield_option == '30-year':
+            yielddiff = yield_difference(start_date,
+                                         input_end_date,
+                                         lt_yield_inp='30y')
+            curr_yielddiff = round(yielddiff['Yield Difference'].iloc[-1],1)
+            curr_ltyield = round(yielddiff['Long Term Yield'].iloc[-1],1)
+            curr_styield = round(yielddiff['Short Term Yield'].iloc[-1],1)
+            if curr_yielddiff < 0:
+                st.metric(label=f'30y({curr_ltyield}) < 3m({curr_styield}', value = f'True @ {curr_yielddiff}')
+
+            st.line_chart(yielddiff['Yield Difference'],
+                          use_container_width = True,
+                          height = 100)
+        
+        else:
+            yielddiff = yield_difference(start_date,
+                                         input_end_date,
+                                         lt_yield_inp='10y')
+            curr_yielddiff = round(yielddiff['Yield Difference'].iloc[-1],1)
+            curr_ltyield = round(yielddiff['Long Term Yield'].iloc[-1],1)
+            curr_styield = round(yielddiff['Short Term Yield'].iloc[-1],1)
+            if curr_yielddiff < 0:
+                st.metric(label=f'30yr ({curr_ltyield}) < 3mo ({curr_styield}', value = f'True @ {curr_yielddiff}')
+    pass
 
 st.write("")
 st.write("")
