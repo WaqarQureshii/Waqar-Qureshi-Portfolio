@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
+import streamlit as st
 
 #--- GENERATING SP500 TABLE WITH % CHANGE AND RSI
 def generate_sp500(start_date,
@@ -77,40 +78,6 @@ def generate_vix(start_date, end_date, interval = '1d'):
     return vix
 
 
-def generate_3mrx(start_date, end_date, interval = '1d'):
-    r03m = yf.download(['^IRX'],
-                       start_date,
-                       end_date,
-                       interval)
-    r03m.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
-    
-    r03m['% Change'] = r03m['Close'].pct_change()
-
-    return r03m
-
-
-def generate_10yrx(start_date, end_date, interval = '1d'):
-    r10y = yf.download(['^TNX'],
-                       start_date,
-                       end_date,
-                       interval)
-    r10y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
-    
-    r10y['% Change'] = r10y['Close'].pct_change()
-
-    return r10y
-
-
-def generate_30yrx(start_date, end_date, interval = '1d'):
-    r30y = yf.download(['^TYX'],
-                       start_date,
-                       end_date,
-                       interval)
-    r30y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
-    
-    r30y['% Change'] = r30y['Close'].pct_change()
-
-    return r30y
 
 
 def generate_hyg(start_date, end_date, interval = '1d'):
@@ -203,20 +170,62 @@ def sp500_bbands(start_date,
     sp500 = sp500.join(my_bbands)
     return sp500
 
+def generate_3mrx(start_date, end_date, interval = '1d'):
+    r03m = yf.download(['^IRX'],
+                       start_date,
+                       end_date,
+                       interval)
+    r03m.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
+    
+    r03m['% Change'] = r03m['Close'].pct_change()
 
-def yield_difference(start_date, lt_yield_inp = '30y'):
+    return r03m
+
+
+def generate_10yrx(start_date, end_date, interval = '1d'):
+    r10y = yf.download(['^TNX'],
+                       start_date,
+                       end_date,
+                       interval)
+    r10y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
+    
+    r10y['% Change'] = r10y['Close'].pct_change()
+
+    return r10y
+
+
+def generate_30yrx(start_date, end_date, interval = '1d'):
+    r30y = yf.download(['^TYX'],
+                       start_date,
+                       end_date,
+                       interval)
+    r30y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
+    
+    r30y['% Change'] = r30y['Close'].pct_change()
+
+    return r30y
+
+@st.cache_data
+def yield_difference(start_date, end_date, lt_yield_inp = '30y'):
+    
     #LONG-TERM YIELD GENERATION
     if lt_yield_inp == '30y':
-        lt_yield = generate_30yrx(start_date)
-    else:
-        lt_yield = generate_10yrx(start_date)
+        lt_yield = generate_30yrx(start_date, end_date)
+    elif lt_yield_inp == '10y':
+        lt_yield = generate_10yrx(start_date, end_date)
     lt_yield.rename(columns={'Close': 'Long Term Yield'}, inplace=True)
-    #SHORT TERM YIELD GENERATION
     
-    st_yield = generate_3mrx(start_date)
+    #SHORT TERM YIELD GENERATION
+    st_yield = generate_3mrx(start_date, end_date)
     st_yield.rename(columns={'Close': 'Short Term Yield'}, inplace=True)
 
     #CALCULATING YIELD DIFFERENCE
     dt_yield_diff = pd.concat([lt_yield, st_yield], axis = 1)
     dt_yield_diff['Yield Difference'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
-    return dt_yield_diff
+
+    #CALCULATING VALUES
+    curr_yielddiff = round(dt_yield_diff['Yield Difference'].iloc[-1],1)
+    curr_ltyield = round(dt_yield_diff['Long Term Yield'].iloc[-1],1)
+    curr_styield = round(dt_yield_diff['Short Term Yield'].iloc[-1],1)
+    
+    return dt_yield_diff, curr_yielddiff, curr_ltyield, curr_styield
