@@ -3,7 +3,10 @@ import pandas_ta as ta
 import pandas as pd
 import streamlit as st
 
+import math
+
 #--- GENERATING SP500 TABLE WITH % CHANGE AND RSI
+@st.cache_data
 def generate_sp500(start_date,
                    end_date,
                    interval = "1d",
@@ -17,9 +20,13 @@ def generate_sp500(start_date,
     sp500['rsi'] = ta.rsi(close = sp500.Close,
                           length=rsi_value)
     
-    return sp500
+    sp500rsicurrent = sp500['rsi'].iloc[-1]
+    sp500rsicurrent = int(sp500rsicurrent)
+    
+    return sp500, sp500rsicurrent
 
 #--- GENERATING RSP TABLE WITH % CHANGE, MA & RSI
+@st.cache_data
 def generate_rsp(start_date,
                  end_date,
                  interval = "1d",
@@ -29,14 +36,20 @@ def generate_rsp(start_date,
                       start_date,
                       end_date,
                       interval)
-    rsp = rsp.drop(["Adj Close"], axis=1)
+    rsp = rsp.drop(["Adj Close", "High", "Low", "Volume", "Dividends", "Stock Splits", "Capital Gains"], axis=1)
     rsp['ma'] = ta.sma(close = rsp.Close, length = ma_length)
     rsp['% Change'] = rsp['Close'].pct_change()
     rsp['rsi'] = ta.rsi(close = rsp.Close,
                         length=rsi_value)
-    return rsp
+    
+    rsp_price = rsp["Close"].iloc[-1]
+    rsp_ma = rsp['ma'].iloc[-1]
+    rsp_rsi_level = rsp['rsi'].iloc[-1]
+
+    return rsp, rsp_price, rsp_ma, rsp_rsi_level
 
 #--- GENERATING NASDAQ TABLE WITH % CHANGE, RSI
+@st.cache_data
 def generate_ndx(start_date,
                  end_date,
                  interval = '1d',
@@ -49,9 +62,16 @@ def generate_ndx(start_date,
     ndx['% Change'] = ndx['Close'].pct_change()
     ndx['rsi'] = ta.rsi(close = ndx.Close,
                         length = rsi_value)
-    return ndx
+    
+    ndxrsicurrent = ndx['rsi'].iloc[-1]
+    ndxrsicurrent = int(ndxrsicurrent)
+
+    return ndx, ndxrsicurrent
+
+#TODO do a calculation of average S&P daily return to assess if there is a pattern
 
 #--- GENERATING RUSSEL 2000 TABLE WITH % CHANGE, RSI
+@st.cache_data
 def generate_rus2k(start_date,
                    end_date,
                    interval = '1d',
@@ -64,8 +84,13 @@ def generate_rus2k(start_date,
     rus2k['% Change'] = rus2k['Close'].pct_change()
     rus2k['rsi'] = ta.rsi(close = rus2k.Close,
                             length = rsi_value)
-    return rus2k
+    
+    rus2krsicurrent = rus2k['rsi'].iloc[-1]
+    rus2krsicurrent = int(rus2krsicurrent)
 
+    return rus2k, rus2krsicurrent
+
+@st.cache_data
 def generate_vix(start_date, end_date, interval = '1d'):
     vix = yf.download(['^VIX'],
                       start_date,
@@ -75,11 +100,15 @@ def generate_vix(start_date, end_date, interval = '1d'):
 
     vix['% Change'] = vix['Close'].pct_change()
 
-    return vix
+    vix_level = vix["Close"].iloc[-1]
+    str_vix_pct_change = "{:.2%}".format(vix["% Change"].iloc[-1])
+    int_vix_pct_change = vix["% Change"].iloc[-1]
+    vix_pct_change_floor = math.floor(int_vix_pct_change*100)/100
+    vix_pct_change_ceil = math.ceil(int_vix_pct_change*100)/100
+    
+    return vix, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil
 
-
-
-
+@st.cache_data
 def generate_hyg(start_date, end_date, interval = '1d'):
     hyg = yf.download(['HYG'],
                       start_date,
@@ -88,7 +117,12 @@ def generate_hyg(start_date, end_date, interval = '1d'):
     
     hyg['% Change'] = hyg['Close'].pct_change()
 
-    return hyg
+    str_hyg_pct_change = "{:.2%}".format(hyg["% Change"].iloc[-1])
+    int_hyg_pct_change = hyg["% Change"].iloc[-1]
+    hyg_pct_change_floor = math.floor(int_hyg_pct_change*100)/100
+    hyg_pct_change_ceil = math.ceil(int_hyg_pct_change*100)/100
+    
+    return hyg, str_hyg_pct_change, int_hyg_pct_change, hyg_pct_change_floor, hyg_pct_change_ceil
 
 
 def generate_energy(start_date, end_date, interval = '1d'):
