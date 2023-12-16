@@ -222,4 +222,10 @@ def yield_difference(start_date, end_date, lt_yield_inp = '30y'):
     #CALCULATING YIELD DIFFERENCE
     dt_yield_diff = pd.concat([lt_yield, st_yield], axis = 1)
     dt_yield_diff['Yield Difference'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
-    return dt_yield_diff
+
+    #CALCULATING VALUES
+    curr_yielddiff = round(dt_yield_diff['Yield Difference'].iloc[-1],1)
+    curr_ltyield = round(dt_yield_diff['Long Term Yield'].iloc[-1],1)
+    curr_styield = round(dt_yield_diff['Short Term Yield'].iloc[-1],1)
+    
+    return dt_yield_diff, curr_yielddiff, curr_ltyield, curr_styield

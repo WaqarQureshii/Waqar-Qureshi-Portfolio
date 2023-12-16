@@ -175,17 +175,17 @@ with col1:
             rus2k_intersection.append(filtered_vix_metric)
         else:
             if vix_comparator_selection == 'Greater than:':
-                vix_boolean = vix_level > vix_comparator_value
+                vix_boolean = vix_level >= vix_comparator_value
                 st.metric(label=f'VIX > {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
-                filtered_vix_metric = vix_metric[vix_metric['Close'] > vix_comparator_value]
+                filtered_vix_metric = vix_metric[vix_metric['Close'] >= vix_comparator_value]
                 sp500_intersection.append(filtered_vix_metric)
                 nasdaq_intersection.append(filtered_vix_metric)
                 rus2k_intersection.append(filtered_vix_metric)
 
             else:
-                vix_boolean = vix_level < vix_comparator_value
+                vix_boolean = vix_level <= vix_comparator_value
                 st.metric(label=f'VIX < {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
-                filtered_vix_metric = vix_metric[vix_metric['Close'] < vix_comparator_value]
+                filtered_vix_metric = vix_metric[vix_metric['Close'] <= vix_comparator_value]
                 sp500_intersection.append(filtered_vix_metric)
                 nasdaq_intersection.append(filtered_vix_metric)
                 rus2k_intersection.append(filtered_vix_metric)
@@ -235,28 +235,48 @@ with col3:
 with col5:
     if show_yieldcurve == True:
         if show_yield_option == '30-year':
-            yielddiff = yield_difference(start_date,
-                                         input_end_date,
-                                         lt_yield_inp='30y')
-            curr_yielddiff = round(yielddiff['Yield Difference'].iloc[-1],1)
-            curr_ltyield = round(yielddiff['Long Term Yield'].iloc[-1],1)
-            curr_styield = round(yielddiff['Short Term Yield'].iloc[-1],1)
-            if curr_yielddiff < 0:
-                st.metric(label=f'30y({curr_ltyield}) < 3m({curr_styield}', value = f'True @ {curr_yielddiff}')
+            yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_difference(start_date,
+                                            input_end_date,
+                                            lt_yield_inp='30y')
+            if yieldcurve_comparator_selection == "Diff greater than":
+                yield_boolean = curr_yielddiff >= yieldcurve_level
+                st.metric(label=f'Yield Diff > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
+                
+                filtered_yielddiff_metric = yielddiff[yielddiff['Yield Difference'] >= yieldcurve_level]
+                sp500_intersection.append(filtered_yielddiff_metric)
+                nasdaq_intersection.append(filtered_yielddiff_metric)
+                rus2k_intersection.append(filtered_yielddiff_metric)
 
-            st.line_chart(yielddiff['Yield Difference'],
+            else:
+                yield_boolean = curr_yielddiff <= yieldcurve_level
+                st.metric(label=f'Yield Diff < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
+
+                filtered_yielddiff_metric = yielddiff[yielddiff['Yield Difference'] <= yieldcurve_level]
+                sp500_intersection.append(filtered_yielddiff_metric)
+                nasdaq_intersection.append(filtered_yielddiff_metric)
+                rus2k_intersection.append(filtered_yielddiff_metric)
+
+
+            st.line_chart(yielddiff['Yield Difference'], #TODO add chart to other variables
                           use_container_width = True,
                           height = 100)
         
         else:
-            yielddiff = yield_difference(start_date,
-                                         input_end_date,
-                                         lt_yield_inp='10y')
-            curr_yielddiff = round(yielddiff['Yield Difference'].iloc[-1],1)
-            curr_ltyield = round(yielddiff['Long Term Yield'].iloc[-1],1)
-            curr_styield = round(yielddiff['Short Term Yield'].iloc[-1],1)
-            if curr_yielddiff < 0:
-                st.metric(label=f'30yr ({curr_ltyield}) < 3mo ({curr_styield}', value = f'True @ {curr_yielddiff}')
+            yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_difference(start_date,
+                                            input_end_date,
+                                            lt_yield_inp='10y')
+            if yieldcurve_comparator_selection == "Diff greater than":
+                yield_boolean = curr_yielddiff >= yieldcurve_level
+                st.metric(label=f'Yield Diff > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
+
+            else:
+                yield_boolean = curr_yielddiff <= yieldcurve_level
+                st.metric(label=f'Yield Diff < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
+
+
+            st.line_chart(yielddiff['Yield Difference'],
+                          use_container_width = True,
+                          height = 100)
     pass
 
 st.write("")
@@ -337,7 +357,7 @@ with col3.expander("Russell 2000 Parameter Section"):
             rus2k = generate_rus2k(start_date, input_end_date, interval=interval_input, rsi_value=rus2k_rsi_length)
             rus2krsicurrent = rus2k['rsi'].iloc[-1]
             rus2krsicurrent = int(rus2krsicurrent)
-            rus2kcomparator = st.radio('Choose comparator',
+            rus2kcomparator = st.radio(f'Choose comparator, current RSI {rus2krsicurrent}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
                                        key="rus2k RSI comparator")
@@ -405,7 +425,7 @@ graph2.write('{:.2%}'.format(average_ndx_return))
 
 #--RUSSEL 2000 REPORTING
 rus2k_index_columns = [df.index for df in rus2k_intersection]
-rus2k_common_index = reduce(lambda left, right: left.intersection(right), ndx_index_columns).to_list()
+rus2k_common_index = reduce(lambda left, right: left.intersection(right), rus2k_index_columns).to_list()
 
 rus2k["% Change Sel Interval"] = rus2k['Close'].pct_change(rus2k_return_interval).shift(-rus2k_return_interval)
 rus2k_common = rus2k[rus2k.index.isin(rus2k_common_index)]
