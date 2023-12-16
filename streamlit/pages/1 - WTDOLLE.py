@@ -63,7 +63,7 @@ st.sidebar.divider()
     
 
     # --- HYG OPTIONS ---
-hyg_show = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=True)
+hyg_show = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False)
 if hyg_show == True:
     sidebar_counter += 1
 st.sidebar.divider()
@@ -169,10 +169,6 @@ st.markdown(
 sp500_intersection = []
 nasdaq_intersection = []
 rus2k_intersection = []
-# --------------- DATAFRAMES FOR ALL INDICES ------------------
-vix_metric = generate_vix(start_date, input_end_date, interval_input)
-hyg_metric = generate_hyg(start_date, input_end_date, interval_input)
-
 
 # ----- SELECTED VARIABLES COLUMNS ---------
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
@@ -180,6 +176,7 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 # ------------------ ESTABLISH VIX CLOSING PRICE AND LAST % CHANGE FOR WTDOLLE ----------------------
 with col1:
     if vix_show == True:
+        vix_metric = generate_vix(start_date, input_end_date, interval_input)
         
         vix_level = vix_metric["Close"].iloc[-1]
         str_vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
@@ -215,6 +212,7 @@ with col1:
 
 with col2:
      if hyg_show == True:
+        hyg_metric = generate_hyg(start_date, input_end_date, interval_input)
 
         #Grab the inputted end date's % Change
         str_hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])

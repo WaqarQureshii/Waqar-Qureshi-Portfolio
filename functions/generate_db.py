@@ -170,6 +170,7 @@ def sp500_bbands(start_date,
     sp500 = sp500.join(my_bbands)
     return sp500
 
+@st.cache_data
 def generate_3mrx(start_date, end_date, interval = '1d'):
     r03m = yf.download(['^IRX'],
                        start_date,
@@ -181,7 +182,7 @@ def generate_3mrx(start_date, end_date, interval = '1d'):
 
     return r03m
 
-
+@st.cache_data
 def generate_10yrx(start_date, end_date, interval = '1d'):
     r10y = yf.download(['^TNX'],
                        start_date,
@@ -193,7 +194,7 @@ def generate_10yrx(start_date, end_date, interval = '1d'):
 
     return r10y
 
-
+@st.cache_data
 def generate_30yrx(start_date, end_date, interval = '1d'):
     r30y = yf.download(['^TYX'],
                        start_date,
