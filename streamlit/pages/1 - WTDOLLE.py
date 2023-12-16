@@ -173,20 +173,13 @@ rus2k_intersection = []
 # ----- SELECTED VARIABLES COLUMNS ---------
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
-# ------------------ ESTABLISH VIX CLOSING PRICE AND LAST % CHANGE FOR WTDOLLE ----------------------
+# ---VIX---
 with col1:
     if vix_show == True:
-        vix_metric = generate_vix(start_date, input_end_date, interval_input)
-        
-        vix_level = vix_metric["Close"].iloc[-1]
-        str_vix_pct_change = "{:.2%}".format(vix_metric["% Change"].iloc[-1])
-        int_vix_pct_change = vix_metric["% Change"].iloc[-1]
-
+        vix_metric, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil = generate_vix(start_date, input_end_date, interval_input)
 
         if vix_show_label == "VIX % Change":
             st.metric(label = "VIX % Change", value = str_vix_pct_change)
-            vix_pct_change_floor = math.floor(int_vix_pct_change*100)/100
-            vix_pct_change_ceil = math.ceil(int_vix_pct_change*100)/100
 
             #Generate filtered dataset with selected parameters
             filtered_vix_metric = vix_metric[(vix_metric['% Change'] >= vix_pct_change_floor) & (vix_metric['% Change'] <= vix_pct_change_ceil)]
@@ -210,15 +203,10 @@ with col1:
                 nasdaq_intersection.append(filtered_vix_metric)
                 rus2k_intersection.append(filtered_vix_metric)
 
+# ---HYG---
 with col2:
      if hyg_show == True:
-        hyg_metric = generate_hyg(start_date, input_end_date, interval_input)
-
-        #Grab the inputted end date's % Change
-        str_hyg_pct_change = "{:.2%}".format(hyg_metric["% Change"].iloc[-1])
-        int_hyg_pct_change = hyg_metric["% Change"].iloc[-1]
-        hyg_pct_change_floor = math.floor(int_hyg_pct_change*100)/100
-        hyg_pct_change_ceil = math.ceil(int_hyg_pct_change*100)/100
+        hyg_metric, str_hyg_pct_change, int_hyg_pct_change, hyg_pct_change_floor, hyg_pct_change_ceil = generate_hyg(start_date, input_end_date, interval_input)
 
         #Generate filtered dataset with selected parameters
         filtered_hyg_metric = hyg_metric[(hyg_metric['% Change'] >= hyg_pct_change_floor) & (hyg_metric['% Change'] <= hyg_pct_change_ceil)]
@@ -229,19 +217,24 @@ with col2:
         #Show metric
         st.metric(label = "HYG % Change", value = str_hyg_pct_change)
 
-with col3:
-    if show_rsp == True:
+#---RSP---
+if show_rsp == True:
+    if 'Moving Average (MA)' in rspMAorRSI and 'RSI (Relative Strength Index)' in rspMAorRSI:
+        rsp_metric, rsp_price, rsp_ma, rsp_rsi_level = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
+    elif 'Moving Average (MA)' in rspMAorRSI:
+        rsp_metric, rsp_price, rsp_ma, rsp_rsi_level = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
+    elif 'RSI (Relative Strength Index)' in rspMAorRSI:
+        rsp_metric, rsp_price, rsp_ma, rsp_rsi_level = generate_rsp(start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
+
+    with col3:
         if 'Moving Average (MA)' in rspMAorRSI:
-            rsp_metric = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
-            rsp_price = rsp_metric["Close"].iloc[-1]
-            rsp_ma = rsp_metric['ma'].iloc[-1]
             if rsp_comparator_selection == 'Price greater than MA':
                 rsp_boolean = rsp_price > rsp_ma
                 st.metric(label=f'Price > ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
-                filtered_rsp_metric = rsp_metric[rsp_metric['Close'] > rsp_metric['ma']]
-                sp500_intersection.append(filtered_rsp_metric)
-                nasdaq_intersection.append(filtered_rsp_metric)
-                rus2k_intersection.append(filtered_rsp_metric)
+                filtered_rsp_ma_metric = rsp_metric[rsp_metric['Close'] > rsp_metric['ma']]
+                sp500_intersection.append(filtered_rsp_ma_metric)
+                nasdaq_intersection.append(filtered_rsp_ma_metric)
+                rus2k_intersection.append(filtered_rsp_ma_metric)
 
             else:
                 rsp_boolean = rsp_price < rsp_ma
@@ -251,18 +244,15 @@ with col3:
                 nasdaq_intersection.append(filtered_rsp_ma_metric)
                 rus2k_intersection.append(filtered_rsp_ma_metric)
 
-with col4:
-    if show_rsp == True:
+    with col4:
         if 'RSI (Relative Strength Index)' in rspMAorRSI:
-            rsp_metric = generate_rsp(start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
-            rsp_rsi_level = rsp_metric['rsi'].iloc[-1]
             if rsp_rsi_comparator == 'Greater than':
-                    rsp_rsi_boolean = rsp_rsi_level > rsp_rsi_value_selection
-                    st.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_level)}')
-                    filtered_rsp_rsi_metric = rsp_metric[rsp_metric['rsi'] > rsp_rsi_value_selection]
-                    sp500_intersection.append(filtered_rsp_rsi_metric)
-                    nasdaq_intersection.append(filtered_rsp_rsi_metric)
-                    rus2k_intersection.append(filtered_rsp_rsi_metric)
+                rsp_rsi_boolean = rsp_rsi_level > rsp_rsi_value_selection
+                st.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_level)}')
+                filtered_rsp_rsi_metric = rsp_metric[rsp_metric['rsi'] > rsp_rsi_value_selection]
+                sp500_intersection.append(filtered_rsp_rsi_metric)
+                nasdaq_intersection.append(filtered_rsp_rsi_metric)
+                rus2k_intersection.append(filtered_rsp_rsi_metric)
 
             else:
                 rsp_rsi_boolean = rsp_rsi_level < rsp_rsi_value_selection
@@ -272,6 +262,7 @@ with col4:
                 nasdaq_intersection.append(filtered_rsp_rsi_metric)
                 rus2k_intersection.append(filtered_rsp_rsi_metric)
 
+#---YIELD CURVE---
 with col5:
     if show_yieldcurve == True:
         if show_yield_option == '30-year':
@@ -337,9 +328,8 @@ with col1.expander("S&P500 Parameter Selection"):
         sp500rsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='sp500 RSI show')
         if sp500rsishow:
             sp500_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "sp500 RSI length")) 
-            sp500 = generate_sp500(start_date, input_end_date, interval=interval_input, rsi_value=sp500_rsi_length)
-            sp500rsicurrent=sp500['rsi'].iloc[-1]
-            sp500rsicurrent = int(sp500rsicurrent)
+            sp500, sp500rsicurrent = generate_sp500(start_date, input_end_date, interval=interval_input, rsi_value=sp500_rsi_length)
+
             sp500comparator = st.radio(f'Choose comparator, current RSI {sp500rsicurrent}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -355,7 +345,7 @@ with col1.expander("S&P500 Parameter Selection"):
                 filtered_sp500rsi_metric = sp500[sp500['rsi'] < sp500rsivalue]
                 sp500_intersection.append(filtered_sp500rsi_metric)
         else:
-            sp500 = generate_sp500(start_date, input_end_date, interval=interval_input)
+            sp500, sp500rsicurrent = generate_sp500(start_date, input_end_date, interval=interval_input)
 
 col2.subheader("Nasdaq")
 with col2.expander("Nasdaq Parameter Section"):
@@ -366,9 +356,7 @@ with col2.expander("Nasdaq Parameter Section"):
         ndxrsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='ndx RSI show')
         if ndxrsishow:
             ndx_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "ndx RSI length"))
-            ndx = generate_ndx(start_date, input_end_date, interval=interval_input, rsi_value=ndx_rsi_length)
-            ndxrsicurrent = ndx['rsi'].iloc[-1]
-            ndxrsicurrent = int(ndxrsicurrent)
+            ndx, ndxrsicurrent = generate_ndx(start_date, input_end_date, interval=interval_input, rsi_value=ndx_rsi_length)
             ndxcomparator = st.radio(f'Choose comparator, current RSI {ndxrsicurrent}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -384,7 +372,7 @@ with col2.expander("Nasdaq Parameter Section"):
                 filtered_ndxrsi_metric = ndx[ndx['rsi'] < ndxrsivalue]
                 nasdaq_intersection.append(filtered_ndxrsi_metric)
         else:
-            ndx = generate_ndx(start_date, input_end_date, interval=interval_input)
+            ndx, ndxrsicurrent = generate_ndx(start_date, input_end_date, interval=interval_input)
 
 col3.subheader("Russell 2000")
 with col3.expander("Russell 2000 Parameter Section"):
@@ -395,9 +383,7 @@ with col3.expander("Russell 2000 Parameter Section"):
         rus2krsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='rus2k RSI show')
         if rus2krsishow:
             rus2k_rsi_length = int(st.text_input('Select RSI lenght (in intervals)', 22, key = "rus2k RSI length"))
-            rus2k = generate_rus2k(start_date, input_end_date, interval=interval_input, rsi_value=rus2k_rsi_length)
-            rus2krsicurrent = rus2k['rsi'].iloc[-1]
-            rus2krsicurrent = int(rus2krsicurrent)
+            rus2k, rus2krsicurrent = generate_rus2k(start_date, input_end_date, interval=interval_input, rsi_value=rus2k_rsi_length)
             rus2kcomparator = st.radio(f'Choose comparator, current RSI {rus2krsicurrent}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -414,7 +400,7 @@ with col3.expander("Russell 2000 Parameter Section"):
                 filtered_rus2krsi_metric = rus2k[rus2k['rsi'] < rus2krsivalue]
                 rus2k_intersection.append(filtered_rus2krsi_metric)
         else:
-            rus2k = generate_rus2k(start_date, input_end_date, interval=interval_input)
+            rus2k, rus2krsicurrent = generate_rus2k(start_date, input_end_date, interval=interval_input)
 
 #---S&P500 REPORTING---
 sp500_index_columns = [df.index for df in sp500_intersection]
