@@ -191,7 +191,7 @@ def sp500_ma(start_date,
              end_date,
              ma_length = 50,
              interval = '1d'):
-    sp500 = generate_sp500(start_date, end_date, interval = interval)
+    sp500 = generate_sp500(start_date, end_date, interval)
     sp500['ma'] = ta.sma(close = sp500.Close, length=ma_length)
     return sp500
 
@@ -210,9 +210,9 @@ def generate_3mrx(start_date, end_date, interval = '1d'):
                        start_date,
                        end_date,
                        interval)
-    # r03m.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
-    
-    r03m['ST % Change'] = r03m['Close'].pct_change()
+    r03m.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
+    r03m.rename(columns = {"Close": "3mClose"}, inplace=True)
+    r03m['ST % Change'] = r03m['3mClose'].pct_change()
 
     return r03m
 
@@ -222,9 +222,9 @@ def generate_10yrx(start_date, end_date, interval = '1d'):
                        start_date,
                        end_date,
                        interval)
-    # r10y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
-    
-    r10y['LT % Change'] = r10y['Close'].pct_change()
+    r10y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
+    r10y.rename(columns = {"Close": "10yClose"}, inplace=True)
+    r10y['LT % Change'] = r10y['10yClose'].pct_change()
 
     return r10y
 
@@ -234,33 +234,35 @@ def generate_30yrx(start_date, end_date, interval = '1d'):
                        start_date,
                        end_date,
                        interval)
-    # r30y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
-    
-    r30y['LT % Change'] = r30y['Close'].pct_change()
+    r30y.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close', 'Stock Splits', 'Dividends'], axis=1, inplace=True)
+    r30y.rename(columns = {"Close": "30yClose"}, inplace=True)
+    r30y['LT % Change'] = r30y['30yClose'].pct_change()
 
     return r30y
 
 @st.cache_data
-def yield_ratio(start_date, end_date, lt_yield_inp = '30y'):
+def yield_diff(start_date, end_date, lt_yield_inp = '30y', interval = '1d'):
     
     #LONG-TERM YIELD GENERATION
     if lt_yield_inp == '30y':
-        lt_yield = generate_30yrx(start_date, end_date)
+        lt_yield = generate_30yrx(start_date, end_date, interval)
+        lt_yield.rename(columns={'30yClose': 'Long Term Yield'}, inplace=True)
     elif lt_yield_inp == '10y':
         lt_yield = generate_10yrx(start_date, end_date)
-    lt_yield.rename(columns={'Close': 'Long Term Yield'}, inplace=True)
+        lt_yield.rename(columns={'10yClose': 'Long Term Yield'}, inplace=True)
     
     #SHORT TERM YIELD GENERATION
-    st_yield = generate_3mrx(start_date, end_date)
-    st_yield.rename(columns={'Close': 'Short Term Yield'}, inplace=True)
+    st_yield = generate_3mrx(start_date, end_date, interval)
+    st_yield.rename(columns={'3mClose': 'Short Term Yield'}, inplace=True)
 
-    #CALCULATING YIELD DIFFERENCE
-    dt_yield_ratio = pd.concat([lt_yield, st_yield], axis = 1)
-    dt_yield_ratio['Yield Ratio'] = dt_yield_ratio['Long Term Yield']/dt_yield_ratio['Short Term Yield']
+    #CALCULATING YIELD FIGURES
+    dt_yield_diff = pd.concat([lt_yield, st_yield], axis = 1)
+    dt_yield_diff['Yield Ratio'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
+    dt_yield_diff['Yield Ratio % Chg'] = dt_yield_diff['Yield Ratio'].pct_change()
 
-    #CALCULATING VALUES
-    curr_yieldratio = round(dt_yield_ratio['Yield Ratio'].iloc[-1],2)
-    curr_ltyield = round(dt_yield_ratio['Long Term Yield'].iloc[-1],2)
-    curr_styield = round(dt_yield_ratio['Short Term Yield'].iloc[-1],2)
+    #OUTPUTTING VALUES
+    curr_yielddiff = round(dt_yield_diff['Yield Ratio'].iloc[-1],2)
+    curr_ltyield = round(dt_yield_diff['Long Term Yield'].iloc[-1],2)
+    curr_styield = round(dt_yield_diff['Short Term Yield'].iloc[-1],2)
     
-    return dt_yield_ratio, curr_yieldratio, curr_ltyield, curr_styield
+    return dt_yield_diff, curr_yielddiff, curr_ltyield, curr_styield
