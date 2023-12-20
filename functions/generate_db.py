@@ -257,11 +257,11 @@ def yield_diff(start_date, end_date, lt_yield_inp = '30y', interval = '1d'):
 
     #CALCULATING YIELD FIGURES
     dt_yield_diff = pd.concat([lt_yield, st_yield], axis = 1)
-    dt_yield_diff['Yield Ratio'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
-    dt_yield_diff['Yield Ratio % Chg'] = dt_yield_diff['Yield Ratio'].pct_change()
+    dt_yield_diff['Yield Diff'] = dt_yield_diff['Long Term Yield'] - dt_yield_diff['Short Term Yield']
+    dt_yield_diff['Yield Diff % Chg'] = dt_yield_diff['Yield Diff'].pct_change()
 
     #OUTPUTTING VALUES
-    curr_yielddiff = round(dt_yield_diff['Yield Ratio'].iloc[-1],2)
+    curr_yielddiff = round(dt_yield_diff['Yield Diff'].iloc[-1],2)
     curr_ltyield = round(dt_yield_diff['Long Term Yield'].iloc[-1],2)
     curr_styield = round(dt_yield_diff['Short Term Yield'].iloc[-1],2)
     

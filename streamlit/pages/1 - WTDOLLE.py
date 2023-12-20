@@ -116,7 +116,7 @@ if show_yieldcurve == True:
     yieldcurve_comparator_selection = st.sidebar.radio('Choose Yield Curve comparator',
                                                        ['Diff greater than', 'Diff less than'],
                                                        index = 0)
-    yieldcurve_level = float(st.sidebar.text_input("Input Yield Ratio to compare",
+    yieldcurve_level = float(st.sidebar.text_input("Input Yield Diff to compare",
                                                  0.5,
                                                  key = 'Yield Curve level'))
     
@@ -266,54 +266,60 @@ if show_rsp == True:
 with col5:
     if show_yieldcurve == True:
         if show_yield_option == '30-year':
-            yieldratio, curr_yieldratio, curr_ltyield, curr_styield = yield_ratio(start_date,
+            yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
                                             input_end_date,
                                             lt_yield_inp='30y')
-            if yieldcurve_comparator_selection == "Ratio greater than":
-                yield_boolean = curr_yieldratio >= yieldcurve_level
-                st.metric(label=f'Yield Ratio > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yieldratio}')
+            if yieldcurve_comparator_selection == "Diff greater than": # Current Yield Curve greater than Selected Difference Value
+                yield_boolean = curr_yielddiff >= yieldcurve_level
+                st.metric(label=f'Yield Diff > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
                 
-                filtered_yieldiff_ratio = yieldratio[yieldratio['Yield Ratio'] >= yieldcurve_level]
-                sp500_intersection.append(filtered_yieldiff_ratio)
-                nasdaq_intersection.append(filtered_yieldiff_ratio)
-                rus2k_intersection.append(filtered_yieldiff_ratio)
+                filtered_yieldiff = yielddiff[yielddiff['Yield Diff'] >= yieldcurve_level]
+                sp500_intersection.append(filtered_yieldiff)
+                nasdaq_intersection.append(filtered_yieldiff)
+                rus2k_intersection.append(filtered_yieldiff)
+            
+            else: # Current Yield Curve less than Selected Difference Value
+                yield_boolean = curr_yielddiff <= yieldcurve_level
+                st.metric(label=f'Yield Diff < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
 
-            else:
-                yield_boolean = curr_yieldratio <= yieldcurve_level
-                st.metric(label=f'Yield Ratio < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yieldratio}')
-
-                filtered_yieldiff_ratio = yieldratio[yieldratio['Yield Ratio'] <= yieldcurve_level]
-                sp500_intersection.append(filtered_yieldiff_ratio)
-                nasdaq_intersection.append(filtered_yieldiff_ratio)
-                rus2k_intersection.append(filtered_yieldiff_ratio)
+                filtered_yieldiff = yielddiff[yielddiff['Yield Diff'] <= yieldcurve_level]
+                sp500_intersection.append(filtered_yieldiff)
+                nasdaq_intersection.append(filtered_yieldiff)
+                rus2k_intersection.append(filtered_yieldiff)
 
 
-            st.line_chart(yieldratio['Yield Ratio'], #TODO add chart to other variables
+            st.line_chart(yielddiff['Yield Diff'], #TODO add chart to other variables
                           use_container_width = True,
                           height = 100)
+            
         
         else:
-            yieldratio, curr_yieldratio, curr_ltyield, curr_styield = yield_ratio(start_date,
+            yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
                                             input_end_date,
                                             lt_yield_inp='10y')
-            if yieldcurve_comparator_selection == "Ratio greater than":
-                yield_boolean = curr_yieldratio >= yieldcurve_level
-                st.metric(label=f'Yield Ratio > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yieldratio}')
+            if yieldcurve_comparator_selection == "Diff greater than":
+                yield_boolean = curr_yielddiff >= yieldcurve_level
+                st.metric(label=f'Yield Diff > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
+                
+                filtered_yieldiff = yielddiff[yielddiff['Yield Diff'] >= yieldcurve_level]
+                sp500_intersection.append(filtered_yieldiff)
+                nasdaq_intersection.append(filtered_yieldiff)
+                rus2k_intersection.append(filtered_yieldiff)
 
             else:
-                yield_boolean = curr_yieldratio <= yieldcurve_level
-                st.metric(label=f'Yield Ratio < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yieldratio}')
+                yield_boolean = curr_yielddiff <= yieldcurve_level
+                st.metric(label=f'Yield Diff < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
 
 
-            st.line_chart(yieldratio['Yield Ratio'],
+            st.line_chart(yielddiff['Yield Diff'],
                           use_container_width = True,
                           height = 100)
-    else:
-        pass
 
-st.dataframe(yieldratio)
-st.write("")
-st.write("")
+if show_yieldcurve == True:
+    st.dataframe(yielddiff)
+    st.write("")
+    st.write("")
+
 
         
 #--- PLOTTING GRAPH ---
