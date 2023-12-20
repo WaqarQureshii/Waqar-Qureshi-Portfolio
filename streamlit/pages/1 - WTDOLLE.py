@@ -122,6 +122,27 @@ if show_yieldcurve == True:
     
 st.sidebar.divider()        
 
+show_ndx_sp500 = st.sidebar.checkbox("Nasdaq vs SP500 Ratio", value = False, key = "show Nasdaq vs SP500")
+if show_ndx_sp500:
+    sidebar_counter += 1
+    show_ndxsp500_option = st.sidebar.radio('Compare against',
+                                            ['Nasdaq vs SP500 Ratio', 'Nasdaq vs SP500 Ratio % Change'],
+                                            index=0)
+    
+    if show_ndxsp500_option == 'Nasdaq vs SP500 Ratio':
+        ndxsp500_ratio_level = float(st.sidebar.text_input("Input Nasdaq vs SP500 ratio to compare against",
+                                                           1,
+                                                           key = 'Nasdaq vs Sp500 Ratio Level'))
+    elif show_ndxsp500_option == 'Nasdaq vs SP500 Ratio % Change':
+        ndxsp500_ratio_pct = float(st.sidebar.text_input("Input Nasdaq vs SP500 Ratio % Change to compare against",
+                                                           1,
+                                                           key = 'Nasdaq vs Sp500 Ratio Level % Change'))
+        
+    if show_ndxsp500_option == 'Nasdaq vs SP500 Ratio' or 'Nasdaq vs SP500 Ratio % Change':
+        ndxsp500_comparator_selection = st.sidebar.radio('Choose comparator',
+                                                         ['Greater than', 'Lower than'],
+                                                         index = 0)
+
 # show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
 # if show_consumer == True:
 #         sidebar_counter += 1
@@ -291,7 +312,6 @@ with col5:
             st.line_chart(yielddiff['Yield Diff'], #TODO add chart to other variables
                           use_container_width = True,
                           height = 100)
-            
         
         else:
             yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
@@ -319,6 +339,13 @@ if show_yieldcurve == True:
     st.dataframe(yielddiff)
     st.write("")
     st.write("")
+
+#---NASDAQ VS SP500 RATIO---
+with col6:
+    if show_ndx_sp500:
+        if show_ndxsp500_option == 'Nasdaq vs SP500 Ratio':
+            ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, nasdaq, sp500 = nasdaqvssp500(start_date, input_end_date, interval_input)
+        pass
 
 
         
