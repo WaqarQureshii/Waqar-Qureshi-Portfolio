@@ -157,20 +157,27 @@ def generate_consumer(start_date, end_date, interval = '1d'):
     
     return consumer
 
-def nasdaqvssp500(start_date, interval = '1d'):
-    nasdaq = generate_ndx(start_date, interval)
+@st.cache_data
+def nasdaqvssp500(start_date, end_date, interval = '1d'):
+    nasdaq, nasdaq_rsi = generate_ndx(start_date, end_date, interval)
     nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
     nasdaq.rename(columns={'Close':'Nasdaq Close'}, inplace=True)
 
-    sp500 = generate_sp500(start_date, interval)
+    sp500, sp500_rsi = generate_sp500(start_date, end_date, interval)
     sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
     sp500.rename(columns={'Close':'SP500 Close'}, inplace=True)
 
+    #Creates Ratio Calculation
     ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
-    ndxvssp500['Nasdaq vs SP500 Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
+    ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
+    ndxvssp500['Ratio % Chg'] = ndxvssp500['Nasdaq Close'].pct_change()
     ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
     
-    return ndxvssp500
+    #OUTPUTTING VALUES
+    curr_ndxsp500_ratio = round(ndxvssp500['Ratio'].iloc[-1],2)
+    curr_ndxsp500_pct_ch = round(ndxvssp500['Ratio % Chg'].iloc[-1],2)
+
+    return ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, nasdaq, sp500
 
 def rus2kvssp500(start_date, end_date, interval = '1d'):
     rus2k = generate_rus2k(start_date, end_date, interval)
