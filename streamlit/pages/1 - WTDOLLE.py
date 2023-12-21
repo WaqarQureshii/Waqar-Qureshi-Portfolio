@@ -130,18 +130,20 @@ if show_ndx_sp500:
                                             index=0)
     
     if show_ndxsp500_option == 'Nasdaq vs SP500 Ratio':
-        ndxsp500_ratio_level = float(st.sidebar.text_input("Input Nasdaq vs SP500 ratio to compare against",
-                                                           1,
-                                                           key = 'Nasdaq vs Sp500 Ratio Level'))
-    elif show_ndxsp500_option == 'Nasdaq vs SP500 Ratio % Change':
-        ndxsp500_ratio_pct = float(st.sidebar.text_input("Input Nasdaq vs SP500 Ratio % Change to compare against",
-                                                           1,
-                                                           key = 'Nasdaq vs Sp500 Ratio Level % Change'))
-        
-    if show_ndxsp500_option == 'Nasdaq vs SP500 Ratio' or 'Nasdaq vs SP500 Ratio % Change':
         ndxsp500_comparator_selection = st.sidebar.radio('Choose comparator',
                                                          ['Greater than', 'Lower than'],
                                                          index = 0)
+        ndxsp500_ratio_level = float(st.sidebar.text_input("Input Nasdaq vs SP500 ratio to compare against",
+                                                           1,
+                                                           key = 'Nasdaq vs Sp500 Ratio Level'))
+
+    elif show_ndxsp500_option == 'Nasdaq vs SP500 Ratio % Change':
+        ndxsp500_comparator_selection = st.sidebar.radio('Choose comparator',
+                                                         ['Greater than', 'Lower than'],
+                                                         index = 0)
+        ndxsp500_ratio_pct = float(st.sidebar.text_input("Input Nasdaq vs SP500 Ratio % Change to compare against",
+                                                           1.2,
+                                                           key = 'Nasdaq vs Sp500 Ratio Level % Change'))
 
 # show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
 # if show_consumer == True:
