@@ -105,7 +105,7 @@ else:
 st.sidebar.divider()
 
     # --- YIELD CURVE --- TODO Implement Yield Curve implementation
-show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False, key='show yield curve')
+show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False, key='show yield curve') #TODO Add % Change parameter to Yield Curve
 if show_yieldcurve == True:
     sidebar_counter += 1
     show_yield_option = st.sidebar.radio('3 month vs',
@@ -121,6 +121,29 @@ if show_yieldcurve == True:
                                                  key = 'Yield Curve level'))
     
 st.sidebar.divider()        
+
+show_ndx_sp500 = st.sidebar.checkbox("Nasdaq vs SP500 Ratio", value = False, key = "show Nasdaq vs SP500")
+if show_ndx_sp500:
+    sidebar_counter += 1
+    show_ndxsp500_option = st.sidebar.radio('Evaluate',
+                                            ['Nasdaq vs SP500 Ratio', 'Nasdaq vs SP500 Ratio % Change'],
+                                            index=0)
+    
+    if show_ndxsp500_option == 'Nasdaq vs SP500 Ratio':
+        ndxsp500_comparator_selection = st.sidebar.radio('Choose comparator',
+                                                         ['Greater than', 'Lower than'],
+                                                         index = 0)
+        ndxsp500_ratio_level = float(st.sidebar.text_input("Input Nasdaq vs SP500 ratio to compare against",
+                                                           1,
+                                                           key = 'Nasdaq vs Sp500 Ratio Level'))
+
+    elif show_ndxsp500_option == 'Nasdaq vs SP500 Ratio % Change':
+        ndxsp500_comparator_selection = st.sidebar.radio('Choose comparator',
+                                                         ['Greater than', 'Lower than'],
+                                                         index = 0)
+        ndxsp500_ratio_pct = float(st.sidebar.text_input("Input Nasdaq vs SP500 Ratio % Change to compare against",
+                                                           1.2,
+                                                           key = 'Nasdaq vs Sp500 Ratio Level % Change'))
 
 # show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
 # if show_consumer == True:
@@ -286,12 +309,6 @@ with col5:
                 sp500_intersection.append(filtered_yieldiff)
                 nasdaq_intersection.append(filtered_yieldiff)
                 rus2k_intersection.append(filtered_yieldiff)
-
-
-            st.line_chart(yielddiff['Yield Diff'], #TODO add chart to other variables
-                          use_container_width = True,
-                          height = 100)
-            
         
         else:
             yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
@@ -311,17 +328,63 @@ with col5:
                 st.metric(label=f'Yield Diff < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
 
 
-            st.line_chart(yielddiff['Yield Diff'],
-                          use_container_width = True,
-                          height = 100)
+        st.line_chart(yielddiff['Yield Diff'],
+                        use_container_width = True,
+                        height = 100)
 
-if show_yieldcurve == True:
-    st.dataframe(yielddiff)
-    st.write("")
-    st.write("")
+#---NASDAQ VS SP500 RATIO---
+with col6:
+    if show_ndx_sp500:
+        if show_ndxsp500_option == 'Nasdaq vs SP500 Ratio':
+            ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, ndxsp500_pct_ch_str, nasdaq, sp500 = nasdaqvssp500(start_date, input_end_date, interval_input)
 
+            if ndxsp500_comparator_selection == 'Greater than': #LEVEL - Greater than
+                ndxsp500_boolean = curr_ndxsp500_ratio >= ndxsp500_ratio_level
+                st.metric(label=f'NDX/SPY > {ndxsp500_ratio_level}', value = f'{ndxsp500_boolean} @ {round(curr_ndxsp500_ratio,2)}')
 
+                filtered_ndxsp500 = ndxvssp500[ndxvssp500['Ratio'] >= ndxsp500_ratio_level]
+                sp500_intersection.append(filtered_ndxsp500)
+                nasdaq_intersection.append(filtered_ndxsp500)
+                rus2k_intersection.append(filtered_ndxsp500)
+
+            elif ndxsp500_comparator_selection == 'Lower than': #LEVEL - Lower than
+                ndxsp500_boolean = curr_ndxsp500_ratio <= ndxsp500_ratio_level
+                st.metric(label=f'NDX/SPY < {ndxsp500_ratio_level}', value = f'{ndxsp500_boolean} @ {round(curr_ndxsp500_ratio,2)}')
+
+                filtered_ndxsp500 = ndxvssp500[ndxvssp500['Ratio'] <= ndxsp500_ratio_level]
+                sp500_intersection.append(filtered_ndxsp500)
+                nasdaq_intersection.append(filtered_ndxsp500)
+                rus2k_intersection.append(filtered_ndxsp500)
+
+            st.line_chart(ndxvssp500['Ratio'],
+                            use_container_width = True,
+                            height = 100)
+            
+        elif show_ndxsp500_option == 'Nasdaq vs SP500 Ratio % Change':
+            ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, curr_ndxsp500_pct_ch_str, nasdaq, sp500 = nasdaqvssp500(start_date, input_end_date, interval_input)
+
+            if ndxsp500_comparator_selection == 'Greater than': #% Change - Greater than
+                ndxsp500_boolean = ndxsp500_ratio_pct <= curr_ndxsp500_pct_ch
+                st.metric(label=f'NDX/SPY % Chg > {ndxsp500_ratio_pct}', value = f'{ndxsp500_boolean} @ {curr_ndxsp500_pct_ch_str}')
+
+                filtered_ndxsp500 = ndxvssp500[ndxvssp500['Ratio % Chg'] >= ndxsp500_ratio_pct]
+                sp500_intersection.append(filtered_ndxsp500)
+                nasdaq_intersection.append(filtered_ndxsp500)
+                rus2k_intersection.append(filtered_ndxsp500)
+
+            elif ndxsp500_comparator_selection == 'Lower than': #% Change - Lower than
+                ndxsp500_boolean = ndxsp500_ratio_pct >= curr_ndxsp500_pct_ch*100
+                st.metric(label=f'NDX/SPY % Chg < {ndxsp500_ratio_pct}', value = f'{ndxsp500_boolean} @ {curr_ndxsp500_pct_ch_str}')
+
+                filtered_ndxsp500 = ndxvssp500[ndxvssp500['Ratio % Chg'] <= ndxsp500_ratio_pct]
+                sp500_intersection.append(filtered_ndxsp500)
+                nasdaq_intersection.append(filtered_ndxsp500)
+                rus2k_intersection.append(filtered_ndxsp500)
         
+            st.line_chart(ndxvssp500['Ratio % Chg'],
+                                use_container_width = True,
+                                height = 100)
+
 #--- PLOTTING GRAPH ---
 col1, col2, col3 = st.columns(3)
 graph1, graph2, graph3= st.columns(3)
@@ -354,6 +417,7 @@ with col1.expander("S&P500 Parameter Selection"):
                 sp500_intersection.append(filtered_sp500rsi_metric)
         else:
             sp500, sp500rsicurrent = generate_sp500(start_date, input_end_date, interval=interval_input)
+
 
 col2.subheader("Nasdaq")
 with col2.expander("Nasdaq Parameter Section"):
@@ -433,6 +497,8 @@ sp500_positive_percentage = '{:.2%}'.format(sp500_positive_percentage)
 
 graph1.write(f'This occurred {sp500_number_of_occurrences} of time(s) and is {sp500_positive_percentage} positive in {sp500_return_interval} days.' )
 graph1.write('{:.2%}'.format(average_sp500_return))
+
+sp500_test_interval, sp500rsicurrent_test = generate_sp500(start_date, input_end_date, interval="1d", rsi_value=22)
 
 #--_NASDAQ REPORTING
 ndx_index_columns = [df.index for df in nasdaq_intersection]
