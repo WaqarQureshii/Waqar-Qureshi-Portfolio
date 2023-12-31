@@ -115,6 +115,7 @@ def generate_vix(start_date, end_date, interval = '1d'):
     vix_level = vix["Close"].iloc[-1]
     str_vix_pct_change = "{:.2%}".format(vix["% Change"].iloc[-1])
     int_vix_pct_change = vix["% Change"].iloc[-1]
+    str_vix_pct_change = "{:.2%}".format(int_vix_pct_change)
     vix_pct_change_floor = math.floor(int_vix_pct_change*100)/100
     vix_pct_change_ceil = math.ceil(int_vix_pct_change*100)/100
     
@@ -176,15 +177,25 @@ def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple
             - sp500 (pd.DataFrame): The historical data for the S&P 500 index.
     """
     nasdaq, nasdaq_rsi = generate_ndx(start_date, end_date, interval)
+<<<<<<< Updated upstream
     nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis=1, inplace=True)
     nasdaq.rename(columns={'Close': 'Nasdaq Close'}, inplace=True)
 
     sp500, sp500_rsi = generate_sp500(start_date, end_date, interval)
     sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis=1, inplace=True)
     sp500.rename(columns={'Close': 'SP500 Close'}, inplace=True)
+=======
+    nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'Dividends', 'Stock Splits', 'rsi'], axis = 1, inplace=True)
+    nasdaq.rename(columns={'Close':'Nasdaq Close'}, inplace=True)
+
+    sp500, sp500_rsi = generate_sp500(start_date, end_date, interval)
+    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'Dividends', 'Stock Splits', 'rsi'], axis = 1, inplace=True)
+    sp500.rename(columns={'Close':'SP500 Close'}, inplace=True)
+>>>>>>> Stashed changes
 
     # Creates Ratio Calculation
     ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
+<<<<<<< Updated upstream
     ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close'] / ndxvssp500['SP500 Close']
     ndxvssp500['Ratio % Chg'] = ndxvssp500['Nasdaq Close'].pct_change()
     ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis=1, inplace=True)
@@ -192,8 +203,19 @@ def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple
     # OUTPUTTING VALUES
     curr_ndxsp500_ratio = round(ndxvssp500['Ratio'].iloc[-1], 2)
     curr_ndxsp500_pct_ch = round(ndxvssp500['Ratio % Chg'].iloc[-1], 2)
+=======
+    ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
+    ndxvssp500['Ratio % Chg'] = (ndxvssp500['Ratio'].pct_change()*100).round(2)
+    ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
+    
+    #OUTPUTTING VALUES
+    curr_ndxsp500_ratio = ndxvssp500['Ratio'].iloc[-1]
+    curr_ndxsp500_pct_ch = ndxvssp500['Ratio % Chg'].iloc[-1]
+    ndxsp500_pct_ch_str = "{:.2%}".format(curr_ndxsp500_pct_ch / 100)
+>>>>>>> Stashed changes
 
     return ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, nasdaq, sp500
+    return ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, ndxsp500_pct_ch_str, nasdaq, sp500
 
 def rus2kvssp500(start_date, end_date, interval = '1d'):
     rus2k = generate_rus2k(start_date, end_date, interval)
