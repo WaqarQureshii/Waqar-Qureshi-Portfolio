@@ -1,3 +1,4 @@
+from typing import Tuple, Any
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
@@ -6,15 +7,22 @@ import streamlit as st
 import math
 
 #--- GENERATING SP500 TABLE WITH % CHANGE AND RSI
-@st.cache_data
-def generate_sp500(start_date,
-                   end_date,
-                   interval = "1d",
-                   rsi_value = 22):
-    sp500 = yf.download(['^GSPC'],
-                        start_date,
-                        end_date,
-                        interval)
+# @st.cache_data
+def generate_sp500(start_date, end_date, interval = "1d", rsi_value = 22):
+    """
+    Generates historical data for the S&P 500 index within a specified time period.
+    Calculates the relative strength index (RSI) for the index.
+
+    Args:
+        start_date (str): The start date of the time period for which the data is retrieved.
+        end_date (str): The end date of the time period for which the data is retrieved.
+        interval (str, optional): The interval at which the data is retrieved (e.g., '1d' for daily, '1h' for hourly). Defaults to '1d'.
+        rsi_value (int, optional): The length of the RSI calculation. Defaults to 22.
+
+    Returns:
+        Tuple[pd.DataFrame, int]: A dataframe containing the historical data for the S&P 500 index and the current RSI value.
+    """
+    sp500 = yf.download(['^GSPC'], start=start_date, end=end_date, interval=interval)
     sp500 = sp500.drop(["Adj Close"], axis=1)
     sp500['% Change'] = sp500['Close'].pct_change()
     sp500['rsi'] = ta.rsi(close = sp500.Close,
@@ -26,16 +34,22 @@ def generate_sp500(start_date,
     return sp500, sp500rsicurrent
 
 #--- GENERATING RSP TABLE WITH % CHANGE, MA & RSI
-@st.cache_data
-def generate_rsp(start_date,
-                 end_date,
-                 interval = "1d",
-                 ma_length = 50,
-                 rsi_value = 22):
-    rsp = yf.download(['RSP'],
-                      start_date,
-                      end_date,
-                      interval)
+# @st.cache_data
+def generate_rsp(start_date, end_date, interval = "1d", ma_length = 50, rsi_value = 22):
+    """
+        Downloads stock data for the ticker symbol 'RSP' from Yahoo Finance and performs calculations to add a moving average (MA) and relative strength index (RSI) to the data.
+    
+        Args:
+            start_date (str): The start date for downloading the stock data.
+            end_date (str): The end date for downloading the stock data.
+            interval (str, optional): The interval between data points. Default is "1d" (daily).
+            ma_length (int, optional): The length of the moving average. Default is 50.
+            rsi_value (int, optional): The length of the RSI calculation. Default is 22.
+    
+        Returns:
+            Tuple[pd.DataFrame, float, float, float]: The downloaded stock data with added columns for MA and RSI, current price, MA value, and RSI level.
+        """
+    rsp = yf.download(['RSP'], start=start_date, end=end_date, interval=interval)
     rsp = rsp.drop(["Adj Close", "High", "Low", "Volume", "Dividends", "Stock Splits", "Capital Gains"], axis=1)
     rsp['ma'] = ta.sma(close = rsp.Close, length = ma_length)
     rsp['% Change'] = rsp['Close'].pct_change()
@@ -49,15 +63,22 @@ def generate_rsp(start_date,
     return rsp, rsp_price, rsp_ma, rsp_rsi_level
 
 #--- GENERATING NASDAQ TABLE WITH % CHANGE, RSI
-@st.cache_data
-def generate_ndx(start_date,
-                 end_date,
-                 interval = '1d',
-                 rsi_value = 22):
-    ndx = yf.download(['^IXIC'],
-                      start_date,
-                      end_date,
-                      interval)
+# @st.cache_data
+def generate_ndx(start_date, end_date, interval = '1d', rsi_value = 22):
+    """
+        Downloads stock data for the ticker symbol 'RSP' from Yahoo Finance and performs calculations to add a moving average (MA) and relative strength index (RSI) to the data.
+    
+        Args:
+            start_date (str): The start date for downloading the stock data.
+            end_date (str): The end date for downloading the stock data.
+            interval (str, optional): The interval between data points. Default is "1d" (daily).
+            ma_length (int, optional): The length of the moving average. Default is 50.
+            rsi_value (int, optional): The length of the RSI calculation. Default is 22.
+    
+        Returns:
+            def generate_ndx(start_date: str, end_date: str, interval: str, rsi_value: int) -> tuple:
+    """
+    ndx = yf.download(['^IXIC'], start=start_date, end=end_date, interval=interval)
     ndx = ndx.drop(["Adj Close"], axis=1)
     ndx['% Change'] = ndx['Close'].pct_change()
     ndx['rsi'] = ta.rsi(close = ndx.Close,
@@ -71,15 +92,9 @@ def generate_ndx(start_date,
 #TODO do a calculation of average S&P daily return to assess if there is a pattern
 
 #--- GENERATING RUSSEL 2000 TABLE WITH % CHANGE, RSI
-@st.cache_data
-def generate_rus2k(start_date,
-                   end_date,
-                   interval = '1d',
-                   rsi_value = 22):
-    rus2k = yf.download(['^RUT'],
-                      start_date,
-                      end_date,
-                      interval)
+# @st.cache_data
+def generate_rus2k(start_date, end_date, interval = '1d', rsi_value = 22):
+    rus2k = yf.download(['^RUT'], start=start_date, end=end_date, interval=interval)
     rus2k = rus2k.drop(["Adj Close"], axis=1)
     rus2k['% Change'] = rus2k['Close'].pct_change()
     rus2k['rsi'] = ta.rsi(close = rus2k.Close,
@@ -90,12 +105,9 @@ def generate_rus2k(start_date,
 
     return rus2k, rus2krsicurrent
 
-@st.cache_data
+# @st.cache_data
 def generate_vix(start_date, end_date, interval = '1d'):
-    vix = yf.download(['^VIX'],
-                      start_date,
-                      end_date,
-                      interval)
+    vix = yf.download(['^VIX'], start=start_date, end=end_date, interval=interval)
     vix.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
 
     vix['% Change'] = vix['Close'].pct_change()
@@ -108,12 +120,9 @@ def generate_vix(start_date, end_date, interval = '1d'):
     
     return vix, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil
 
-@st.cache_data
+# @st.cache_data
 def generate_hyg(start_date, end_date, interval = '1d'):
-    hyg = yf.download(['HYG'],
-                      start_date,
-                      end_date,
-                      interval)
+    hyg = yf.download(['HYG'], start=start_date, end=end_date, interval=interval)
     
     hyg['% Change'] = hyg['Close'].pct_change()
 
@@ -126,10 +135,7 @@ def generate_hyg(start_date, end_date, interval = '1d'):
 
 
 def generate_energy(start_date, end_date, interval = '1d'):
-    energy = yf.download(['XLE'],
-                         start_date,
-                         end_date,
-                         interval)
+    energy = yf.download(['XLE'], start=start_date, end=end_date, interval=interval)
     
     energy['% Change'] = energy['Close'].pct_change()
     
@@ -137,45 +143,55 @@ def generate_energy(start_date, end_date, interval = '1d'):
 
 
 def generate_utility(start_date, end_date, interval = '1d'):
-    utility = yf.download(['XLU'],
-                          start_date,
-                          end_date,
-                          interval)
-    
+    utility = yf.download(['XLU'], start=start_date, end=end_date, interval=interval)
     utility['% Change'] = utility['Close'].pct_change()
     
     return utility
 
 
 def generate_consumer(start_date, end_date, interval = '1d'):
-    consumer = yf.download(['XLY'],
-                           start_date,
-                           end_date,
-                           interval)
+    consumer = yf.download(['XLY'], start=start_date, end=end_date, interval=interval)
     
     consumer['% Change'] = consumer['Close'].pct_change()
     
     return consumer
 
-@st.cache_data
-def nasdaqvssp500(start_date, end_date, interval = '1d'):
+def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple[pd.DataFrame, float, float, pd.DataFrame, pd.DataFrame]:
+    """
+    Calculates the ratio between the closing prices of the Nasdaq and S&P 500 indices over a specified time period.
+    Also calculates the percentage change in the ratio.
+
+    Args:
+        start_date (str): The start date of the time period for which the data is retrieved.
+        end_date (str): The end date of the time period for which the data is retrieved.
+        interval (str, optional): The interval at which the data is retrieved (e.g., '1d' for daily, '1h' for hourly).
+            Defaults to '1d'.
+
+    Returns:
+        Tuple[pd.DataFrame, float, float, pd.DataFrame, pd.DataFrame]: A tuple containing:
+            - ndxvssp500 (pd.DataFrame): A dataframe containing the ratio and percentage change in the ratio between the Nasdaq and S&P 500 indices.
+            - curr_ndxsp500_ratio (float): The current ratio between the Nasdaq and S&P 500 indices.
+            - curr_ndxsp500_pct_ch (float): The current percentage change in the ratio between the Nasdaq and S&P 500 indices.
+            - nasdaq (pd.DataFrame): The historical data for the Nasdaq index.
+            - sp500 (pd.DataFrame): The historical data for the S&P 500 index.
+    """
     nasdaq, nasdaq_rsi = generate_ndx(start_date, end_date, interval)
-    nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
-    nasdaq.rename(columns={'Close':'Nasdaq Close'}, inplace=True)
+    nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis=1, inplace=True)
+    nasdaq.rename(columns={'Close': 'Nasdaq Close'}, inplace=True)
 
     sp500, sp500_rsi = generate_sp500(start_date, end_date, interval)
-    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
-    sp500.rename(columns={'Close':'SP500 Close'}, inplace=True)
+    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis=1, inplace=True)
+    sp500.rename(columns={'Close': 'SP500 Close'}, inplace=True)
 
-    #Creates Ratio Calculation
+    # Creates Ratio Calculation
     ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
-    ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
+    ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close'] / ndxvssp500['SP500 Close']
     ndxvssp500['Ratio % Chg'] = ndxvssp500['Nasdaq Close'].pct_change()
-    ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
-    
-    #OUTPUTTING VALUES
-    curr_ndxsp500_ratio = round(ndxvssp500['Ratio'].iloc[-1],2)
-    curr_ndxsp500_pct_ch = round(ndxvssp500['Ratio % Chg'].iloc[-1],2)
+    ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis=1, inplace=True)
+
+    # OUTPUTTING VALUES
+    curr_ndxsp500_ratio = round(ndxvssp500['Ratio'].iloc[-1], 2)
+    curr_ndxsp500_pct_ch = round(ndxvssp500['Ratio % Chg'].iloc[-1], 2)
 
     return ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, nasdaq, sp500
 
@@ -211,7 +227,7 @@ def sp500_bbands(start_date,
     sp500 = sp500.join(my_bbands)
     return sp500
 
-@st.cache_data
+# @st.cache_data
 def generate_3mrx(start_date, end_date, interval = '1d'):
     r03m = yf.download(['^IRX'],
                        start_date,
@@ -223,7 +239,7 @@ def generate_3mrx(start_date, end_date, interval = '1d'):
 
     return r03m
 
-@st.cache_data
+# @st.cache_data
 def generate_10yrx(start_date, end_date, interval = '1d'):
     r10y = yf.download(['^TNX'],
                        start_date,
@@ -235,7 +251,7 @@ def generate_10yrx(start_date, end_date, interval = '1d'):
 
     return r10y
 
-@st.cache_data
+# @st.cache_data
 def generate_30yrx(start_date, end_date, interval = '1d'):
     r30y = yf.download(['^TYX'],
                        start_date,
@@ -247,7 +263,7 @@ def generate_30yrx(start_date, end_date, interval = '1d'):
 
     return r30y
 
-@st.cache_data
+# @st.cache_data
 def yield_diff(start_date, end_date, lt_yield_inp = '30y', interval = '1d'):
     
     #LONG-TERM YIELD GENERATION
