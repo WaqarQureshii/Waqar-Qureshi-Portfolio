@@ -384,7 +384,6 @@ with col6:
             st.line_chart(ndxvssp500['Ratio % Chg'],
                                 use_container_width = True,
                                 height = 100)
-        # st.dataframe(ndxvssp500)
 
 #--- PLOTTING GRAPH ---
 col1, col2, col3 = st.columns(3)
@@ -500,7 +499,6 @@ graph1.write(f'This occurred {sp500_number_of_occurrences} of time(s) and is {sp
 graph1.write('{:.2%}'.format(average_sp500_return))
 
 sp500_test_interval, sp500rsicurrent_test = generate_sp500(start_date, input_end_date, interval="1d", rsi_value=22)
-graph1.dataframe(sp500)
 
 #--_NASDAQ REPORTING
 ndx_index_columns = [df.index for df in nasdaq_intersection]

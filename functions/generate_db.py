@@ -7,7 +7,7 @@ import streamlit as st
 import math
 
 #--- GENERATING SP500 TABLE WITH % CHANGE AND RSI
-# @st.cache_data
+@st.cache_data
 def generate_sp500(start_date, end_date, interval = "1d", rsi_value = 22):
     """
     Generates historical data for the S&P 500 index within a specified time period.
@@ -34,7 +34,7 @@ def generate_sp500(start_date, end_date, interval = "1d", rsi_value = 22):
     return sp500, sp500rsicurrent
 
 #--- GENERATING RSP TABLE WITH % CHANGE, MA & RSI
-# @st.cache_data
+@st.cache_data
 def generate_rsp(start_date, end_date, interval = "1d", ma_length = 50, rsi_value = 22):
     """
         Downloads stock data for the ticker symbol 'RSP' from Yahoo Finance and performs calculations to add a moving average (MA) and relative strength index (RSI) to the data.
@@ -63,7 +63,7 @@ def generate_rsp(start_date, end_date, interval = "1d", ma_length = 50, rsi_valu
     return rsp, rsp_price, rsp_ma, rsp_rsi_level
 
 #--- GENERATING NASDAQ TABLE WITH % CHANGE, RSI
-# @st.cache_data
+@st.cache_data
 def generate_ndx(start_date, end_date, interval = '1d', rsi_value = 22):
     """
         Downloads stock data for the ticker symbol 'RSP' from Yahoo Finance and performs calculations to add a moving average (MA) and relative strength index (RSI) to the data.
@@ -92,7 +92,7 @@ def generate_ndx(start_date, end_date, interval = '1d', rsi_value = 22):
 #TODO do a calculation of average S&P daily return to assess if there is a pattern
 
 #--- GENERATING RUSSEL 2000 TABLE WITH % CHANGE, RSI
-# @st.cache_data
+@st.cache_data
 def generate_rus2k(start_date, end_date, interval = '1d', rsi_value = 22):
     rus2k = yf.download(['^RUT'], start=start_date, end=end_date, interval=interval)
     rus2k = rus2k.drop(["Adj Close"], axis=1)
@@ -105,7 +105,7 @@ def generate_rus2k(start_date, end_date, interval = '1d', rsi_value = 22):
 
     return rus2k, rus2krsicurrent
 
-# @st.cache_data
+@st.cache_data
 def generate_vix(start_date, end_date, interval = '1d'):
     vix = yf.download(['^VIX'], start=start_date, end=end_date, interval=interval)
     vix.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1, inplace=True)
@@ -121,7 +121,7 @@ def generate_vix(start_date, end_date, interval = '1d'):
     
     return vix, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil
 
-# @st.cache_data
+@st.cache_data
 def generate_hyg(start_date, end_date, interval = '1d'):
     hyg = yf.download(['HYG'], start=start_date, end=end_date, interval=interval)
     
@@ -177,33 +177,15 @@ def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple
             - sp500 (pd.DataFrame): The historical data for the S&P 500 index.
     """
     nasdaq, nasdaq_rsi = generate_ndx(start_date, end_date, interval)
-<<<<<<< Updated upstream
-    nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis=1, inplace=True)
-    nasdaq.rename(columns={'Close': 'Nasdaq Close'}, inplace=True)
-
-    sp500, sp500_rsi = generate_sp500(start_date, end_date, interval)
-    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis=1, inplace=True)
-    sp500.rename(columns={'Close': 'SP500 Close'}, inplace=True)
-=======
-    nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'Dividends', 'Stock Splits', 'rsi'], axis = 1, inplace=True)
+    nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'rsi'], axis = 1, inplace=True)
     nasdaq.rename(columns={'Close':'Nasdaq Close'}, inplace=True)
 
     sp500, sp500_rsi = generate_sp500(start_date, end_date, interval)
-    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'Dividends', 'Stock Splits', 'rsi'], axis = 1, inplace=True)
+    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'rsi'], axis = 1, inplace=True)
     sp500.rename(columns={'Close':'SP500 Close'}, inplace=True)
->>>>>>> Stashed changes
 
     # Creates Ratio Calculation
     ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
-<<<<<<< Updated upstream
-    ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close'] / ndxvssp500['SP500 Close']
-    ndxvssp500['Ratio % Chg'] = ndxvssp500['Nasdaq Close'].pct_change()
-    ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis=1, inplace=True)
-
-    # OUTPUTTING VALUES
-    curr_ndxsp500_ratio = round(ndxvssp500['Ratio'].iloc[-1], 2)
-    curr_ndxsp500_pct_ch = round(ndxvssp500['Ratio % Chg'].iloc[-1], 2)
-=======
     ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
     ndxvssp500['Ratio % Chg'] = (ndxvssp500['Ratio'].pct_change()*100).round(2)
     ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
@@ -212,9 +194,7 @@ def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple
     curr_ndxsp500_ratio = ndxvssp500['Ratio'].iloc[-1]
     curr_ndxsp500_pct_ch = ndxvssp500['Ratio % Chg'].iloc[-1]
     ndxsp500_pct_ch_str = "{:.2%}".format(curr_ndxsp500_pct_ch / 100)
->>>>>>> Stashed changes
-
-    return ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, nasdaq, sp500
+    
     return ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, ndxsp500_pct_ch_str, nasdaq, sp500
 
 def rus2kvssp500(start_date, end_date, interval = '1d'):
@@ -249,7 +229,7 @@ def sp500_bbands(start_date,
     sp500 = sp500.join(my_bbands)
     return sp500
 
-# @st.cache_data
+@st.cache_data
 def generate_3mrx(start_date, end_date, interval = '1d'):
     r03m = yf.download(['^IRX'],
                        start_date,
@@ -261,7 +241,7 @@ def generate_3mrx(start_date, end_date, interval = '1d'):
 
     return r03m
 
-# @st.cache_data
+@st.cache_data
 def generate_10yrx(start_date, end_date, interval = '1d'):
     r10y = yf.download(['^TNX'],
                        start_date,
@@ -273,7 +253,7 @@ def generate_10yrx(start_date, end_date, interval = '1d'):
 
     return r10y
 
-# @st.cache_data
+@st.cache_data 
 def generate_30yrx(start_date, end_date, interval = '1d'):
     r30y = yf.download(['^TYX'],
                        start_date,
@@ -285,7 +265,7 @@ def generate_30yrx(start_date, end_date, interval = '1d'):
 
     return r30y
 
-# @st.cache_data
+@st.cache_data
 def yield_diff(start_date, end_date, lt_yield_inp = '30y', interval = '1d'):
     
     #LONG-TERM YIELD GENERATION
