@@ -384,6 +384,7 @@ with col1.expander("S&P500 Parameter Selection"):
         else:
             sp500, sp500rsicurrent = generate_sp500(start_date, input_end_date, interval=interval_input)
 
+
 col2.subheader("Nasdaq")
 with col2.expander("Nasdaq Parameter Section"):
     ndxcol1, ndxcol2 = st.columns(2)
@@ -462,6 +463,9 @@ sp500_positive_percentage = '{:.2%}'.format(sp500_positive_percentage)
 
 graph1.write(f'This occurred {sp500_number_of_occurrences} of time(s) and is {sp500_positive_percentage} positive in {sp500_return_interval} days.' )
 graph1.write('{:.2%}'.format(average_sp500_return))
+
+sp500_test_interval, sp500rsicurrent_test = generate_sp500(start_date, input_end_date, interval="1d", rsi_value=22)
+graph1.dataframe(sp500)
 
 #--_NASDAQ REPORTING
 ndx_index_columns = [df.index for df in nasdaq_intersection]
