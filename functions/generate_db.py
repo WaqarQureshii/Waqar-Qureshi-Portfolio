@@ -50,7 +50,7 @@ def generate_rsp(start_date, end_date, interval = "1d", ma_length = 50, rsi_valu
             Tuple[pd.DataFrame, float, float, float]: The downloaded stock data with added columns for MA and RSI, current price, MA value, and RSI level.
         """
     rsp = yf.download(['RSP'], start=start_date, end=end_date, interval=interval)
-    rsp = rsp.drop(["Adj Close", "High", "Low", "Volume", "Dividends", "Stock Splits", "Capital Gains"], axis=1)
+    rsp = rsp.drop(["Adj Close", "High", "Low", "Volume"], axis=1)
     rsp['ma'] = ta.sma(close = rsp.Close, length = ma_length)
     rsp['% Change'] = rsp['Close'].pct_change()
     rsp['rsi'] = ta.rsi(close = rsp.Close,
