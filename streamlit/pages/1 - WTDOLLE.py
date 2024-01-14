@@ -10,6 +10,7 @@ from functools import reduce
 sys.path.append("..")
 
 from functions.generate_db import *
+from functions.signal_generators import *
 
 st.set_page_config(layout="wide")
 
@@ -44,17 +45,17 @@ sidebar_counter = 0
 # ------- SIDEBAR SELECTIONS ---------
     # --- VIX OPTIONS ---
 vix_show = st.sidebar.checkbox("Volatility - VIX", value=True)
+
 if vix_show == True:
         sidebar_counter += 1
-        vix_show_label = st.sidebar.radio('Choose Signal Type',
+        vix_signal_selected = st.sidebar.radio('Choose Signal Type',
                                 ['VIX % Change' ,"VIX level"],
                                 index=0)
-        if vix_show_label == 'VIX level':
+        if vix_signal_selected == 'VIX level':
             vix_comparator_selection = st.sidebar.radio('Choose VIX comparator',
                                                       ['Greater than:', "Less than:"],
                                                       index = 1)
-            vix_comparator_value = st.sidebar.text_input("input VIX integer (##)", 20)
-            vix_comparator_value = int(vix_comparator_value)
+            vix_comparator_value = int(st.sidebar.text_input("input VIX integer (##)", 20))
         else:
             pass
 else:
@@ -163,9 +164,6 @@ if show_ndx_sp500:
     # -------------------- HEADER -------------------------
 st.header(f'WTDOLLE on {input_end_date}')
 
-st.text("")
-st.text("")
-
     # ------------------ SUB HEADER -----------------------
 if sidebar_counter == 0:
     st.header(f"{sidebar_counter} variables were selected in the sidebar")
@@ -197,47 +195,30 @@ rus2k_intersection = []
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 # ---VIX---
+
 with col1:
     if vix_show == True:
-        vix_metric, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil = generate_vix(start_date, input_end_date, interval_input)
+        vix_database, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil = generate_vix(start_date, input_end_date, interval_input)
 
-        if vix_show_label == "VIX % Change":
+        if vix_signal_selected == "VIX % Change":
             st.metric(label = "VIX % Change", value = str_vix_pct_change)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(vix_database, vix_pct_change_floor, vix_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
 
-            #Generate filtered dataset with selected parameters
-            filtered_vix_metric = vix_metric[(vix_metric['% Change'] >= vix_pct_change_floor) & (vix_metric['% Change'] <= vix_pct_change_ceil)]
-            sp500_intersection.append(filtered_vix_metric)
-            nasdaq_intersection.append(filtered_vix_metric)
-            rus2k_intersection.append(filtered_vix_metric)
         else:
             if vix_comparator_selection == 'Greater than:':
-                vix_boolean = vix_level >= vix_comparator_value
+                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
                 st.metric(label=f'VIX > {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
-                filtered_vix_metric = vix_metric[vix_metric['Close'] >= vix_comparator_value]
-                sp500_intersection.append(filtered_vix_metric)
-                nasdaq_intersection.append(filtered_vix_metric)
-                rus2k_intersection.append(filtered_vix_metric)
 
             else:
-                vix_boolean = vix_level <= vix_comparator_value
+                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
                 st.metric(label=f'VIX < {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
-                filtered_vix_metric = vix_metric[vix_metric['Close'] <= vix_comparator_value]
-                sp500_intersection.append(filtered_vix_metric)
-                nasdaq_intersection.append(filtered_vix_metric)
-                rus2k_intersection.append(filtered_vix_metric)
 
 # ---HYG---
 with col2:
      if hyg_show == True:
-        hyg_metric, str_hyg_pct_change, int_hyg_pct_change, hyg_pct_change_floor, hyg_pct_change_ceil = generate_hyg(start_date, input_end_date, interval_input)
+        hyg_database, str_hyg_pct_change, int_hyg_pct_change, hyg_pct_change_floor, hyg_pct_change_ceil = generate_hyg(start_date, input_end_date, interval_input)
 
-        #Generate filtered dataset with selected parameters
-        filtered_hyg_metric = hyg_metric[(hyg_metric['% Change'] >= hyg_pct_change_floor) & (hyg_metric['% Change'] <= hyg_pct_change_ceil)]
-        sp500_intersection.append(filtered_hyg_metric)
-        nasdaq_intersection.append(filtered_hyg_metric)
-        rus2k_intersection.append(filtered_hyg_metric)
-
-        #Show metric
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(hyg_database, hyg_pct_change_floor, hyg_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
         st.metric(label = "HYG % Change", value = str_hyg_pct_change)
 
 #---RSP---
