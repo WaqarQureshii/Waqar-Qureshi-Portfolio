@@ -41,42 +41,70 @@ elif interval_selection == 'Monthly':
 st.sidebar.subheader("Global Parameters used with WTDOLLE")
 sidebar_counter = 0
 
+# --- Dataframes Set Up ---
+# ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
+sp500_intersection = []
+nasdaq_intersection = []
+rus2k_intersection = []
+
+# --- SELECTED VARIABLES COLUMNS ---
+col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 # ------- SIDEBAR SELECTIONS ---------
     # --- VIX OPTIONS ---
 vix_show = st.sidebar.checkbox("Volatility - VIX", value=True)
 
 if vix_show == True:
-        sidebar_counter += 1
+    # --- VIX UI ---
         vix_signal_selected = st.sidebar.radio('Choose Signal Type',
                                 ['VIX % Change' ,"VIX level"],
                                 index=0)
+        
+    # --- VIX Database Generation ---
+        sidebar_counter += 1
+        vix_database, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil = generate_vix(start_date, input_end_date, interval_input)
+
         if vix_signal_selected == 'VIX level':
+    # ------ VIX UI for VIX level selection ------
             vix_comparator_selection = st.sidebar.radio('Choose VIX comparator',
                                                       ['Greater than:', "Less than:"],
                                                       index = 1)
             vix_comparator_value = int(st.sidebar.text_input("input VIX integer (##)", 20))
+
+            if vix_comparator_selection == 'Greater than:':
+                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+                col1.metric(label=f'VIX > {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
+
+            else:
+                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+                col1.metric(label=f'VIX < {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
+    
+    # ------ VIX UI for VIX % Change Selection ------
         else:
-            pass
+            col1.metric(label = "VIX % Change", value = str_vix_pct_change)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(vix_database, vix_pct_change_floor, vix_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
 else:
         pass
 st.sidebar.divider()
-    
 
     # --- HYG OPTIONS ---
 hyg_show = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False)
 if hyg_show == True:
     sidebar_counter += 1
+
+    hyg_database, str_hyg_pct_change, int_hyg_pct_change, hyg_pct_change_floor, hyg_pct_change_ceil = generate_hyg(start_date, input_end_date, interval_input)
+
+    sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(hyg_database, hyg_pct_change_floor, hyg_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+    col2.metric(label = "HYG % Change", value = str_hyg_pct_change)
+
 st.sidebar.divider()
 
     # --- RSP OPTIONS ---
 show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
 if show_rsp == True:
-    rspMAorRSI = st.sidebar.multiselect(
-        'Choose your RSP parameters',
-        ['Moving Average (MA)', 'RSI (Relative Strength Index)']
-    )
+    rspMAorRSI = st.sidebar.multiselect('Choose your RSP parameters', ['Moving Average (MA)', 'RSI (Relative Strength Index)'])
     st.sidebar.write("")
+    
     if 'Moving Average (MA)' in rspMAorRSI:
         st.sidebar.subheader('RSP Moving Average')
         sidebar_counter += 1
@@ -85,6 +113,8 @@ if show_rsp == True:
                                                     ['Price greater than MA', "Price less than MA"],
                                                     index = 0)
         
+        if rsp_comparator_selection == "Price greater than MA":
+            pass
         st.sidebar.write("")
     
     if 'RSI (Relative Strength Index)' in rspMAorRSI:
@@ -185,86 +215,38 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- DATAFRAMES SET UP ---
-# ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
-sp500_intersection = []
-nasdaq_intersection = []
-rus2k_intersection = []
-
-# ----- SELECTED VARIABLES COLUMNS ---------
-col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
-
-# ---VIX---
-
-with col1:
-    if vix_show == True:
-        vix_database, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil = generate_vix(start_date, input_end_date, interval_input)
-
-        if vix_signal_selected == "VIX % Change":
-            st.metric(label = "VIX % Change", value = str_vix_pct_change)
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(vix_database, vix_pct_change_floor, vix_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-        else:
-            if vix_comparator_selection == 'Greater than:':
-                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-                st.metric(label=f'VIX > {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
-
-            else:
-                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-                st.metric(label=f'VIX < {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
-
-# ---HYG---
-with col2:
-     if hyg_show == True:
-        hyg_database, str_hyg_pct_change, int_hyg_pct_change, hyg_pct_change_floor, hyg_pct_change_ceil = generate_hyg(start_date, input_end_date, interval_input)
-
-        sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(hyg_database, hyg_pct_change_floor, hyg_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-        st.metric(label = "HYG % Change", value = str_hyg_pct_change)
-
 #---RSP---
 if show_rsp == True:
     if 'Moving Average (MA)' in rspMAorRSI and 'RSI (Relative Strength Index)' in rspMAorRSI:
-        rsp_metric, rsp_price, rsp_ma, rsp_rsi_level = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
+        rsp_database, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
     elif 'Moving Average (MA)' in rspMAorRSI:
-        rsp_metric, rsp_price, rsp_ma, rsp_rsi_level = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
+        rsp_database, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
     elif 'RSI (Relative Strength Index)' in rspMAorRSI:
-        rsp_metric, rsp_price, rsp_ma, rsp_rsi_level = generate_rsp(start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
+        rsp_database, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
 
     with col3:
         if 'Moving Average (MA)' in rspMAorRSI:
             if rsp_comparator_selection == 'Price greater than MA':
-                rsp_boolean = rsp_price > rsp_ma
-                st.metric(label=f'Price > ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
-                filtered_rsp_ma_metric = rsp_metric[rsp_metric['Close'] > rsp_metric['ma']]
-                sp500_intersection.append(filtered_rsp_ma_metric)
-                nasdaq_intersection.append(filtered_rsp_ma_metric)
-                rus2k_intersection.append(filtered_rsp_ma_metric)
+                rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(rsp_database, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+                
+                st.metric(label=f'Price > ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
 
             else:
-                rsp_boolean = rsp_price < rsp_ma
-                st.metric(label=f'Price < ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_boolean} @ {"{:.0f}".format(rsp_price)}')
-                filtered_rsp_ma_metric = rsp_metric[rsp_metric['Close'] < rsp_metric['ma']]
-                sp500_intersection.append(filtered_rsp_ma_metric)
-                nasdaq_intersection.append(filtered_rsp_ma_metric)
-                rus2k_intersection.append(filtered_rsp_ma_metric)
+                rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(rsp_database, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+                st.metric(label=f'Price < ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
 
     with col4:
         if 'RSI (Relative Strength Index)' in rspMAorRSI:
             if rsp_rsi_comparator == 'Greater than':
-                rsp_rsi_boolean = rsp_rsi_level > rsp_rsi_value_selection
-                st.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_level)}')
-                filtered_rsp_rsi_metric = rsp_metric[rsp_metric['rsi'] > rsp_rsi_value_selection]
-                sp500_intersection.append(filtered_rsp_rsi_metric)
-                nasdaq_intersection.append(filtered_rsp_rsi_metric)
-                rus2k_intersection.append(filtered_rsp_rsi_metric)
+                rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp_database, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+                
+                st.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
 
             else:
-                rsp_rsi_boolean = rsp_rsi_level < rsp_rsi_value_selection
-                st.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_level)}')
-                filtered_rsp_rsi_metric = rsp_metric[rsp_metric['rsi'] < rsp_rsi_value_selection]
-                sp500_intersection.append(filtered_rsp_rsi_metric)
-                nasdaq_intersection.append(filtered_rsp_rsi_metric)
-                rus2k_intersection.append(filtered_rsp_rsi_metric)
+                rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(rsp_database, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+                
+                st.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
 
 #---YIELD CURVE---
 with col5:
