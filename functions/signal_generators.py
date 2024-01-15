@@ -27,3 +27,40 @@ def signal_level_lower_than(level_selected, comparator_value_selected, database,
     rus2k_intersection.append(filtered_database)
 
     return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+@st.cache_data
+def signal_p_greater_than_MA(database, price, ma, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    boolean = price > ma
+    filtered_database = database[database['Close'] > database['ma']]
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+def signal_p_lower_than_MA(database, price, ma, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    boolean = price < ma
+    filtered_database = database[database['Close'] < database['ma']]
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+def signal_rsi_greater_than(database, rsi_current, rsi_selected_value, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    boolean = rsi_current > rsi_selected_value
+    
+    filtered_database = database[database['rsi'] > rsi_selected_value]
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+    
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+def signal_rsi_lower_than(database, rsi_current, rsi_selected_value, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    boolean = rsi_current < rsi_selected_value
+    
+    filtered_database = database[database['rsi'] < rsi_selected_value]
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+    
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection

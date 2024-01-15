@@ -58,9 +58,9 @@ def generate_rsp(start_date, end_date, interval = "1d", ma_length = 50, rsi_valu
     
     rsp_price = rsp["Close"].iloc[-1]
     rsp_ma = rsp['ma'].iloc[-1]
-    rsp_rsi_level = rsp['rsi'].iloc[-1]
+    rsp_rsi_current_value = rsp['rsi'].iloc[-1]
 
-    return rsp, rsp_price, rsp_ma, rsp_rsi_level
+    return rsp, rsp_price, rsp_ma, rsp_rsi_current_value
 
 #--- GENERATING NASDAQ TABLE WITH % CHANGE, RSI
 @st.cache_data
