@@ -5,4 +5,3 @@ mplfinance
 Jinja2
 streamlit
 matplotlib
-matplotlib.pyplot
