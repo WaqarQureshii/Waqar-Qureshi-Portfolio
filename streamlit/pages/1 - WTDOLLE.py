@@ -7,8 +7,8 @@ import math
 from datetime import datetime
 import sys
 from functools import reduce
-sys.path.append("..")
 
+sys.path.append("..")
 from functions.generate_db import *
 
 st.set_page_config(layout="wide")
