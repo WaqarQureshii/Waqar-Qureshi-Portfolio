@@ -1,4 +1,5 @@
 import streamlit as st
+
 @st.cache_data
 def signal_pct_change_auto(database, pct_change_floor, pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection):
     filtered_database = database[(database['% Change'] >= pct_change_floor) & (database['% Change'] <= pct_change_ceil)]
@@ -37,6 +38,7 @@ def signal_p_greater_than_MA(database, price, ma, sp500_intersection, nasdaq_int
     rus2k_intersection.append(filtered_database)
     return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
 
+@st.cache_data
 def signal_p_lower_than_MA(database, price, ma, sp500_intersection, nasdaq_intersection, rus2k_intersection):
     boolean = price < ma
     filtered_database = database[database['Close'] < database['ma']]
@@ -45,6 +47,7 @@ def signal_p_lower_than_MA(database, price, ma, sp500_intersection, nasdaq_inter
     rus2k_intersection.append(filtered_database)
     return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
 
+@st.cache_data
 def signal_rsi_greater_than(database, rsi_current, rsi_selected_value, sp500_intersection, nasdaq_intersection, rus2k_intersection):
     boolean = rsi_current > rsi_selected_value
     
@@ -55,6 +58,7 @@ def signal_rsi_greater_than(database, rsi_current, rsi_selected_value, sp500_int
     
     return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
 
+@st.cache_data
 def signal_rsi_lower_than(database, rsi_current, rsi_selected_value, sp500_intersection, nasdaq_intersection, rus2k_intersection):
     boolean = rsi_current < rsi_selected_value
     
