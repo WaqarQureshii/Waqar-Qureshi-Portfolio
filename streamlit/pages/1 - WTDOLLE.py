@@ -288,6 +288,56 @@ if show_ndx_sp500:
     
         col6.line_chart(ndxvssp500['Ratio % Chg'], use_container_width = True, height = 100)
 
+#Russel 2000 vs SP500 RATIO
+header_show_rus2ksp500 = st.sidebar.checkbox("Russel 2000 vs SP500 Ratio", value = False, key = "show Russ2k vs SP500")
+if header_show_rus2ksp500:
+    sidebar_counter += 1
+    selected_signal_rus2ksp500 = st.sidebar.radio('Evaluate',
+                                            ['Russell 2000 vs SP500 Ratio', 'Russell 2000 vs SP500 Ratio % Change'],
+                                            index=0)
+    
+    if selected_signal_rus2ksp500 == 'Russell 2000 vs SP500 Ratio':
+        selected_comparator_rus2ksp500 = st.sidebar.radio('Choose comparator',
+                                                         ['Greater than', 'Lower than'],
+                                                         index = 0)
+        selected_value_rus2ksp500 = float(st.sidebar.text_input("Input Russell 2000 vs SP500 ratio to compare against",
+                                                           1,
+                                                           key = 'Russell 2000 vs Sp500 Ratio Level'))
+        
+        ndxvssp500, curr_ndxsp500_ratio, ndxsp500_ratio_pct_curr, ndxsp500_pct_ch_str, nasdaq, sp500 = nasdaqvssp500(start_date, input_end_date, interval_input)
+
+        if selected_comparator_rus2ksp500 == 'Greater than': #LEVEL - Greater than
+            ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(ndxvssp500, ndxsp500_comparator_selection, curr_ndxsp500_ratio, selected_value_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+            col7.metric(label=f'NDX/SPY > {selected_value_rus2ksp500}', value = f'{ndxsp500_boolean} @ {round(curr_ndxsp500_ratio,2)}')
+
+        elif selected_comparator_rus2ksp500 == 'Lower than': #LEVEL - Lower than
+            ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(ndxvssp500, ndxsp500_comparator_selection, curr_ndxsp500_ratio, selected_value_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+            col7.metric(label=f'NDX/SPY < {selected_value_rus2ksp500}', value = f'{ndxsp500_boolean} @ {round(curr_ndxsp500_ratio,2)}')
+        
+        col7.line_chart(ndxvssp500['Ratio'], use_container_width = True, height = 100)
+
+    elif selected_signal_rus2ksp500 == 'Nasdaq vs SP500 Ratio % Change':
+        selected_comparator_rus2ksp500 = st.sidebar.radio('Choose comparator',
+                                                         ['Greater than', 'Lower than'],
+                                                         index = 0)
+        ndxsp500_ratio_pct_selected = float(st.sidebar.text_input("Input Nasdaq vs SP500 Ratio % Change to compare against", 1.2, key = 'Nasdaq vs Sp500 Ratio Level % Change'))
+
+        ndxvssp500, curr_ndxsp500_ratio, ndxsp500_ratio_pct_curr, curr_ndxsp500_pct_ch_str, nasdaq, sp500 = nasdaqvssp500(start_date, input_end_date, interval_input)
+
+        if selected_comparator_rus2ksp500 == 'Greater than': #% Change - Greater than
+            ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(ndxvssp500, ndxsp500_comparator_selection, ndxsp500_ratio_pct_curr, ndxsp500_ratio_pct_selected, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+            col7.metric(label=f'NDX/SPY % Chg > {ndxsp500_ratio_pct_selected}', value = f'{ndxsp500_boolean} @ {ndxsp500_ratio_pct_curr}')
+
+        elif selected_comparator_rus2ksp500 == 'Lower than': #% Change - Lower than
+            ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(ndxvssp500, ndxsp500_comparator_selection, ndxsp500_ratio_pct_curr, ndxsp500_ratio_pct_selected, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+            col7.metric(label=f'NDX/SPY % Chg < {ndxsp500_ratio_pct_selected}', value = f'{ndxsp500_boolean} @ {curr_ndxsp500_pct_ch_str}')
+    
+        col7.line_chart(ndxvssp500['Ratio % Chg'], use_container_width = True, height = 100)
+
 # show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
 # if show_consumer == True:
 #         sidebar_counter += 1
