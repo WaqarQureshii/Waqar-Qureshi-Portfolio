@@ -68,3 +68,23 @@ def signal_rsi_lower_than(database, rsi_current, rsi_selected_value, sp500_inter
     rus2k_intersection.append(filtered_database)
     
     return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+@st.cache_data
+def yieldcurve_diff_greater(database, current_difference, selected_difference, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    boolean = current_difference >= selected_difference
+    filtered_database = database[database['Yield Diff'] >= selected_difference]
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+@st.cache_data
+def yieldcurve_diff_lower(database, current_difference, selected_difference, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    boolean = current_difference >= selected_difference
+    filtered_database = database[database['Yield Diff'] <= selected_difference]
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection

@@ -3,12 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from datetime import datetime
-import math
 from datetime import datetime
 import sys
 from functools import reduce
-sys.path.append("..")
 
+sys.path.append("..")
 from functions.generate_db import *
 from functions.signal_generators import *
 
@@ -53,7 +52,6 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 # ------- SIDEBAR SELECTIONS ---------
     # --- VIX OPTIONS ---
 vix_show = st.sidebar.checkbox("Volatility - VIX", value=True)
-
 if vix_show == True:
     # --- VIX UI ---
         vix_signal_selected = st.sidebar.radio('Choose Signal Type',
@@ -137,8 +135,8 @@ if show_rsp == True:
             col3.metric(label=f'Price < ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
 
         if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
-                rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp_database, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-                col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
+            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp_database, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
         else:
             rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(rsp_database, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
             col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
@@ -179,12 +177,20 @@ if show_rsp == True:
         rsp_rsi_value_selection = int(st.sidebar.text_input("Input RSI value to compare against",
                                               70,
                                               key='rsp rsi value selection'))
+        
+        if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
+            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp_database, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
+        else:
+            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(rsp_database, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')   
+
 else:
     pass
 st.sidebar.divider()
 
     # --- YIELD CURVE ---
-show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False, key='show yield curve') #TODO Add % Change parameter to Yield Curve
+show_yieldcurve = st.sidebar.checkbox("US Yield Curve", value=False, key='show yield curve')
 if show_yieldcurve == True:
     sidebar_counter += 1
     show_yield_option = st.sidebar.radio('3 month vs',
@@ -195,9 +201,40 @@ if show_yieldcurve == True:
     yieldcurve_comparator_selection = st.sidebar.radio('Choose Yield Curve comparator',
                                                        ['Diff greater than', 'Diff less than'],
                                                        index = 0)
-    yieldcurve_level = float(st.sidebar.text_input("Input Yield Diff to compare",
+    selected_yieldcurve_diff = float(st.sidebar.text_input("Input Yield Diff to compare",
                                                  0.5,
                                                  key = 'Yield Curve level'))
+    
+    if show_yield_option == '30-year':
+        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
+                                        input_end_date,
+                                        lt_yield_inp='30y')
+        
+        if yieldcurve_comparator_selection == "Diff greater than": # Current Yield Curve greater than Selected Difference Value
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+        
+        else: # Current Yield Curve less than Selected Difference Value
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_lower(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+    
+    else:
+        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
+                                        input_end_date,
+                                        lt_yield_inp='10y')
+        
+        if yieldcurve_comparator_selection == "Diff greater than":
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+
+        else:
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_lower(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+
+
+    col5.line_chart(yielddiff['Yield Diff'],
+                    use_container_width = True,
+                    height = 100)
     
 st.sidebar.divider()        
 
@@ -262,53 +299,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
-#---YIELD CURVE---
-with col5:
-    if show_yieldcurve == True:
-        if show_yield_option == '30-year':
-            yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
-                                            input_end_date,
-                                            lt_yield_inp='30y')
-            if yieldcurve_comparator_selection == "Diff greater than": # Current Yield Curve greater than Selected Difference Value
-                yield_boolean = curr_yielddiff >= yieldcurve_level
-                st.metric(label=f'Yield Diff > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
-                
-                filtered_yieldiff = yielddiff[yielddiff['Yield Diff'] >= yieldcurve_level]
-                sp500_intersection.append(filtered_yieldiff)
-                nasdaq_intersection.append(filtered_yieldiff)
-                rus2k_intersection.append(filtered_yieldiff)
-            
-            else: # Current Yield Curve less than Selected Difference Value
-                yield_boolean = curr_yielddiff <= yieldcurve_level
-                st.metric(label=f'Yield Diff < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
-
-                filtered_yieldiff = yielddiff[yielddiff['Yield Diff'] <= yieldcurve_level]
-                sp500_intersection.append(filtered_yieldiff)
-                nasdaq_intersection.append(filtered_yieldiff)
-                rus2k_intersection.append(filtered_yieldiff)
-        
-        else:
-            yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
-                                            input_end_date,
-                                            lt_yield_inp='10y')
-            if yieldcurve_comparator_selection == "Diff greater than":
-                yield_boolean = curr_yielddiff >= yieldcurve_level
-                st.metric(label=f'Yield Diff > {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
-                
-                filtered_yieldiff = yielddiff[yielddiff['Yield Diff'] >= yieldcurve_level]
-                sp500_intersection.append(filtered_yieldiff)
-                nasdaq_intersection.append(filtered_yieldiff)
-                rus2k_intersection.append(filtered_yieldiff)
-
-            else:
-                yield_boolean = curr_yielddiff <= yieldcurve_level
-                st.metric(label=f'Yield Diff < {yieldcurve_level}', value = f'{yield_boolean} @ {curr_yielddiff}')
-
-
-        st.line_chart(yielddiff['Yield Diff'],
-                        use_container_width = True,
-                        height = 100)
 
 #---NASDAQ VS SP500 RATIO---
 with col6:
