@@ -206,11 +206,17 @@ def rus2kvssp500(start_date, end_date, interval = '1d'):
     sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
     sp500.rename(columns={'Close':'SP500 Close'}, inplace=True)
 
-    rus2kvssp500 = pd.concat([rus2k, sp500], axis=1)
-    rus2kvssp500['Russell 2000 vs SP500 Ratio'] = rus2kvssp500['Russell 2000 Close']/rus2kvssp500['SP500 Close']
-    rus2kvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
+    database = pd.concat([rus2k, sp500], axis=1)
+    database['Ratio'] = database['Russell 2000 Close']/database['SP500 Close']
+    database['Ratio % Chg'] = (database['Ratio'].pct_change()*100).round(2)
+    database.drop(['Russell 2000 Close', 'SP500 Close'], axis = 1, inplace=True)
     
-    return rus2kvssp500
+    #OUTPUTTING VALUES
+    current_ratio = database['Ratio'].iloc[-1]
+    current_ratio_pct = database['Ratio % Chg'].iloc[-1]
+    current_ratio_pct_str = "{:.2%}".format(current_ratio_pct / 100)
+    
+    return database, current_ratio, current_ratio_pct, current_ratio_pct_str, rus2k, sp500
 
 def sp500_ma(start_date,
              end_date,
