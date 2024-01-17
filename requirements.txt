@@ -5,3 +5,4 @@ mplfinance
 Jinja2
 streamlit
 matplotlib
+generate_db.py
