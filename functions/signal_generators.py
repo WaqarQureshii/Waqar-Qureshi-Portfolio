@@ -88,3 +88,33 @@ def yieldcurve_diff_lower(database, current_difference, selected_difference, sp5
     rus2k_intersection.append(filtered_database)
 
     return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+@st.cache_data
+def signal_ratio_value(database, comparator, curr_ratio, selected_level ,sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    if comparator == 'Greater than':
+        boolean = curr_ratio >= selected_level
+        filtered_database = database[database['Ratio'] >= selected_level]
+    elif comparator == 'Lower than':
+        boolean = curr_ratio <= selected_level
+        filtered_database = database[database['Ratio'] <= selected_level]
+    
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+@st.cache_data
+def signal_ratio_pct_value(database, comparator, ratio_pct_curr, selected_level ,sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    if comparator == 'Greater than':
+        boolean = ratio_pct_curr >= selected_level
+        filtered_database = database[database['Ratio % Chg'] >= selected_level]
+    elif comparator == 'Lower than':
+        boolean = ratio_pct_curr <= selected_level
+        filtered_database = database[database['Ratio % Chg'] <= selected_level]
+    
+    sp500_intersection.append(filtered_database)
+    nasdaq_intersection.append(filtered_database)
+    rus2k_intersection.append(filtered_database)
+
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
