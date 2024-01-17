@@ -23,16 +23,16 @@ start_date = header_col1.date_input(label = "Choose start date", value = start_d
 input_end_date = header_col1.date_input(label = 'Choose end date', value = today_date)
 
     # --- INDEX PARAMETERS
-interval_selection = header_col2.radio("Select Interval",
+selection_interval = header_col2.radio("Select Interval",
                                        options =['Daily', 'Weekly', 'Monthly'],
                                        index = 0,
                                        key = "interval_selection")
 
-if interval_selection == 'Daily':
+if selection_interval == 'Daily':
     interval_input = '1d'
-elif interval_selection == 'Weekly':
+elif selection_interval == 'Weekly':
     interval_input = '1wk'
-elif interval_selection == 'Monthly':
+elif selection_interval == 'Monthly':
     interval_input = '1mo'
 
 
@@ -51,55 +51,55 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 # ------- SIDEBAR SELECTIONS ---------
     # --- VIX OPTIONS ---
-vix_show = st.sidebar.checkbox("Volatility - VIX", value=True)
-if vix_show == True:
+header_show_vix = st.sidebar.checkbox("Volatility - VIX", value=True)
+if header_show_vix == True:
     # --- VIX UI ---
-        vix_signal_selected = st.sidebar.radio('Choose Signal Type',
+        selected_signal_vix = st.sidebar.radio('Choose Signal Type',
                                 ['VIX % Change' ,"VIX level"],
                                 index=0)
         
     # --- VIX Database Generation ---
         sidebar_counter += 1
-        vix_database, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil = generate_vix(start_date, input_end_date, interval_input)
+        db_vix, current_value_vix, current_pct_vix_str, current_pct_floor_vix, current_pct_ceiling_vix = generate_vix(start_date, input_end_date, interval_input)
 
-        if vix_signal_selected == 'VIX level':
+        if selected_signal_vix == 'VIX level':
     # ------ VIX UI for VIX level selection ------
-            vix_comparator_selection = st.sidebar.radio('Choose VIX comparator',
+            subheader_comparator_vix = st.sidebar.radio('Choose VIX comparator',
                                                       ['Greater than:', "Less than:"],
                                                       index = 1)
-            vix_comparator_value = int(st.sidebar.text_input("input VIX integer (##)", 20))
+            selected_value_vix = int(st.sidebar.text_input("input VIX integer (##)", 20))
 
-            if vix_comparator_selection == 'Greater than:':
-                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-                col1.metric(label=f'VIX > {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
+            if subheader_comparator_vix == 'Greater than:':
+                boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+                col1.metric(label=f'VIX > {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
 
             else:
-                vix_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(vix_level, vix_comparator_value, vix_database, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-                col1.metric(label=f'VIX < {vix_comparator_value}', value = f'{vix_boolean} @ {"{:.0f}".format(vix_level)}')
+                boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+                col1.metric(label=f'VIX < {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
     
     # ------ VIX UI for VIX % Change Selection ------
         else:
-            col1.metric(label = "VIX % Change", value = str_vix_pct_change)
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(vix_database, vix_pct_change_floor, vix_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label = "VIX % Change", value = current_pct_vix_str)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(db_vix, current_pct_floor_vix, current_pct_ceiling_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
 else:
         pass
 st.sidebar.divider()
 
     # --- HYG OPTIONS ---
-hyg_show = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False)
-if hyg_show == True:
+header_show_hyg = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False)
+if header_show_hyg == True:
     sidebar_counter += 1
 
-    hyg_database, str_hyg_pct_change, int_hyg_pct_change, hyg_pct_change_floor, hyg_pct_change_ceil = generate_hyg(start_date, input_end_date, interval_input)
+    db_hyg, current_pct_hyg_str, current_pct_hyg_int, current_pct_floor_hyg, current_pct_ceiling_hyg = generate_hyg(start_date, input_end_date, interval_input)
 
-    sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(hyg_database, hyg_pct_change_floor, hyg_pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-    col2.metric(label = "HYG % Change", value = str_hyg_pct_change)
+    sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(db_hyg, current_pct_floor_hyg, current_pct_ceiling_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+    col2.metric(label = "HYG % Change", value = current_pct_hyg_str)
 
 st.sidebar.divider()
 
     # --- RSP OPTIONS ---
-show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
-if show_rsp == True:
+header_show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
+if header_show_rsp == True:
     rspMAorRSI = st.sidebar.multiselect('Choose your RSP parameters', ['Moving Average (MA)', 'RSI (Relative Strength Index)'])
     st.sidebar.write("")
     
