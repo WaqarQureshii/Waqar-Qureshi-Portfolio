@@ -1,5 +1,7 @@
 import streamlit as st
 
+from functools import reduce
+
 @st.cache_data
 def signal_pct_change_auto(database, pct_change_floor, pct_change_ceil, sp500_intersection, nasdaq_intersection, rus2k_intersection):
     filtered_database = database[(database['% Change'] >= pct_change_floor) & (database['% Change'] <= pct_change_ceil)]
@@ -118,3 +120,10 @@ def signal_ratio_pct_value(database, comparator, ratio_pct_curr, selected_level 
     rus2k_intersection.append(filtered_database)
 
     return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+@st.cache_data
+def signal_pct_positive(db, db_intersection, db_common):
+    appended_dates = [df.index for df in db_intersection] #collect all of the dates from the signals created
+    unique_dates = reduce(lambda left, right: left.intersection(right), appended_dates).to_list()
+
+    pass
