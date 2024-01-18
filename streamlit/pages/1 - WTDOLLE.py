@@ -414,7 +414,6 @@ with col1.expander("S&P500 Parameter Selection"):
         else:
             sp500, sp500rsicurrent = generate_sp500(start_date, input_end_date, interval=interval_input)
 
-
 col2.subheader("Nasdaq")
 with col2.expander("Nasdaq Parameter Section"):
     ndxcol1, ndxcol2 = st.columns(2)
@@ -527,7 +526,7 @@ rus2k_common_index = reduce(lambda left, right: left.intersection(right), rus2k_
 rus2k["% Change Sel Interval"] = rus2k['Close'].pct_change(rus2k_return_interval).shift(-rus2k_return_interval)
 rus2k_common = rus2k[rus2k.index.isin(rus2k_common_index)]
 
-#-----RUSSELL 2000 GRAPH-----
+    #-----RUSSELL 2000 GRAPH-----
 fig, ax = plt.subplots()
 ax.set_title('Russel 2000')
 ax.plot(rus2k.index, rus2k['Close'], linewidth = 0.5, color='black')
