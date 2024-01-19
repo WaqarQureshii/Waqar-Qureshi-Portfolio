@@ -124,16 +124,20 @@ def signal_ratio_pct_value(database, comparator, ratio_pct_curr, selected_level 
 @st.cache_data
 def signal_pct_positive(db, db_intersection, selected_return_interval):
     appended_dates = [df.index for df in db_intersection] #collect all of the dates from the signals created
-    unique_dates = reduce(lambda left, right: left.intersection(right), appended_dates).to_list()
+    if appended_dates:
+        unique_dates = reduce(lambda left, right: left.intersection(right), appended_dates).to_list()
 
-    db['% Change Sel Interval'] = db['Close'].pct_change(selected_return_interval).shift(-selected_return_interval) #calculate future return based on selected return interval
+        db['% Change Sel Interval'] = db['Close'].pct_change(selected_return_interval).shift(-selected_return_interval) #calculate future return based on selected return interval
 
-    db_filtered_dates = db[db.index.isin(unique_dates)] #filter database for only the dates that are in common - this is in order to plot red dots on the graphs
+        db_filtered_dates = db[db.index.isin(unique_dates)] #filter database for only the dates that are in common - this is in order to plot red dots on the graphs
 
-    avg_db_return = db_filtered_dates['% Change Sel Interval'].mean()
-    no_of_occurrences = len(db_filtered_dates['% Change Sel Interval'])
-    no_of_positives = (db_filtered_dates['% Change Sel Interval'] > 0).sum()
-    positive_percentage = no_of_positives/no_of_occurrences
-    positive_percentage = '{:.2%}'.format(positive_percentage)
+        avg_db_return = db_filtered_dates['% Change Sel Interval'].mean()
+        no_of_occurrences = len(db_filtered_dates['% Change Sel Interval'])
+        no_of_positives = (db_filtered_dates['% Change Sel Interval'] > 0).sum()
+        positive_percentage = no_of_positives/no_of_occurrences
+        positive_percentage = '{:.2%}'.format(positive_percentage)
 
-    return db_filtered_dates, avg_db_return, no_of_occurrences, positive_percentage
+        return db_filtered_dates, avg_db_return, no_of_occurrences, positive_percentage
+
+    else:
+        pass
