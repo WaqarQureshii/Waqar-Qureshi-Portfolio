@@ -7,7 +7,7 @@ from datetime import datetime
 import sys
 from functools import reduce
 
-sys.path.append("..")
+sys.path.append(".")
 from functions.generate_db import *
 from functions.signal_generators import *
 
@@ -360,15 +360,6 @@ st.sidebar.divider()
     # -------------------- HEADER -------------------------
 st.header(f'WTDOLLE on {input_end_date}')
 
-    # ------------------ SUB HEADER -----------------------
-if sidebar_counter == 0:
-    st.header(f"{sidebar_counter} variables were selected in the sidebar")
-
-elif sidebar_counter == 1:
-    st.header(f"WTDOLLE with {sidebar_counter} selected variable")
-
-else: st.subheader(f"WTDOLLE with the selected {sidebar_counter} variables")
-
 # ---------MODIFYING THE METRIC FORMAT ------------------
 st.markdown(
     """
@@ -469,76 +460,38 @@ with col3.expander("Russell 2000 Parameter Section"):
         else:
             rus2k, rus2krsicurrent = generate_rus2k(start_date, input_end_date, interval=interval_input)
 
-#---S&P500 REPORTING---
-sp500_index_columns = [df.index for df in sp500_intersection]
-sp500_common_index = reduce(lambda left, right: left.intersection(right), sp500_index_columns).to_list()
-
-sp500['% Change Sel Interval'] = sp500['Close'].pct_change(sp500_return_interval).shift(-sp500_return_interval)
-sp500_common = sp500[sp500.index.isin(sp500_common_index)]
-
-    #-------S&P500 GRAPH------
+#---S&P500 DATABASE GENERATION---
+db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500, sp500_intersection, sp500_return_interval)
+#-------S&P500 GRAPH------
 fig, ax = plt.subplots()
 ax.set_title('S&P500')
 ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
-ax.scatter(sp500_common.index, sp500_common['Close'], marker='.', color='red', s = 10)
+ax.scatter(db_filtered_sp500.index, db_filtered_sp500['Close'], marker='.', color='red', s = 10)
 graph1.pyplot(fig)
+#-------S&P500 GENERATE STATEMENTS--------
+graph1.write(f'This occurred {no_of_occurrences_sp500} of time(s) and is {positive_percentage_sp500} positive in {sp500_return_interval} days.' )
+graph1.write('{:.2%}'.format(avg_sp500_return))
 
-    #-------S&P500 GENERATE STATEMENTS--------
-average_sp500_return = sp500_common['% Change Sel Interval'].mean()
-sp500_number_of_occurrences = len(sp500_common['% Change Sel Interval'])
-sp500_number_of_positives = (sp500_common['% Change Sel Interval'] > 0).sum()
-sp500_positive_percentage = sp500_number_of_positives/sp500_number_of_occurrences
-sp500_positive_percentage = '{:.2%}'.format(sp500_positive_percentage)
-
-graph1.write(f'This occurred {sp500_number_of_occurrences} of time(s) and is {sp500_positive_percentage} positive in {sp500_return_interval} days.' )
-graph1.write('{:.2%}'.format(average_sp500_return))
-
-sp500_test_interval, sp500rsicurrent_test = generate_sp500(start_date, input_end_date, interval="1d", rsi_value=22)
-
-#--_NASDAQ REPORTING
-ndx_index_columns = [df.index for df in nasdaq_intersection]
-ndx_common_index = reduce(lambda left, right: left.intersection(right), ndx_index_columns).to_list()
-
-ndx["% Change Sel Interval"] = ndx['Close'].pct_change(ndx_return_interval).shift(-ndx_return_interval)
-ndx_common = ndx[ndx.index.isin(ndx_common_index)]
-
-    #-------NASDAQ GRAPH------
+#---NASDAQ DATABASE GENERATION---
+db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx, nasdaq_intersection, ndx_return_interval)
+#-------NASDAQ GRAPH------
 fig, ax = plt.subplots()
 ax.set_title('Nasdaq 100')
 ax.plot(ndx.index, ndx['Close'], linewidth = 0.5, color='black')
-ax.scatter(ndx_common.index, ndx_common['Close'], marker='.', color='red', s = 10)
+ax.scatter(db_filtered_ndx.index, db_filtered_ndx['Close'], marker='.', color='red', s = 10)
 graph2.pyplot(fig)
+#-------NASDAQ GENERATE STATEMENTS-------
+graph2.write(f'This occurred {no_of_occurrences_ndx} time(s) and is {positive_percentage_ndx} positive in {ndx_return_interval} days.' )
+graph2.write('{:.2%}'.format(avg_ndx_return))
 
-    #-------NASDAQ GENERATE STATEMENTS-------
-average_ndx_return = ndx_common['% Change Sel Interval'].mean()
-ndx_number_of_occurrences = len(ndx_common['% Change Sel Interval'])
-ndx_number_of_positives = (ndx_common['% Change Sel Interval'] > 0).sum()
-ndx_positive_percentage = ndx_number_of_positives/ndx_number_of_occurrences
-ndx_positive_percentage = '{:.2%}'.format(ndx_positive_percentage)
-
-graph2.write(f'This occurred {ndx_number_of_occurrences} time(s) and is {ndx_positive_percentage} positive in {ndx_return_interval} days.' )
-graph2.write('{:.2%}'.format(average_ndx_return))
-
-#--RUSSEL 2000 REPORTING
-rus2k_index_columns = [df.index for df in rus2k_intersection]
-rus2k_common_index = reduce(lambda left, right: left.intersection(right), rus2k_index_columns).to_list()
-
-rus2k["% Change Sel Interval"] = rus2k['Close'].pct_change(rus2k_return_interval).shift(-rus2k_return_interval)
-rus2k_common = rus2k[rus2k.index.isin(rus2k_common_index)]
-
-    #-----RUSSELL 2000 GRAPH-----
+#--RUSSEL 2000 DATABASE GENERATION
+db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k, rus2k_intersection, rus2k_return_interval)
+#-----RUSSELL 2000 GRAPH-----
 fig, ax = plt.subplots()
 ax.set_title('Russel 2000')
 ax.plot(rus2k.index, rus2k['Close'], linewidth = 0.5, color='black')
-ax.scatter(rus2k_common.index, rus2k_common['Close'], marker='.', color='red', s = 10)
+ax.scatter(db_filtered_rus2k.index, db_filtered_rus2k['Close'], marker='.', color='red', s = 10)
 graph3.pyplot(fig)
-
-    #-------NASDAQ GENERATE STATEMENTS-------
-average_rus2k_return = rus2k_common['% Change Sel Interval'].mean()
-rus2k_number_of_occurrences = len(rus2k_common['% Change Sel Interval'])
-rus2k_number_of_positives = (rus2k_common['% Change Sel Interval'] > 0).sum()
-rus2k_positive_percentage = rus2k_number_of_positives/rus2k_number_of_occurrences
-rus2k_positive_percentage = '{:.2%}'.format(rus2k_positive_percentage)
-
-graph3.write(f'This occurred {rus2k_number_of_occurrences} of time(s) and is {rus2k_positive_percentage} positive in {rus2k_return_interval} days.' )
-graph3.write('{:.2%}'.format(average_rus2k_return))
+#-------NASDAQ GENERATE STATEMENTS-------
+graph3.write(f'This occurred {no_of_occurrences_rus2k} of time(s) and is {positive_percentage_rus2k} positive in {rus2k_return_interval} days.' )
+graph3.write('{:.2%}'.format(avg_rus2k_return))
