@@ -460,38 +460,43 @@ with col3.expander("Russell 2000 Parameter Section"):
         else:
             rus2k, rus2krsicurrent = generate_rus2k(start_date, input_end_date, interval=interval_input)
 
-#---S&P500 DATABASE GENERATION---
-db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500, sp500_intersection, sp500_return_interval)
-#-------S&P500 GRAPH------
-fig, ax = plt.subplots()
-ax.set_title('S&P500')
-ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
-ax.scatter(db_filtered_sp500.index, db_filtered_sp500['Close'], marker='.', color='red', s = 10)
-graph1.pyplot(fig)
-#-------S&P500 GENERATE STATEMENTS--------
-graph1.write(f'This occurred {no_of_occurrences_sp500} of time(s) and is {positive_percentage_sp500} positive in {sp500_return_interval} days.' )
-graph1.write('{:.2%}'.format(avg_sp500_return))
+# --- Indices Generation ---
+if sidebar_counter > 0:
+    #---S&P500 DATABASE GENERATION---
+    db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500, sp500_intersection, sp500_return_interval)
+    #-------S&P500 GRAPH------
+    fig, ax = plt.subplots()
+    ax.set_title('S&P500')
+    ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
+    ax.scatter(db_filtered_sp500.index, db_filtered_sp500['Close'], marker='.', color='red', s = 10)
+    graph1.pyplot(fig)
+    #-------S&P500 GENERATE STATEMENTS--------
+    graph1.write(f'This occurred {no_of_occurrences_sp500} of time(s) and is {positive_percentage_sp500} positive in {sp500_return_interval} days.' )
+    graph1.write('{:.2%}'.format(avg_sp500_return))
 
-#---NASDAQ DATABASE GENERATION---
-db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx, nasdaq_intersection, ndx_return_interval)
-#-------NASDAQ GRAPH------
-fig, ax = plt.subplots()
-ax.set_title('Nasdaq 100')
-ax.plot(ndx.index, ndx['Close'], linewidth = 0.5, color='black')
-ax.scatter(db_filtered_ndx.index, db_filtered_ndx['Close'], marker='.', color='red', s = 10)
-graph2.pyplot(fig)
-#-------NASDAQ GENERATE STATEMENTS-------
-graph2.write(f'This occurred {no_of_occurrences_ndx} time(s) and is {positive_percentage_ndx} positive in {ndx_return_interval} days.' )
-graph2.write('{:.2%}'.format(avg_ndx_return))
+    #---NASDAQ DATABASE GENERATION---
+    db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx, nasdaq_intersection, ndx_return_interval)
+    #-------NASDAQ GRAPH------
+    fig, ax = plt.subplots()
+    ax.set_title('Nasdaq 100')
+    ax.plot(ndx.index, ndx['Close'], linewidth = 0.5, color='black')
+    ax.scatter(db_filtered_ndx.index, db_filtered_ndx['Close'], marker='.', color='red', s = 10)
+    graph2.pyplot(fig)
+    #-------NASDAQ GENERATE STATEMENTS-------
+    graph2.write(f'This occurred {no_of_occurrences_ndx} time(s) and is {positive_percentage_ndx} positive in {ndx_return_interval} days.' )
+    graph2.write('{:.2%}'.format(avg_ndx_return))
 
-#--RUSSEL 2000 DATABASE GENERATION
-db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k, rus2k_intersection, rus2k_return_interval)
-#-----RUSSELL 2000 GRAPH-----
-fig, ax = plt.subplots()
-ax.set_title('Russel 2000')
-ax.plot(rus2k.index, rus2k['Close'], linewidth = 0.5, color='black')
-ax.scatter(db_filtered_rus2k.index, db_filtered_rus2k['Close'], marker='.', color='red', s = 10)
-graph3.pyplot(fig)
-#-------NASDAQ GENERATE STATEMENTS-------
-graph3.write(f'This occurred {no_of_occurrences_rus2k} of time(s) and is {positive_percentage_rus2k} positive in {rus2k_return_interval} days.' )
-graph3.write('{:.2%}'.format(avg_rus2k_return))
+    #--RUSSEL 2000 DATABASE GENERATION
+    db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k, rus2k_intersection, rus2k_return_interval)
+    #-----RUSSELL 2000 GRAPH-----
+    fig, ax = plt.subplots()
+    ax.set_title('Russel 2000')
+    ax.plot(rus2k.index, rus2k['Close'], linewidth = 0.5, color='black')
+    ax.scatter(db_filtered_rus2k.index, db_filtered_rus2k['Close'], marker='.', color='red', s = 10)
+    graph3.pyplot(fig)
+    #-------NASDAQ GENERATE STATEMENTS-------
+    graph3.write(f'This occurred {no_of_occurrences_rus2k} of time(s) and is {positive_percentage_rus2k} positive in {rus2k_return_interval} days.' )
+    graph3.write('{:.2%}'.format(avg_rus2k_return))
+
+else:
+    pass
