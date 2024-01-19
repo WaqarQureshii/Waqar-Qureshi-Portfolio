@@ -58,9 +58,9 @@ def generate_rsp(start_date, end_date, interval = "1d", ma_length = 50, rsi_valu
     
     rsp_price = rsp["Close"].iloc[-1]
     rsp_ma = rsp['ma'].iloc[-1]
-    rsp_rsi_level = rsp['rsi'].iloc[-1]
+    rsp_rsi_current_value = rsp['rsi'].iloc[-1]
 
-    return rsp, rsp_price, rsp_ma, rsp_rsi_level
+    return rsp, rsp_price, rsp_ma, rsp_rsi_current_value
 
 #--- GENERATING NASDAQ TABLE WITH % CHANGE, RSI
 @st.cache_data
@@ -157,7 +157,7 @@ def generate_consumer(start_date, end_date, interval = '1d'):
     
     return consumer
 
-def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple[pd.DataFrame, float, float, pd.DataFrame, pd.DataFrame]:
+def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple[pd.DataFrame, float, float, str, pd.DataFrame, pd.DataFrame]:
     """
     Calculates the ratio between the closing prices of the Nasdaq and S&P 500 indices over a specified time period.
     Also calculates the percentage change in the ratio.
@@ -170,13 +170,13 @@ def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple
 
     Returns:
         Tuple[pd.DataFrame, float, float, pd.DataFrame, pd.DataFrame]: A tuple containing:
-            - ndxvssp500 (pd.DataFrame): A dataframe containing the ratio and percentage change in the ratio between the Nasdaq and S&P 500 indices.
-            - curr_ndxsp500_ratio (float): The current ratio between the Nasdaq and S&P 500 indices.
-            - curr_ndxsp500_pct_ch (float): The current percentage change in the ratio between the Nasdaq and S&P 500 indices.
+            - database (pd.DataFrame): A dataframe containing the ratio and percentage change in the ratio between the Nasdaq and S&P 500 indices.
+            - current_ratio (float): The current ratio between the Nasdaq and S&P 500 indices.
+            - current_ratio_pct (float): The current percentage change in the ratio between the Nasdaq and S&P 500 indices.
             - nasdaq (pd.DataFrame): The historical data for the Nasdaq index.
             - sp500 (pd.DataFrame): The historical data for the S&P 500 index.
     """
-    nasdaq, nasdaq_rsi = generate_ndx(start_date, end_date, interval)
+    nasdaq, rsi_current = generate_ndx(start_date, end_date, interval)
     nasdaq.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'rsi'], axis = 1, inplace=True)
     nasdaq.rename(columns={'Close':'Nasdaq Close'}, inplace=True)
 
@@ -185,32 +185,38 @@ def nasdaqvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple
     sp500.rename(columns={'Close':'SP500 Close'}, inplace=True)
 
     # Creates Ratio Calculation
-    ndxvssp500 = pd.concat([nasdaq, sp500], axis=1)
-    ndxvssp500['Ratio'] = ndxvssp500['Nasdaq Close']/ndxvssp500['SP500 Close']
-    ndxvssp500['Ratio % Chg'] = (ndxvssp500['Ratio'].pct_change()*100).round(2)
-    ndxvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
+    database = pd.concat([nasdaq, sp500], axis=1)
+    database['Ratio'] = database['Nasdaq Close']/database['SP500 Close']
+    database['Ratio % Chg'] = (database['Ratio'].pct_change()*100).round(2)
+    database.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
     
     #OUTPUTTING VALUES
-    curr_ndxsp500_ratio = ndxvssp500['Ratio'].iloc[-1]
-    curr_ndxsp500_pct_ch = ndxvssp500['Ratio % Chg'].iloc[-1]
-    ndxsp500_pct_ch_str = "{:.2%}".format(curr_ndxsp500_pct_ch / 100)
+    current_ratio = database['Ratio'].iloc[-1]
+    current_ratio_pct = database['Ratio % Chg'].iloc[-1]
+    current_ratio_pct_str = "{:.2%}".format(current_ratio_pct / 100)
     
-    return ndxvssp500, curr_ndxsp500_ratio, curr_ndxsp500_pct_ch, ndxsp500_pct_ch_str, nasdaq, sp500
+    return database, current_ratio, current_ratio_pct, current_ratio_pct_str, nasdaq, sp500
 
-def rus2kvssp500(start_date, end_date, interval = '1d'):
-    rus2k = generate_rus2k(start_date, end_date, interval)
-    rus2k.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
+def rus2kvssp500(start_date: str, end_date: str, interval: str = '1d') -> Tuple[pd.DataFrame, float, float, str, pd.DataFrame, pd.DataFrame]:
+    rus2k, rsi_current = generate_rus2k(start_date, end_date, interval)
+    rus2k.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'rsi'], axis = 1, inplace=True)
     rus2k.rename(columns={'Close':'Russell 2000 Close'}, inplace=True)
 
-    sp500 = generate_sp500(start_date, end_date, interval)
-    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change'], axis = 1, inplace=True)
+    sp500, sp500_rsi = generate_sp500(start_date, end_date, interval)
+    sp500.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'rsi'], axis = 1, inplace=True)
     sp500.rename(columns={'Close':'SP500 Close'}, inplace=True)
 
-    rus2kvssp500 = pd.concat([rus2k, sp500], axis=1)
-    rus2kvssp500['Russell 2000 vs SP500 Ratio'] = rus2kvssp500['Russell 2000 Close']/rus2kvssp500['SP500 Close']
-    rus2kvssp500.drop(['Nasdaq Close', 'SP500 Close'], axis = 1, inplace=True)
+    database = pd.concat([rus2k, sp500], axis=1)
+    database['Ratio'] = database['Russell 2000 Close']/database['SP500 Close']
+    database['Ratio % Chg'] = (database['Ratio'].pct_change()*100).round(2)
+    database.drop(['Russell 2000 Close', 'SP500 Close'], axis = 1, inplace=True)
     
-    return rus2kvssp500
+    #OUTPUTTING VALUES
+    current_ratio = database['Ratio'].iloc[-1]
+    current_ratio_pct = database['Ratio % Chg'].iloc[-1]
+    current_ratio_pct_str = "{:.2%}".format(current_ratio_pct / 100)
+    
+    return database, current_ratio, current_ratio_pct, current_ratio_pct_str, rus2k, sp500
 
 def sp500_ma(start_date,
              end_date,
