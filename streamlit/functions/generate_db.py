@@ -113,13 +113,13 @@ def generate_vix(start_date, end_date, interval = '1d'):
     vix['% Change'] = vix['Close'].pct_change()
 
     vix_level = vix["Close"].iloc[-1]
-    str_vix_pct_change = "{:.2%}".format(vix["% Change"].iloc[-1])
-    int_vix_pct_change = vix["% Change"].iloc[-1]
-    str_vix_pct_change = "{:.2%}".format(int_vix_pct_change)
-    vix_pct_change_floor = math.floor(int_vix_pct_change*100)/100
-    vix_pct_change_ceil = math.ceil(int_vix_pct_change*100)/100
+    pct_vix_str = "{:.2%}".format(vix["% Change"].iloc[-1])
+    pct_vix_int = vix["% Change"].iloc[-1]
+    pct_vix_str = "{:.2%}".format(pct_vix_int)
+    vix_pct_change_floor = math.floor(pct_vix_int*100)/100
+    vix_pct_change_ceil = math.ceil(pct_vix_int*100)/100
     
-    return vix, vix_level, str_vix_pct_change, vix_pct_change_floor, vix_pct_change_ceil
+    return vix, vix_level, pct_vix_str, pct_vix_int, vix_pct_change_floor, vix_pct_change_ceil
 
 @st.cache_data
 def generate_hyg(start_date, end_date, interval = '1d'):

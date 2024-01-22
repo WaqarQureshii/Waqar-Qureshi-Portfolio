@@ -16,14 +16,14 @@ def signal_pct_change_manual(database, comparator, selected_value, current_value
     if comparator == 'Greater than':
         boolean = current_value*100 >= selected_value
         
-        filtered_database = database['% Change'] >= selected_value
+        filtered_database = database[database['% Change'] >= selected_value/100]
         sp500_intersection.append(filtered_database)
         nasdaq_intersection.append(filtered_database)
         rus2k_intersection.append(filtered_database)
     else:
         boolean = current_value*100 <= selected_value
         
-        filtered_database = database['% Change'] <= selected_value
+        filtered_database = database[database['% Change'] <= selected_value/100]
         sp500_intersection.append(filtered_database)
         nasdaq_intersection.append(filtered_database)
         rus2k_intersection.append(filtered_database)
