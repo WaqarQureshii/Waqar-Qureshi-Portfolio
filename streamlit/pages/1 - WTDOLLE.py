@@ -107,8 +107,20 @@ if header_show_hyg == True:
 
     db_hyg, current_pct_hyg_str, current_pct_hyg_int, current_pct_floor_hyg, current_pct_ceiling_hyg = generate_hyg(start_date, input_end_date, interval_input)
 
-    sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(db_hyg, current_pct_floor_hyg, current_pct_ceiling_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-    col2.metric(label = "HYG % Change", value = current_pct_hyg_str)
+    subheader_comparator_hyg = st.sidebar.radio('Choose HYG comparator',
+    ['Greater than', "Less than"],
+    index = 1, key = "comparator hyg pct selector")
+    selected_pct_change = float(st.sidebar.text_input("Input percent increase/decrease", value = 
+    current_pct_ceiling_hyg*100, key = 'HYG pct comparator value'))
+    
+    if subheader_comparator_hyg == 'Greater than':
+        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_hyg, subheader_comparator_hyg, selected_pct_change, current_pct_hyg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{boolean_hyg} @ {current_pct_hyg_str}')
+    else:
+        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_hyg, subheader_comparator_hyg, selected_pct_change, current_pct_hyg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        col2.metric(label = f"HYG % < {selected_pct_change}", value = f'{boolean_hyg} @ {current_pct_hyg_str}')
+    
+    col2.line_chart(db_hyg['% Change']*100, height = 100, use_container_width = True)
 
 st.sidebar.divider()
 
