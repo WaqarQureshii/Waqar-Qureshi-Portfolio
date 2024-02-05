@@ -53,36 +53,51 @@ col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
     # --- VIX OPTIONS ---
 header_show_vix = st.sidebar.checkbox("Volatility - VIX", value=True)
 if header_show_vix == True:
-    # --- VIX UI ---
-        selected_signal_vix = st.sidebar.radio('Choose Signal Type',
-                                ['VIX % Change' ,"VIX level"],
-                                index=0)
-        
-    # --- VIX Database Generation ---
-        sidebar_counter += 1
-        db_vix, current_value_vix, current_pct_vix_str, current_pct_floor_vix, current_pct_ceiling_vix = generate_vix(start_date, input_end_date, interval_input)
+# --- VIX UI ---
+# --- VIX Database Generation ---
+    sidebar_counter += 1
+    db_vix, current_value_vix, current_pct_vix_str, current_pct_vix_int, current_pct_floor_vix, current_pct_ceiling_vix = generate_vix(start_date, input_end_date, interval_input)
 
-        if selected_signal_vix == 'VIX level':
-    # ------ VIX UI for VIX level selection ------
-            subheader_comparator_vix = st.sidebar.radio('Choose VIX comparator',
-                                                      ['Greater than:', "Less than:"],
-                                                      index = 1)
-            selected_value_vix = int(st.sidebar.text_input("input VIX integer (##)", 20))
+    selected_signal_vix = st.sidebar.radio('Choose Signal Type',
+                            [f'VIX % Change: {current_pct_vix_str}' ,f'VIX level: {round(current_value_vix,1)}'],
+                            index=0)
 
-            if subheader_comparator_vix == 'Greater than:':
-                boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-                col1.metric(label=f'VIX > {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
+    if selected_signal_vix == f'VIX level: {round(current_value_vix,1)}':
+# ------ VIX UI for VIX level selection ------
+        subheader_comparator_vix = st.sidebar.radio('Choose VIX comparator',
+                                                    ['Greater than', "Less than"],
+                                                    index = 1,
+                                                    key = "comparator vix level selector")
+        selected_value_vix = int(st.sidebar.text_input("Input VIX integer (##)", value = int(current_value_vix+1))) #TODO add intelligent default values
 
-            else:
-                boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-                col1.metric(label=f'VIX < {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
-    
-    # ------ VIX UI for VIX % Change Selection ------
+        if subheader_comparator_vix == 'Greater than':
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label=f'VIX > {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
+
         else:
-            col1.metric(label = "VIX % Change", value = current_pct_vix_str)
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(db_vix, current_pct_floor_vix, current_pct_ceiling_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label=f'VIX < {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
+        
+        col1.line_chart(db_vix['Close'], height = 100, use_container_width = True)
+
+# ------ VIX UI for VIX % Change Selection ------
+    else:
+        subheader_comparator_vix = st.sidebar.radio('Choose VIX comparator',
+        ['Greater than', "Less than"],
+        index = 1, key = "comparator vix pct selector")
+        selected_pct_change = float(st.sidebar.text_input("Input percent increase/decrease", value = 
+        current_pct_ceiling_vix*100, key = 'VIX pct comparator value'))
+        
+        if subheader_comparator_vix == 'Greater than':
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_vix, subheader_comparator_vix, selected_pct_change, current_pct_vix_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label = f"VIX % > {selected_pct_change}", value = f'{boolean_vix} @ {current_pct_vix_str}')
+        else:
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_vix, subheader_comparator_vix, selected_pct_change, current_pct_vix_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label = f"VIX % < {selected_pct_change}", value = f'{boolean_vix} @ {current_pct_vix_str}')
+        
+        col1.line_chart(db_vix['% Change']*100, height = 100, use_container_width = True)
 else:
-        pass
+    pass
 st.sidebar.divider()
 
     # --- HYG OPTIONS ---
@@ -92,8 +107,20 @@ if header_show_hyg == True:
 
     db_hyg, current_pct_hyg_str, current_pct_hyg_int, current_pct_floor_hyg, current_pct_ceiling_hyg = generate_hyg(start_date, input_end_date, interval_input)
 
-    sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_auto(db_hyg, current_pct_floor_hyg, current_pct_ceiling_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-    col2.metric(label = "HYG % Change", value = current_pct_hyg_str)
+    subheader_comparator_hyg = st.sidebar.radio('Choose HYG comparator',
+    ['Greater than', "Less than"],
+    index = 1, key = "comparator hyg pct selector")
+    selected_pct_change = float(st.sidebar.text_input("Input percent increase/decrease", value = 
+    current_pct_ceiling_hyg*100, key = 'HYG pct comparator value'))
+    
+    if subheader_comparator_hyg == 'Greater than':
+        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_hyg, subheader_comparator_hyg, selected_pct_change, current_pct_hyg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{boolean_hyg} @ {current_pct_hyg_str}')
+    else:
+        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_hyg, subheader_comparator_hyg, selected_pct_change, current_pct_hyg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        col2.metric(label = f"HYG % < {selected_pct_change}", value = f'{boolean_hyg} @ {current_pct_hyg_str}')
+    
+    col2.line_chart(db_hyg['% Change']*100, height = 100, use_container_width = True)
 
 st.sidebar.divider()
 
