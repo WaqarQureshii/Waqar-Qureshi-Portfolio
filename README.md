@@ -10,4 +10,4 @@
 
  The aspiration is that this project is able to build graphical and numerical indicators on when to buy or sell stocks based on information inputted.
 
-<img src="./wtdolle_recording.gif" alt="Interacting with WTDOLLE GIF" width="1000" height="600">
+<img src="./wtdolle_recording.gif" alt="Interacting with WTDOLLE GIF" width="1100" height="600">
