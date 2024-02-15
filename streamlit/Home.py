@@ -8,5 +8,7 @@ st.write('''
         
          The purpose of WTDOLLE (What Transpired During Our Last Encounter) is to answer this very question: what was the general return over a given number of periods when the last time certain signals were given. \n
 
-         Head over to the WTDOLLE page to see all of the available pages.
+         Head over to the WTDOLLE page to see all of the available signals and parameters.
+
+         - Waqar Qureshi
 ''')
