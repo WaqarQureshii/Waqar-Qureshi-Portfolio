@@ -12,8 +12,27 @@ def signal_pct_change_auto(database, pct_change_floor, pct_change_ceil, sp500_in
     return sp500_intersection, nasdaq_intersection, rus2k_intersection
 
 @st.cache_data
-def signal_level_greater_than(level_selected, comparator_value_selected, database, sp500_intersection, nasdaq_intersection, rus2k_intersection):
-    boolean = level_selected >= comparator_value_selected
+def signal_pct_change_manual(database, comparator, selected_value, current_value, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    if comparator == 'Greater than':
+        boolean = current_value*100 >= selected_value
+        
+        filtered_database = database[database['% Change'] >= selected_value/100]
+        sp500_intersection.append(filtered_database)
+        nasdaq_intersection.append(filtered_database)
+        rus2k_intersection.append(filtered_database)
+    else:
+        boolean = current_value*100 <= selected_value
+        
+        filtered_database = database[database['% Change'] <= selected_value/100]
+        sp500_intersection.append(filtered_database)
+        nasdaq_intersection.append(filtered_database)
+        rus2k_intersection.append(filtered_database)
+
+    return boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection
+
+@st.cache_data
+def signal_level_greater_than(current_value, comparator_value_selected, database, sp500_intersection, nasdaq_intersection, rus2k_intersection):
+    boolean = current_value >= comparator_value_selected
     filtered_database = database[database['Close'] >= comparator_value_selected]
     sp500_intersection.append(filtered_database)
     nasdaq_intersection.append(filtered_database)
