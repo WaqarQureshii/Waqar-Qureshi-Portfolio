@@ -19,7 +19,7 @@ today_date = datetime.today()
 start_date = '2001-01-01 00:00:00'
 start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
 header_col1, header_col2 = st.columns(2)
-start_date = header_col1.date_input(label = "Choose start date", value = start_date)
+input_start_date = header_col1.date_input(label = "Choose start date", value = start_date)
 input_end_date = header_col1.date_input(label = 'Choose end date', value = today_date)
 
     # --- INDEX PARAMETERS
@@ -30,10 +30,13 @@ selection_interval = header_col2.radio("Select Interval",
 
 if selection_interval == 'Daily':
     interval_input = '1d'
+    grammatical_selection = 'days'
 elif selection_interval == 'Weekly':
     interval_input = '1wk'
+    grammatical_selection = 'weeks'
 elif selection_interval == 'Monthly':
     interval_input = '1mo'
+    grammatical_selection = 'months'
 
 
 #Creating the sidebar with the different signal creations
@@ -56,7 +59,7 @@ if header_show_vix == True:
 # --- VIX UI ---
 # --- VIX Database Generation ---
     sidebar_counter += 1
-    db_vix, current_value_vix, current_pct_vix_str, current_pct_vix_int, current_pct_floor_vix, current_pct_ceiling_vix = generate_vix(start_date, input_end_date, interval_input)
+    db_vix, current_value_vix, current_pct_vix_str, current_pct_vix_int, current_pct_floor_vix, current_pct_ceiling_vix = generate_vix(input_start_date, input_end_date, interval_input)
 
     selected_signal_vix = st.sidebar.radio('Choose Signal Type',
                             [f'VIX % Change: {current_pct_vix_str}' ,f'VIX level: {round(current_value_vix,1)}'],
@@ -105,7 +108,7 @@ header_show_hyg = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False
 if header_show_hyg == True:
     sidebar_counter += 1
 
-    db_hyg, current_pct_hyg_str, current_pct_hyg_int, current_pct_floor_hyg, current_pct_ceiling_hyg = generate_hyg(start_date, input_end_date, interval_input)
+    db_hyg, current_pct_hyg_str, current_pct_hyg_int, current_pct_floor_hyg, current_pct_ceiling_hyg = generate_hyg(input_start_date, input_end_date, interval_input)
 
     subheader_comparator_hyg = st.sidebar.radio('Choose HYG comparator',
     ['Greater than', "Less than"],
@@ -151,22 +154,22 @@ if header_show_rsp == True:
                                               70,
                                               key='rsp rsi value selection'))
         #---database generator---
-        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
+        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, interval_input, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
         #---database generator---
         
         if rsp_macomparator_selection == "Price greater than MA": #---Moving Average Signal generator---
             rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(db_rsp, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
-            col3.metric(label=f'Price > ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
+            col3.metric(label=f'Price > {rsp_ma_length} day MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
         else:
             rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(db_rsp, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col3.metric(label=f'Price < ({rsp_ma_length}) MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
+            col3.metric(label=f'Price < {rsp_ma_length} day MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
 
         if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
             rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(db_rsp, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
+            col4.metric(label=f'RSP {rsp_rsi_length} day RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
         else:
             rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(db_rsp, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
+            col4.metric(label=f'RSP {rsp_rsi_length} day RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
         
         col3.line_chart(db_rsp['ma'], height = 100, use_container_width = True)
         col4.line_chart(db_rsp['rsi'], height = 100, use_container_width = True)
@@ -177,7 +180,7 @@ if header_show_rsp == True:
         sidebar_counter += 1
         rsp_ma_length = int(st.sidebar.text_input("Input Moving Average Length (interval)", 50, key='rsp ma length'))
         
-        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
+        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
 
         rsp_comparator_selection = st.sidebar.radio('Choose RSP comparator',
                                                     ['Price greater than MA', "Price less than MA"],
@@ -199,7 +202,7 @@ if header_show_rsp == True:
         rsp_rsi_length = int(st.sidebar.text_input('Input RSI length', 22, key = 'rsp rsi length'))
 
         sidebar_counter += 1
-        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
+        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
         
         rsp_rsi_comparator = st.sidebar.radio('Choose RSP RSI comparator',
                                             ['Greater than', 'Less than'],
@@ -240,7 +243,7 @@ if show_yieldcurve == True:
                                                  key = 'Yield Curve level'))
     
     if show_yield_option == '30-year':
-        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
+        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(input_start_date,
                                         input_end_date,
                                         lt_yield_inp='30y')
         
@@ -253,7 +256,7 @@ if show_yieldcurve == True:
             col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
     
     else:
-        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(start_date,
+        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(input_start_date,
                                         input_end_date,
                                         lt_yield_inp='10y')
         
@@ -288,7 +291,7 @@ if header_show_ndxvssp500:
                                                            1,
                                                            key = 'Nasdaq vs Sp500 Ratio Level'))
         
-        db_ndxsp500, current_ratio_ndxsp500, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(start_date, input_end_date, interval_input)
+        db_ndxsp500, current_ratio_ndxsp500, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(input_start_date, input_end_date, interval_input)
 
         if selected_comparator_ndxsp500 == 'Greater than': #LEVEL - Greater than
             ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(db_ndxsp500, selected_comparator_ndxsp500, current_ratio_ndxsp500, selected_ratio_value_ndxsp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -308,7 +311,7 @@ if header_show_ndxvssp500:
                                                          index = 0, key = 'ndx vs SP500 Comparator Selection')
         ndxsp500_ratio_pct_selected = float(st.sidebar.text_input("Input Nasdaq vs SP500 Ratio % Change to compare against", 1.2, key = 'Nasdaq vs Sp500 Ratio Level % Change'))
 
-        db_ndxsp500, curr_ndxsp500_ratio, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(start_date, input_end_date, interval_input)
+        db_ndxsp500, curr_ndxsp500_ratio, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(input_start_date, input_end_date, interval_input)
 
         if selected_comparator_ndxsp500 == 'Greater than': #% Change - Greater than
             ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_ndxsp500, selected_comparator_ndxsp500, current_ratio_pct_ndxsp500, ndxsp500_ratio_pct_selected, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -340,7 +343,7 @@ if header_show_rus2ksp500:
                                                            1,
                                                            key = 'Russell 2000 vs Sp500 Ratio Level'))
         
-        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(start_date, input_end_date, interval_input)
+        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, interval_input)
 
         if selected_comparator_rus2ksp500 == 'Greater than': #LEVEL - Greater than
             boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_rus2ksp500, selected_ratio_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -360,7 +363,7 @@ if header_show_rus2ksp500:
                                                          index = 0, key = 'rus2k vs SP500 Comparator Selection')
         selected_ratio_pct_rus2ksp500 = float(st.sidebar.text_input("Input Russell 2000 vs SP500 Ratio % Change to compare against", 1.2, key = 'Russell 2000 vs Sp500 Ratio Level % Change'))
 
-        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(start_date, input_end_date, interval_input)
+        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, interval_input)
 
         if selected_comparator_rus2ksp500 == 'Greater than': #% Change - Greater than
             boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_pct_rus2ksp500, selected_ratio_pct_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -415,12 +418,12 @@ col1.subheader("S&P 500")
 with col1.expander("S&P500 Parameter Selection"):
     sp500col1, sp500col2 = st.columns(2)
     with sp500col1:
-        sp500_return_interval = int(st.text_input("# of intervals to calculate return", 10, key="sp500 return interval"))
+        sp500_return_interval = int(st.text_input(f"# of {grammatical_selection} to calculate return over", 10, key="sp500 return interval"))
     with sp500col2:
         sp500rsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='sp500 RSI show')
         if sp500rsishow:
             sp500_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "sp500 RSI length")) 
-            sp500, sp500rsicurrent = generate_sp500(start_date, input_end_date, interval=interval_input, rsi_value=sp500_rsi_length)
+            sp500, sp500rsicurrent = generate_sp500(input_start_date, input_end_date, interval=interval_input, rsi_value=sp500_rsi_length)
 
             sp500comparator = st.radio(f'Choose comparator, current RSI {sp500rsicurrent}',
                                        ['Greater than', 'Lower than'],
@@ -437,18 +440,18 @@ with col1.expander("S&P500 Parameter Selection"):
                 filtered_sp500rsi_metric = sp500[sp500['rsi'] < sp500rsivalue]
                 sp500_intersection.append(filtered_sp500rsi_metric)
         else:
-            sp500, sp500rsicurrent = generate_sp500(start_date, input_end_date, interval=interval_input)
+            sp500, sp500rsicurrent = generate_sp500(input_start_date, input_end_date, interval=interval_input)
 
 col2.subheader("Nasdaq")
 with col2.expander("Nasdaq Parameter Section"):
     ndxcol1, ndxcol2 = st.columns(2)
     with ndxcol1:
-        ndx_return_interval = int(st.text_input("# of intervals to calculate return", 10, key="ndx return interval"))
+        ndx_return_interval = int(st.text_input(f"# of {grammatical_selection} to calculate return over", 10, key="ndx return interval"))
     with ndxcol2:
         ndxrsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='ndx RSI show')
         if ndxrsishow:
             ndx_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "ndx RSI length"))
-            ndx, ndxrsicurrent = generate_ndx(start_date, input_end_date, interval=interval_input, rsi_value=ndx_rsi_length)
+            ndx, ndxrsicurrent = generate_ndx(input_start_date, input_end_date, interval=interval_input, rsi_value=ndx_rsi_length)
             ndxcomparator = st.radio(f'Choose comparator, current RSI {ndxrsicurrent}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -464,18 +467,18 @@ with col2.expander("Nasdaq Parameter Section"):
                 filtered_ndxrsi_metric = ndx[ndx['rsi'] < ndxrsivalue]
                 nasdaq_intersection.append(filtered_ndxrsi_metric)
         else:
-            ndx, ndxrsicurrent = generate_ndx(start_date, input_end_date, interval=interval_input)
+            ndx, ndxrsicurrent = generate_ndx(input_start_date, input_end_date, interval=interval_input)
 
 col3.subheader("Russell 2000")
 with col3.expander("Russell 2000 Parameter Section"):
     rus2kcol1, rus2kcol2 = st.columns(2)
     with rus2kcol1:
-        rus2k_return_interval = int(st.text_input("# of intervals to calculate return", 10, key="rus2k return interval"))
+        rus2k_return_interval = int(st.text_input(f"# of {grammatical_selection} to calculate return over", 10, key="rus2k return interval"))
     with rus2kcol2:
         rus2krsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='rus2k RSI show')
         if rus2krsishow:
             rus2k_rsi_length = int(st.text_input('Select RSI lenght (in intervals)', 22, key = "rus2k RSI length"))
-            rus2k, rus2krsicurrent = generate_rus2k(start_date, input_end_date, interval=interval_input, rsi_value=rus2k_rsi_length)
+            rus2k, rus2krsicurrent = generate_rus2k(input_start_date, input_end_date, interval=interval_input, rsi_value=rus2k_rsi_length)
             rus2kcomparator = st.radio(f'Choose comparator, current RSI {rus2krsicurrent}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -492,7 +495,7 @@ with col3.expander("Russell 2000 Parameter Section"):
                 filtered_rus2krsi_metric = rus2k[rus2k['rsi'] < rus2krsivalue]
                 rus2k_intersection.append(filtered_rus2krsi_metric)
         else:
-            rus2k, rus2krsicurrent = generate_rus2k(start_date, input_end_date, interval=interval_input)
+            rus2k, rus2krsicurrent = generate_rus2k(input_start_date, input_end_date, interval=interval_input)
 
 # --- Indices Generation ---
 if sidebar_counter > 0:
