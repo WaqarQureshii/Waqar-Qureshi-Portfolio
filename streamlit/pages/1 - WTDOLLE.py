@@ -191,7 +191,7 @@ if header_show_rsp == True:
             col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
         else:
             rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(db_rsp, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col3.metric(label=f'Price < {rsp_ma_length} MA {grammatical_selection}  {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
+            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
 
         col3.line_chart(db_rsp['ma'], height = 100, use_container_width = True)
 
