@@ -13,6 +13,8 @@ from functions.signal_generators import *
 
 st.set_page_config(layout="wide")
 
+st.title('What Transpired During Our Last Encounter (WTDOLLE)?')
+
 # -------- DATE SELECTION SECTION --------
     # --- DATE SELECTION ---
 today_date = datetime.today()
