@@ -69,79 +69,84 @@ class Generate_DB():
 
         return self
     
-    class Generate_Yield():
-        def __init__(self, start_date: str, end_date: str, interval: str = "1d"):
-            self.db = None
-            self.db_graph = None
+class Generate_Yield():
+    def __init__(self, start_date: str, end_date: str, interval: str = "1d"):
+        self.db = None
+        self.db_graph = None
 
-            self.yield_ratio = None
-            self.curr_yieldratio = None
-            self.curr_ltyield = None
-            self.curr_styield = None
+        self.yield_ratio = None
+        self.curr_yieldratio = None
+        self.curr_ltyield = None
+        self.curr_styield = None
 
-            self.curr_yielddiff = None
-            self.curr_ltdiff = None
-            self.curr_styield = None
+        self.curr_yielddiff = None
 
-            self.start_date = start_date
-            self.end_date = end_date
-            self.interval = interval
+        self.start_date = start_date
+        self.end_date = end_date
+        self.interval = interval
 
-        def generate_db(self, term_yield: str):
-            """
-            Provide the ticker for the term yield and generates a database; can either be:
-            - 3 month: ^IRX
-            - 10 year: ^TNX
-            - 30 year: ^TYX
-            """
-            self.db = yf.download([term_yield], self.start_date, self.end_date, interval=self.interval)
-            self.db_graph = self.db.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1)
-            self.db_graph['% Change'] = self.db['Close'].pct_change()
+    def generate_db(self, term_yield: str):
+        """
+        Provide the ticker for the term yield and generates a database; can either be:
+        - 3 month: ^IRX
+        - 10 year: ^TNX
+        - 30 year: ^TYX
+        """
+        self.db = yf.download([term_yield], self.start_date, self.end_date, interval=self.interval)
+        self.db_graph = self.db.drop(["Volume", 'Open', 'High', 'Low', 'Adj Close'], axis=1)
+        self.db_graph['% Change'] = self.db['Close'].pct_change()
 
-            return self.db_graph
+        return self.db_graph
+    
+    def calc_yield_curve(self, numerator: str, denominator: str):
+        """
+        Provide a numerator that is either 3 month (^IRX) or 10 year (^TNX) and a denominator that is either 10 year (^TNX) or 30 year (^TYX), returns a ratio between the numerator and denominator in a database.
+        """
+        # Generating Short and Long-Term databases
+        self.num_yield, self.den_yield = self.generate_db(numerator), self.generate_db(denominator)
+        self.num_yield.rename(columns={'Close': "Short Term Yield"}, inplace=True)
+        self.den_yield.rename(columns={'Close': "Long Term Yield"}, inplace=True)
+
+        # Calculates Yield Figures
+        self.yield_ratio = pd.concat([self.num_yield, self.den_yield], axis=1)
+        self.yield_ratio['Yield Ratio'] = self.yield_ratio['Short Term Yield']/self.yield_ratio['Long Term Yield']
+        self.yield_ratio['Yield Ratio % Chg'] = self.yield_ratio['Yield Ratio'].pct_change()
+
+        # Value for UI
+        self.curr_yieldratio = round(self.yield_ratio['Yield Ratio'].iloc[-1],2)
+        self.curr_ltyield = round(self.yield_ratio['Long Term Yield'].iloc[-1],2)
+        self.curr_styield = round(self.yield_ratio['Short Term Yield'].iloc[-1],2)
+
+        return self
+    
+    def calc_yield_diff(self, numerator: str, denominator: str):
+        """
+        Provide a numerator that is either 3 month (^IRX) or 10 year (^TNX) and a denominator that is either 10 year (^TNX) or 30 year (^TYX), returns a ratio between the numerator and denominator in a database.
+        """
+        # Generating Short and Long-Term databases
+        self.num_diff, self.den_diff = self.generate_db(numerator), self.generate_db(denominator)
+        self.num_diff.rename(columns={'Close': "Short Term Yield"}, inplace=True)
+        self.den_diff.rename(columns={'Close': "Long Term Yield"}, inplace=True)
+
+        # Calculates Yield Figures
+        self.yield_diff = pd.concat([self.num_diff, self.den_diff], axis=1)
+        self.yield_diff['Yield Diff'] = self.yield_diff['Long Term Yield'] - self.yield_diff['Short Term Yield']
+        self.yield_diff['Yield Diff % Chg'] = self.yield_diff['Yield Diff'].pct_change()
+
+        # Value for UI
+        self.curr_yielddiff = round(self.yield_diff['Yield Diff'].iloc[-1],2)
+        self.curr_ltyield = round(self.yield_diff['Long Term Yield'].iloc[-1],2)
+        self.curr_styield = round(self.yield_diff['Short Term Yield'].iloc[-1],2)
+
+        return self
+
+    def calc_diffgreater(self, selected_value, sp500intersection, ndxintersection, rus2kintersection):
+
+        self.Boolean = self.curr_yielddiff >= selected_value
+        filtered_database = self.yield_diff[self.yield_diff['Yield Diff'] <= selected_value]
         
-        def calc_yield_curve(self, numerator: str, denominator: str):
-            """
-            Provide a numerator that is either 3 month (^IRX) or 10 year (^TNX) and a denominator that is either 10 year (^TNX) or 30 year (^TYX), returns a ratio between the numerator and denominator in a database.
-            """
-            # Generating Short and Long-Term databases
-            self.num_yield, self.den_yield = self.generate_db(numerator), self.generate_db(denominator)
-            self.num_yield.rename(columns={'Close': "Short Term Yield"}, inplace=True)
-            self.den_yield.rename(columns={'Close': "Long Term Yield"}, inplace=True)
+        sp500intersection.append(filtered_database)
+        ndxintersection.append(filtered_database)
+        rus2kintersection.append(filtered_database)
 
-            # Calculates Yield Figures
-            self.yield_ratio = pd.concat([self.num_yield, self.den_yield], axis=1)
-            self.yield_ratio['Yield Ratio'] = self.yield_ratio['Short Term Yield']/self.yield_ratio['Long Term Yield']
-            self.yield_ratio['Yield Ratio % Chg'] = self.yield_ratio['Yield Ratio'].pct_change()
-
-            # Value for UI
-            self.curr_yieldratio = round(self.yield_ratio['Yield Ratio'].iloc[-1],2)
-            self.curr_ltyield = round(self.yield_ratio['Long Term Yield'].iloc[-1],2)
-            self.curr_styield = round(self.yield_ratio['Short Term Yield'].iloc[-1],2)
-
-            return self
-        
-        def calc_yield_diff(self, numerator: str, denominator: str):
-            """
-            Provide a numerator that is either 3 month (^IRX) or 10 year (^TNX) and a denominator that is either 10 year (^TNX) or 30 year (^TYX), returns a ratio between the numerator and denominator in a database.
-            """
-            # Generating Short and Long-Term databases
-            self.num_diff, self.den_diff = self.generate_db(numerator), self.generate_db(denominator)
-            self.num_diff.rename(columns={'Close': "Short Term Yield"}, inplace=True)
-            self.den_diff.rename(columns={'Close': "Long Term Yield"}, inplace=True)
-
-            # Calculates Yield Figures
-            self.yield_diff = pd.concat([self.num_diff, self.den_diff], axis=1)
-            self.yield_diff['Yield Diff'] = self.yield_diff['Long Term Yield'] - self.yield_diff['Short Term Yield']
-            self.yield_diff['Yield Diff % Chg'] = self.yield_diff['Yield Diff'].pct_change()
-
-            # Value for UI
-            self.curr_yielddiff = round(self.yield_diff['Yield Diff'].iloc[-1],2)
-            self.curr_ltyield = round(self.yield_diff['Long Term Yield'].iloc[-1],2)
-            self.curr_styield = round(self.yield_diff['Short Term Yield'].iloc[-1],2)
-
-            return self
-
-    ratio = Generate_Yield('2023-01-01', '2024-05-01').calc_yield_diff("^IRX", "^TNX")
-    print(ratio.yield_diff)
-
+        return self

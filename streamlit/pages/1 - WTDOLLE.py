@@ -10,7 +10,7 @@ from functools import reduce
 sys.path.append(".")
 from functions.generate_db import *
 from functions.signal_generators import *
-from functions.generations import Generate_DB
+from functions.generations import Generate_DB, Generate_Yield
 
 st.set_page_config(layout="wide")
 
@@ -246,33 +246,29 @@ if show_yieldcurve == True:
                                                  key = 'Yield Curve level'))
     
     if show_yield_option == '30-year':
-        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(input_start_date,
-                                        input_end_date,
-                                        lt_yield_inp='30y')
+        yielddiff = Generate_Yield(input_start_date, input_end_date, input_interval).calc_yield_diff('^IRX', '^TYX')
         
         if yieldcurve_comparator_selection == "Diff greater than": # Current Yield Curve greater than Selected Difference Value
-            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff.yield_diff, yielddiff.curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {yielddiff.curr_yielddiff}')
         
         else: # Current Yield Curve less than Selected Difference Value
-            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_lower(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_lower(yielddiff.yield_diff, yielddiff.curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {yielddiff.curr_yielddiff}')
     
     else:
-        yielddiff, curr_yielddiff, curr_ltyield, curr_styield = yield_diff(input_start_date,
-                                        input_end_date,
-                                        lt_yield_inp='10y')
+        yielddiff = Generate_Yield(input_start_date, input_end_date, input_interval).calc_yield_diff('^IRX', '^TNX')
         
         if yieldcurve_comparator_selection == "Diff greater than":
-            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff.yield_diff, yielddiff.curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {yielddiff.curr_yielddiff}')
 
         else:
-            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_lower(yielddiff, curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {curr_yielddiff}')
+            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_lower(yielddiff.yield_diff, yielddiff.curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {yielddiff.curr_yielddiff}')
 
 
-    col5.line_chart(yielddiff['Yield Diff'],
+    col5.line_chart(yielddiff.yield_diff['Yield Diff'],
                     use_container_width = True,
                     height = 100)
     
