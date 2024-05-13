@@ -10,6 +10,7 @@ from functools import reduce
 sys.path.append(".")
 from functions.generate_db import *
 from functions.signal_generators import *
+from functions.generations import Generate_DB
 
 st.set_page_config(layout="wide")
 
@@ -31,13 +32,13 @@ selection_interval = header_col2.radio("Select Interval",
                                        key = "interval_selection")
 
 if selection_interval == 'Daily':
-    interval_input = '1d'
+    input_interval = '1d'
     grammatical_selection = 'days'
 elif selection_interval == 'Weekly':
-    interval_input = '1wk'
+    input_interval = '1wk'
     grammatical_selection = 'weeks'
 elif selection_interval == 'Monthly':
-    interval_input = '1mo'
+    input_interval = '1mo'
     grammatical_selection = 'months'
 
 
@@ -61,29 +62,29 @@ if header_show_vix == True:
 # --- VIX UI ---
 # --- VIX Database Generation ---
     sidebar_counter += 1
-    db_vix, current_value_vix, current_pct_vix_str, current_pct_vix_int, current_pct_floor_vix, current_pct_ceiling_vix = generate_vix(input_start_date, input_end_date, interval_input)
+    vix = Generate_DB('^VIX', input_start_date, input_end_date, input_interval).get_database()
 
     selected_signal_vix = st.sidebar.radio('Choose Signal Type',
-                            [f'VIX % Change: {current_pct_vix_str}' ,f'VIX level: {round(current_value_vix,1)}'],
+                            [f'VIX % Change: {vix.pctchg_str}' ,f'VIX level: {round(vix.curr_p,1)}'],
                             index=0)
 
-    if selected_signal_vix == f'VIX level: {round(current_value_vix,1)}':
+    if selected_signal_vix == f'VIX level: {round(vix.curr_p,1)}':
 # ------ VIX UI for VIX level selection ------
         subheader_comparator_vix = st.sidebar.radio('Choose VIX comparator',
                                                     ['Greater than', "Less than"],
                                                     index = 1,
                                                     key = "comparator vix level selector")
-        selected_value_vix = int(st.sidebar.text_input("Input VIX integer (##)", value = int(current_value_vix+1))) #TODO add intelligent default values
+        selected_value_vix = int(st.sidebar.text_input("Input VIX integer (##)", value = int(vix.curr_p+1))) #TODO add intelligent default values
 
         if subheader_comparator_vix == 'Greater than':
-            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col1.metric(label=f'VIX > {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(vix.curr_p, selected_value_vix, vix.db, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label=f'VIX > {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(vix.curr_p)}')
 
         else:
-            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(current_value_vix, selected_value_vix, db_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col1.metric(label=f'VIX < {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(current_value_vix)}')
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(vix.curr_p, selected_value_vix, vix.db, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label=f'VIX < {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(vix.curr_p)}')
         
-        col1.line_chart(db_vix['Close'], height = 100, use_container_width = True)
+        col1.line_chart(vix.db['Close'], height = 100, use_container_width = True)
 
 # ------ VIX UI for VIX % Change Selection ------
     else:
@@ -91,16 +92,16 @@ if header_show_vix == True:
         ['Greater than', "Less than"],
         index = 1, key = "comparator vix pct selector")
         selected_pct_change = float(st.sidebar.text_input("Input percent increase/decrease", value = 
-        current_pct_ceiling_vix*100, key = 'VIX pct comparator value'))
+        vix.pctchg_ceil_int*100, key = 'VIX pct comparator value'))
         
         if subheader_comparator_vix == 'Greater than':
-            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_vix, subheader_comparator_vix, selected_pct_change, current_pct_vix_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col1.metric(label = f"VIX % > {selected_pct_change}", value = f'{boolean_vix} @ {current_pct_vix_str}')
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(vix.db, subheader_comparator_vix, selected_pct_change, vix.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label = f"VIX % > {selected_pct_change}", value = f'{boolean_vix} @ {vix.pctchg_str}')
         else:
-            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_vix, subheader_comparator_vix, selected_pct_change, current_pct_vix_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col1.metric(label = f"VIX % < {selected_pct_change}", value = f'{boolean_vix} @ {current_pct_vix_str}')
+            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(vix.db, subheader_comparator_vix, selected_pct_change, vix.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label = f"VIX % < {selected_pct_change}", value = f'{boolean_vix} @ {vix.pctchg_str}')
         
-        col1.line_chart(db_vix['% Change']*100, height = 100, use_container_width = True)
+        col1.line_chart(vix.db['% Change']*100, height = 100, use_container_width = True)
 else:
     pass
 st.sidebar.divider()
@@ -109,23 +110,22 @@ st.sidebar.divider()
 header_show_hyg = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False)
 if header_show_hyg == True:
     sidebar_counter += 1
-
-    db_hyg, current_pct_hyg_str, current_pct_hyg_int, current_pct_floor_hyg, current_pct_ceiling_hyg = generate_hyg(input_start_date, input_end_date, interval_input)
+    hyg = Generate_DB('HYG', input_start_date, input_end_date, input_interval).get_database()
 
     subheader_comparator_hyg = st.sidebar.radio('Choose HYG comparator',
     ['Greater than', "Less than"],
     index = 1, key = "comparator hyg pct selector")
     selected_pct_change = float(st.sidebar.text_input("Input percent increase/decrease", value = 
-    current_pct_ceiling_hyg*100, key = 'HYG pct comparator value'))
+    hyg.pctchg_ceil_int*100, key = 'HYG pct comparator value'))
     
     if subheader_comparator_hyg == 'Greater than':
-        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_hyg, subheader_comparator_hyg, selected_pct_change, current_pct_hyg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-        col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{boolean_hyg} @ {current_pct_hyg_str}')
+        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(hyg.db, subheader_comparator_hyg, selected_pct_change, hyg.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{boolean_hyg} @ {hyg.pctchg_str}')
     else:
-        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(db_hyg, subheader_comparator_hyg, selected_pct_change, current_pct_hyg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-        col2.metric(label = f"HYG % < {selected_pct_change}", value = f'{boolean_hyg} @ {current_pct_hyg_str}')
+        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(hyg.db, subheader_comparator_hyg, selected_pct_change, hyg.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        col2.metric(label = f"HYG % < {selected_pct_change}", value = f'{boolean_hyg} @ {hyg.pctchg_str}')
     
-    col2.line_chart(db_hyg['% Change']*100, height = 100, use_container_width = True)
+    col2.line_chart(hyg.db['% Change']*100, height = 100, use_container_width = True)
 
 st.sidebar.divider()
 
@@ -156,46 +156,47 @@ if header_show_rsp == True:
                                               70,
                                               key='rsp rsi value selection'))
         #---database generator---
-        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, interval_input, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
+        rsp = Generate_DB('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length, rsi_value=rsp_rsi_length).get_database()
+        # db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, input_interval, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
         #---database generator---
         
         if rsp_macomparator_selection == "Price greater than MA": #---Moving Average Signal generator---
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(db_rsp, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
-            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
+            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
+            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
         else:
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(db_rsp, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
+            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
 
         if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(db_rsp, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
+            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp.db, rsp.curr_rsi, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_rsi)}')
         else:
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(db_rsp, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
+            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(rsp.db, rsp.curr_rsi, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_rsi)}')
         
-        col3.line_chart(db_rsp['ma'], height = 100, use_container_width = True)
-        col4.line_chart(db_rsp['rsi'], height = 100, use_container_width = True)
+        col3.line_chart(rsp.db['ma'], height = 100, use_container_width = True)
+        col4.line_chart(rsp.db['rsi'], height = 100, use_container_width = True)
 
     elif 'Moving Average (MA)' in rspMAorRSI:
         st.sidebar.subheader('RSP Moving Average')
 
         sidebar_counter += 1
         rsp_ma_length = int(st.sidebar.text_input("Input Moving Average Length (interval)", 50, key='rsp ma length'))
-        
-        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, interval_input, ma_length = rsp_ma_length)
+
+        rsp = Generate_DB('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length).get_database()
 
         rsp_comparator_selection = st.sidebar.radio('Choose RSP comparator',
                                                     ['Price greater than MA', "Price less than MA"],
                                                     index = 0)
         
         if rsp_comparator_selection == "Price greater than MA":
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(db_rsp, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
-            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
+            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
+            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
         else:
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(db_rsp, rsp_price, rsp_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp_price)}')
+            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
 
-        col3.line_chart(db_rsp['ma'], height = 100, use_container_width = True)
+        col3.line_chart(rsp.db['ma'], height = 100, use_container_width = True)
 
         st.sidebar.write("")
     
@@ -204,7 +205,7 @@ if header_show_rsp == True:
         rsp_rsi_length = int(st.sidebar.text_input('Input RSI length', 22, key = 'rsp rsi length'))
 
         sidebar_counter += 1
-        db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, interval_input, rsi_value = rsp_rsi_length)
+        rsp = Generate_DB('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length).get_database()
         
         rsp_rsi_comparator = st.sidebar.radio('Choose RSP RSI comparator',
                                             ['Greater than', 'Less than'],
@@ -216,13 +217,13 @@ if header_show_rsp == True:
                                               key='rsp rsi value selection'))
         
         if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(db_rsp, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')
+            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp.db, rsp.curr_p, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
         else:
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(db_rsp, rsp_rsi_current_value, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp_rsi_current_value)}')   
+            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(rsp.db, rsp.curr_p, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_p)}')   
         
-        col4.line_chart(db_rsp['rsi'], height = 100, use_container_width = True)
+        col4.line_chart(rsp.db['rsi'], height = 100, use_container_width = True)
 
 else:
     pass
@@ -293,7 +294,7 @@ if header_show_ndxvssp500:
                                                            1,
                                                            key = 'Nasdaq vs Sp500 Ratio Level'))
         
-        db_ndxsp500, current_ratio_ndxsp500, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(input_start_date, input_end_date, interval_input)
+        db_ndxsp500, current_ratio_ndxsp500, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(input_start_date, input_end_date, input_interval)
 
         if selected_comparator_ndxsp500 == 'Greater than': #LEVEL - Greater than
             ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(db_ndxsp500, selected_comparator_ndxsp500, current_ratio_ndxsp500, selected_ratio_value_ndxsp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -313,7 +314,7 @@ if header_show_ndxvssp500:
                                                          index = 0, key = 'ndx vs SP500 Comparator Selection')
         ndxsp500_ratio_pct_selected = float(st.sidebar.text_input("Input Nasdaq vs SP500 Ratio % Change to compare against", 1.2, key = 'Nasdaq vs Sp500 Ratio Level % Change'))
 
-        db_ndxsp500, curr_ndxsp500_ratio, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(input_start_date, input_end_date, interval_input)
+        db_ndxsp500, curr_ndxsp500_ratio, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(input_start_date, input_end_date, input_interval)
 
         if selected_comparator_ndxsp500 == 'Greater than': #% Change - Greater than
             ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_ndxsp500, selected_comparator_ndxsp500, current_ratio_pct_ndxsp500, ndxsp500_ratio_pct_selected, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -345,7 +346,7 @@ if header_show_rus2ksp500:
                                                            1,
                                                            key = 'Russell 2000 vs Sp500 Ratio Level'))
         
-        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, interval_input)
+        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, input_interval)
 
         if selected_comparator_rus2ksp500 == 'Greater than': #LEVEL - Greater than
             boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_rus2ksp500, selected_ratio_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -365,7 +366,7 @@ if header_show_rus2ksp500:
                                                          index = 0, key = 'rus2k vs SP500 Comparator Selection')
         selected_ratio_pct_rus2ksp500 = float(st.sidebar.text_input("Input Russell 2000 vs SP500 Ratio % Change to compare against", 1.2, key = 'Russell 2000 vs Sp500 Ratio Level % Change'))
 
-        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, interval_input)
+        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, input_interval)
 
         if selected_comparator_rus2ksp500 == 'Greater than': #% Change - Greater than
             boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_pct_rus2ksp500, selected_ratio_pct_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
@@ -424,25 +425,24 @@ with col1.expander("S&P500 Parameter Selection"):
     with sp500col2:
         sp500rsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='sp500 RSI show')
         if sp500rsishow:
-            sp500_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "sp500 RSI length")) 
-            sp500, sp500rsicurrent = generate_sp500(input_start_date, input_end_date, interval=interval_input, rsi_value=sp500_rsi_length)
-
-            sp500comparator = st.radio(f'Choose comparator, current RSI {sp500rsicurrent}',
+            sp500_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "sp500 RSI length"))
+            sp500 = Generate_DB('^GSPC', input_start_date, input_end_date, input_interval, sp500_rsi_length).get_database()
+            sp500comparator = st.radio(f'Choose comparator, current RSI {sp500.curr_rsi}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
                                        key="sp500 RSI comparator")
             sp500rsivalue = int(st.text_input('Input RSI value',
-                                              sp500rsicurrent - 1,
+                                              sp500.curr_rsi - 1,
                                               key="sp500rsivalue"))
 
             if sp500comparator == 'Greater than':
-                filtered_sp500rsi_metric = sp500[sp500['rsi'] > sp500rsivalue]
+                filtered_sp500rsi_metric = sp500.db[sp500.db['rsi'] > sp500rsivalue]
                 sp500_intersection.append(filtered_sp500rsi_metric)
             else:
-                filtered_sp500rsi_metric = sp500[sp500['rsi'] < sp500rsivalue]
+                filtered_sp500rsi_metric = sp500.db[sp500.db['rsi'] < sp500rsivalue]
                 sp500_intersection.append(filtered_sp500rsi_metric)
         else:
-            sp500, sp500rsicurrent = generate_sp500(input_start_date, input_end_date, interval=interval_input)
+            sp500 = Generate_DB('^GSPC', input_start_date, input_end_date, input_interval).get_database()
 
 col2.subheader("Nasdaq")
 with col2.expander("Nasdaq Parameter Section"):
@@ -453,23 +453,23 @@ with col2.expander("Nasdaq Parameter Section"):
         ndxrsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='ndx RSI show')
         if ndxrsishow:
             ndx_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "ndx RSI length"))
-            ndx, ndxrsicurrent = generate_ndx(input_start_date, input_end_date, interval=interval_input, rsi_value=ndx_rsi_length)
-            ndxcomparator = st.radio(f'Choose comparator, current RSI {ndxrsicurrent}',
+            ndx = Generate_DB('^IXIC', input_start_date, input_end_date, input_interval, ndx_rsi_length).get_database()
+            ndxcomparator = st.radio(f'Choose comparator, current RSI {ndx.curr_rsi}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
                                        key="ndx RSI comparator")
             ndxrsivalue = int(st.text_input('Input RSI value',
-                                            ndxrsicurrent - 1,
+                                            ndx.curr_rsi - 1,
                                             key="ndxrsivalue"))
             
             if ndxcomparator =='Greater than':
-                filtered_ndxrsi_metric = ndx[ndx['rsi'] > ndxrsivalue]
+                filtered_ndxrsi_metric = ndx.db[ndx.db['rsi'] > ndxrsivalue]
                 nasdaq_intersection.append(filtered_ndxrsi_metric)
             else:
-                filtered_ndxrsi_metric = ndx[ndx['rsi'] < ndxrsivalue]
+                filtered_ndxrsi_metric = ndx.db[ndx.db['rsi'] < ndxrsivalue]
                 nasdaq_intersection.append(filtered_ndxrsi_metric)
         else:
-            ndx, ndxrsicurrent = generate_ndx(input_start_date, input_end_date, interval=interval_input)
+            ndx = Generate_DB('^IXIC', input_start_date, input_end_date, input_interval).get_database()
 
 col3.subheader("Russell 2000")
 with col3.expander("Russell 2000 Parameter Section"):
@@ -480,33 +480,33 @@ with col3.expander("Russell 2000 Parameter Section"):
         rus2krsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='rus2k RSI show')
         if rus2krsishow:
             rus2k_rsi_length = int(st.text_input('Select RSI lenght (in intervals)', 22, key = "rus2k RSI length"))
-            rus2k, rus2krsicurrent = generate_rus2k(input_start_date, input_end_date, interval=interval_input, rsi_value=rus2k_rsi_length)
-            rus2kcomparator = st.radio(f'Choose comparator, current RSI {rus2krsicurrent}',
+            rus2k = Generate_DB('^RUT', input_start_date, input_end_date, input_interval, rus2k_rsi_length).get_database()
+            rus2kcomparator = st.radio(f'Choose comparator, current RSI {rus2k.curr_rsi}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
                                        key="rus2k RSI comparator")
             rus2krsivalue = int(st.text_input('Input RSI value',
-                                            rus2krsicurrent - 1,
+                                            rus2k.curr_rsi - 1,
                                             key='rus2krsivalue'))
             
             if rus2kcomparator == 'Greater than':
-                filtered_rus2krsi_metric = rus2k[rus2k['rsi'] > rus2krsivalue]
+                filtered_rus2krsi_metric = rus2k.db[rus2k.db['rsi'] > rus2krsivalue]
                 rus2k_intersection.append(filtered_rus2krsi_metric)
 
             else:
-                filtered_rus2krsi_metric = rus2k[rus2k['rsi'] < rus2krsivalue]
+                filtered_rus2krsi_metric = rus2k.db[rus2k.db['rsi'] < rus2krsivalue]
                 rus2k_intersection.append(filtered_rus2krsi_metric)
         else:
-            rus2k, rus2krsicurrent = generate_rus2k(input_start_date, input_end_date, interval=interval_input)
+            rus2k = Generate_DB('^RUT', input_start_date, input_end_date, input_interval).get_database()
 
 # --- Indices Generation ---
 if sidebar_counter > 0:
     #---S&P500 DATABASE GENERATION---
-    db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500, sp500_intersection, sp500_return_interval)
+    db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500.db, sp500_intersection, sp500_return_interval)
     #-------S&P500 GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('S&P500')
-    ax.plot(sp500.index, sp500['Close'], linewidth = 0.5, color='black')
+    ax.plot(sp500.db.index, sp500.db['Close'], linewidth = 0.5, color='black')
     ax.scatter(db_filtered_sp500.index, db_filtered_sp500['Close'], marker='.', color='red', s = 10)
     graph1.pyplot(fig)
     #-------S&P500 GENERATE STATEMENTS--------
@@ -514,11 +514,11 @@ if sidebar_counter > 0:
     graph1.write('{:.2%}'.format(avg_sp500_return))
 
     #---NASDAQ DATABASE GENERATION---
-    db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx, nasdaq_intersection, ndx_return_interval)
+    db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx.db, nasdaq_intersection, ndx_return_interval)
     #-------NASDAQ GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('Nasdaq 100')
-    ax.plot(ndx.index, ndx['Close'], linewidth = 0.5, color='black')
+    ax.plot(ndx.db.index, ndx.db['Close'], linewidth = 0.5, color='black')
     ax.scatter(db_filtered_ndx.index, db_filtered_ndx['Close'], marker='.', color='red', s = 10)
     graph2.pyplot(fig)
     #-------NASDAQ GENERATE STATEMENTS-------
@@ -526,11 +526,11 @@ if sidebar_counter > 0:
     graph2.write('{:.2%}'.format(avg_ndx_return))
 
     #--RUSSEL 2000 DATABASE GENERATION
-    db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k, rus2k_intersection, rus2k_return_interval)
+    db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k.db, rus2k_intersection, rus2k_return_interval)
     #-----RUSSELL 2000 GRAPH-----
     fig, ax = plt.subplots()
     ax.set_title('Russel 2000')
-    ax.plot(rus2k.index, rus2k['Close'], linewidth = 0.5, color='black')
+    ax.plot(rus2k.db.index, rus2k.db['Close'], linewidth = 0.5, color='black')
     ax.scatter(db_filtered_rus2k.index, db_filtered_rus2k['Close'], marker='.', color='red', s = 10)
     graph3.pyplot(fig)
     #-------NASDAQ GENERATE STATEMENTS-------
