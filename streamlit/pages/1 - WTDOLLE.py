@@ -238,28 +238,32 @@ if show_yieldcurve == True:
                                     '30-year'],
                                     index = 1,
                                     key = 'show yield option')
-    yieldcurve_comparator_selection = st.sidebar.radio('Choose Yield Curve comparator',
+    yielddiff_comparator_selection = st.sidebar.radio('Choose Yield Curve comparator',
                                                        ['Diff greater than', 'Diff less than'],
                                                        index = 0)
     selected_yieldcurve_diff = float(st.sidebar.text_input("Input Yield Diff to compare",
                                                  0.5,
-                                                 key = 'Yield Curve level'))
+                                                 key = 'Yield Curve level')) #TODO use st.select_slider for a range instead possibly?
     
     if show_yield_option == '30-year':
         yielddiff = Generate_Yield(input_start_date, input_end_date, input_interval).calc_yield_diff('^IRX', '^TYX')
         
-        if yieldcurve_comparator_selection == "Diff greater than": # Current Yield Curve greater than Selected Difference Value
-            yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff.yield_diff, yielddiff.curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {yielddiff.curr_yielddiff}')
+        if yielddiff_comparator_selection == "Diff greater than":
+            yielddiff.calc_diffcomparison(selected_yieldcurve_diff, yielddiff_comparator_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = yielddiff.sp500intersection, yielddiff.ndxintersection, yielddiff.rus2kintersection #TODO Latest Update
+
+            col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yielddiff.diff_boolean} @ {yielddiff.curr_yielddiff}')
         
         else: # Current Yield Curve less than Selected Difference Value
+            yielddiff.calc_diffcomparison(selected_yieldcurve_diff, yielddiff_comparator_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            
             yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_lower(yielddiff.yield_diff, yielddiff.curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
             col5.metric(label=f'Yield Diff < {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {yielddiff.curr_yielddiff}')
     
     else:
         yielddiff = Generate_Yield(input_start_date, input_end_date, input_interval).calc_yield_diff('^IRX', '^TNX')
         
-        if yieldcurve_comparator_selection == "Diff greater than":
+        if yielddiff_comparator_selection == "Diff greater than":
             yield_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldcurve_diff_greater(yielddiff.yield_diff, yielddiff.curr_yielddiff, selected_yieldcurve_diff, sp500_intersection, nasdaq_intersection, rus2k_intersection)
             col5.metric(label=f'Yield Diff > {selected_yieldcurve_diff}', value = f'{yield_boolean} @ {yielddiff.curr_yielddiff}')
 

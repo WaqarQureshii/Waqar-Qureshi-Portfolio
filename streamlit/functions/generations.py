@@ -31,6 +31,9 @@ class Generate_DB():
         self.pctchg_str = None
         self.pctchg_floor_int = None
         self.pctchg_ceil_int = None
+        self.diff_boolean = None
+
+        self.sp500intersection, self.ndxintersection, self.rus2kintersection = None*3
 
         self.ticker = ticker
         self.start_date = start_date
@@ -140,13 +143,24 @@ class Generate_Yield():
 
         return self
 
-    def calc_diffgreater(self, selected_value, sp500intersection, ndxintersection, rus2kintersection):
+    def calc_diffcomparison(self, selected_value, comparison, sp500intersection, ndxintersection, rus2kintersection):
+        self.sp500intersection = None
+        self.ndxintersection = None
+        self.rus2kintersection = None
+        if comparison == "Diff greater than":
+            self.diff_boolean = self.curr_yielddiff >= selected_value
+            filtered_database = self.yield_diff[self.yield_diff['Yield Diff'] >= selected_value]
+            
+            sp500intersection.append(filtered_database)
+            ndxintersection.append(filtered_database)
+            rus2kintersection.append(filtered_database)
 
-        self.Boolean = self.curr_yielddiff >= selected_value
-        filtered_database = self.yield_diff[self.yield_diff['Yield Diff'] <= selected_value]
-        
-        sp500intersection.append(filtered_database)
-        ndxintersection.append(filtered_database)
-        rus2kintersection.append(filtered_database)
+        elif comparison == "Diff less than":
+            self.boolean = self.curr_yielddiff < selected_value
+            filtered_database = self.yield_diff[self.yield_diff['Yield Diff'] < selected_value]
+            
+            sp500intersection.append(filtered_database)
+            ndxintersection.append(filtered_database)
+            rus2kintersection.append(filtered_database)
 
         return self
