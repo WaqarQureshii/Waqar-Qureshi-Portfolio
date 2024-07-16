@@ -5,8 +5,8 @@ import streamlit as st
 
 import math
 
-class Generate_DB():
-    def __init__(self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50):
+class Generate_DB:
+    def __init__(self):
         """
         Generates database with all of its metrics by providing it parameters.
 
@@ -31,24 +31,17 @@ class Generate_DB():
         self.pctchg_str = None
         self.pctchg_floor_int = None
         self.pctchg_ceil_int = None
-
-        self.ticker = ticker
-        self.start_date = start_date
-        self.end_date = end_date
-        self.interval = interval
-        self.rsi_value = rsi_value
-        self.ma_length = ma_length
     
-    def get_database(self):
-        self.db = yf.download([self.ticker], start=self.start_date, end=self.end_date, interval=self.interval)
+    def get_database(self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50):
+        self.db = yf.download([ticker], start=start_date, end=end_date, interval=interval)
         
         # Database Massage
         self.db['% Change'] = self.db['Close'].pct_change()
 
         # (-) Columns
         self.db = self.db.drop(['Adj Close'], axis=1)
-        self.db['rsi'] = ta.rsi(close = self.db.Close, length=self.rsi_value)
-        self.db['ma'] = ta.sma(close = self.db.Close, length=self.ma_length)
+        self.db['rsi'] = ta.rsi(close = self.db.Close, length=rsi_value)
+        self.db['ma'] = ta.sma(close = self.db.Close, length=ma_length)
         
         # (+) % Change
         self.pctchg_int = self.db["% Change"].iloc[-1] # % Change COLUMN
@@ -67,7 +60,30 @@ class Generate_DB():
         # get Current Price
         self.curr_p = int(self.db["Close"].iloc[-1])
 
-        return self
+    def price_vs_selection(self, comparator:str, selected_value, sp500, ndx, rus2k):
+        '''
+        Compares the current level price with the selected value.
+
+        Args:
+        comparator: 'p greater', 'p lower'
+
+        Output:
+        self, sp500_intersection, ndx_intersection, rus2k_intersection
+        '''
+        if comparator == 'p greater':
+            self.boolean_price_vs_selection = self.curr_p > selected_value
+            filtered_database = self.db[self.db['Close'] > selected_value]
+        elif comparator == 'p lower':
+            self.boolean_price_vs_selection = self.curr_p < selected_value
+            filtered_database = self.db[self.db['Close'] < selected_value]
+        else:
+            return "Check comparator value, should be either p greater or lower"
+
+        sp500.append(filtered_database)
+        ndx.append(filtered_database)
+        rus2k.append(filtered_database)        
+
+        return sp500, ndx, rus2k
     
 class Generate_Yield():
     def __init__(self, start_date: str, end_date: str, interval: str = "1d"):
@@ -149,4 +165,4 @@ class Generate_Yield():
         ndxintersection.append(filtered_database)
         rus2kintersection.append(filtered_database)
 
-        return self
+        return sp500intersection, ndxintersection, rus2kintersection
