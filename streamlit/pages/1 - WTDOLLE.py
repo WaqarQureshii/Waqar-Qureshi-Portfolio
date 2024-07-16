@@ -78,12 +78,14 @@ if header_show_vix == True:
         selected_value_vix = int(st.sidebar.text_input("Input VIX integer (##)", value = int(vix.curr_p+1))) #TODO add intelligent default values
 
         if subheader_comparator_vix == 'Greater than':
-            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(vix.curr_p, selected_value_vix, vix.db, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col1.metric(label=f'VIX > {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(vix.curr_p)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.price_vs_selection('p greater', selected_value_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            # boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_greater_than(vix.curr_p, selected_value_vix, vix.db, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label=f'VIX > {selected_value_vix}', value = f'{vix.boolean_price_vs_selection} @ {"{:.0f}".format(vix.curr_p)}')
 
         else:
-            boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(vix.curr_p, selected_value_vix, vix.db, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col1.metric(label=f'VIX < {selected_value_vix}', value = f'{boolean_vix} @ {"{:.0f}".format(vix.curr_p)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.price_vs_selection('p lower', selected_value_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            # boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_level_lower_than(vix.curr_p, selected_value_vix, vix.db, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            col1.metric(label=f'VIX < {selected_value_vix}', value = f'{vix.boolean_price_vs_selection} @ {"{:.0f}".format(vix.curr_p)}')
         
         col1.line_chart(vix.db['Close'], height = 100, use_container_width = True)
 
