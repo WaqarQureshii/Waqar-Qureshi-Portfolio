@@ -62,7 +62,8 @@ if header_show_vix == True:
 # --- VIX UI ---
 # --- VIX Database Generation ---
     sidebar_counter += 1
-    vix = Generate_DB('^VIX', input_start_date, input_end_date, input_interval).get_database()
+    vix = Generate_DB()
+    vix.get_database('^VIX', input_start_date, input_end_date, input_interval)
 
     selected_signal_vix = st.sidebar.radio('Choose Signal Type',
                             [f'VIX % Change: {vix.pctchg_str}' ,f'VIX level: {round(vix.curr_p,1)}'],
@@ -110,7 +111,8 @@ st.sidebar.divider()
 header_show_hyg = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False)
 if header_show_hyg == True:
     sidebar_counter += 1
-    hyg = Generate_DB('HYG', input_start_date, input_end_date, input_interval).get_database()
+    hyg = Generate_DB()
+    hyg.get_database('HYG', input_start_date, input_end_date, input_interval)
 
     subheader_comparator_hyg = st.sidebar.radio('Choose HYG comparator',
     ['Greater than', "Less than"],
@@ -156,7 +158,8 @@ if header_show_rsp == True:
                                               70,
                                               key='rsp rsi value selection'))
         #---database generator---
-        rsp = Generate_DB('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length, rsi_value=rsp_rsi_length).get_database()
+        rsp = Generate_DB()
+        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length, rsi_value=rsp_rsi_length)
         # db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, input_interval, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
         #---database generator---
         
@@ -183,7 +186,8 @@ if header_show_rsp == True:
         sidebar_counter += 1
         rsp_ma_length = int(st.sidebar.text_input("Input Moving Average Length (interval)", 50, key='rsp ma length'))
 
-        rsp = Generate_DB('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length).get_database()
+        rsp = Generate_DB()
+        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length)
 
         rsp_comparator_selection = st.sidebar.radio('Choose RSP comparator',
                                                     ['Price greater than MA', "Price less than MA"],
@@ -205,7 +209,8 @@ if header_show_rsp == True:
         rsp_rsi_length = int(st.sidebar.text_input('Input RSI length', 22, key = 'rsp rsi length'))
 
         sidebar_counter += 1
-        rsp = Generate_DB('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length).get_database()
+        rsp = Generate_DB()
+        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length)
         
         rsp_rsi_comparator = st.sidebar.radio('Choose RSP RSI comparator',
                                             ['Greater than', 'Less than'],
@@ -422,7 +427,8 @@ with col1.expander("S&P500 Parameter Selection"):
         sp500rsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='sp500 RSI show')
         if sp500rsishow:
             sp500_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "sp500 RSI length"))
-            sp500 = Generate_DB('^GSPC', input_start_date, input_end_date, input_interval, sp500_rsi_length).get_database()
+            sp500 = Generate_DB()
+            sp500.get_database('^GSPC', input_start_date, input_end_date, input_interval, sp500_rsi_length)
             sp500comparator = st.radio(f'Choose comparator, current RSI {sp500.curr_rsi}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -438,7 +444,8 @@ with col1.expander("S&P500 Parameter Selection"):
                 filtered_sp500rsi_metric = sp500.db[sp500.db['rsi'] < sp500rsivalue]
                 sp500_intersection.append(filtered_sp500rsi_metric)
         else:
-            sp500 = Generate_DB('^GSPC', input_start_date, input_end_date, input_interval).get_database()
+            sp500 = Generate_DB()
+            sp500.get_database('^GSPC', input_start_date, input_end_date, input_interval)
 
 col2.subheader("Nasdaq")
 with col2.expander("Nasdaq Parameter Section"):
@@ -449,7 +456,8 @@ with col2.expander("Nasdaq Parameter Section"):
         ndxrsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='ndx RSI show')
         if ndxrsishow:
             ndx_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "ndx RSI length"))
-            ndx = Generate_DB('^IXIC', input_start_date, input_end_date, input_interval, ndx_rsi_length).get_database()
+            ndx = Generate_DB()
+            ndx.get_database('^IXIC', input_start_date, input_end_date, input_interval, ndx_rsi_length)
             ndxcomparator = st.radio(f'Choose comparator, current RSI {ndx.curr_rsi}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -465,7 +473,8 @@ with col2.expander("Nasdaq Parameter Section"):
                 filtered_ndxrsi_metric = ndx.db[ndx.db['rsi'] < ndxrsivalue]
                 nasdaq_intersection.append(filtered_ndxrsi_metric)
         else:
-            ndx = Generate_DB('^IXIC', input_start_date, input_end_date, input_interval).get_database()
+            ndx = Generate_DB()
+            ndx.get_database('^IXIC', input_start_date, input_end_date, input_interval)
 
 col3.subheader("Russell 2000")
 with col3.expander("Russell 2000 Parameter Section"):
@@ -476,7 +485,8 @@ with col3.expander("Russell 2000 Parameter Section"):
         rus2krsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='rus2k RSI show')
         if rus2krsishow:
             rus2k_rsi_length = int(st.text_input('Select RSI lenght (in intervals)', 22, key = "rus2k RSI length"))
-            rus2k = Generate_DB('^RUT', input_start_date, input_end_date, input_interval, rus2k_rsi_length).get_database()
+            rus2k = Generate_DB()
+            rus2k.get_database('^RUT', input_start_date, input_end_date, input_interval, rus2k_rsi_length)
             rus2kcomparator = st.radio(f'Choose comparator, current RSI {rus2k.curr_rsi}',
                                        ['Greater than', 'Lower than'],
                                        index = 0,
@@ -493,7 +503,8 @@ with col3.expander("Russell 2000 Parameter Section"):
                 filtered_rus2krsi_metric = rus2k.db[rus2k.db['rsi'] < rus2krsivalue]
                 rus2k_intersection.append(filtered_rus2krsi_metric)
         else:
-            rus2k = Generate_DB('^RUT', input_start_date, input_end_date, input_interval).get_database()
+            rus2k = Generate_DB()
+            rus2k.get_database('^RUT', input_start_date, input_end_date, input_interval)
 
 # --- Indices Generation ---
 if sidebar_counter > 0:
