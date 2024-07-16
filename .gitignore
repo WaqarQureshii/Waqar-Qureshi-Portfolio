@@ -2,4 +2,6 @@
 /venv*
 .DS_Store
 */__pycache__/*
+functions/__pycache__
 stock_market_assessment.code-workspace
+env_var.py
