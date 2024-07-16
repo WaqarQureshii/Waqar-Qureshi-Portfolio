@@ -1,5 +1,9 @@
 /venv_macos/
 /venv*
+venv_winwork
+functions/__pycache__
 .DS_Store
 */__pycache__/*
 stock_market_assessment.code-workspace
+env_var.py
+
