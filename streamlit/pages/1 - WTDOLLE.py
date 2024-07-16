@@ -168,11 +168,14 @@ if header_show_rsp == True:
         rsp.get_database('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length, rsi_value=rsp_rsi_length)
 
         if rsp_macomparator_selection == "Price greater than MA": #---Moving Average Signal generator---
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
-            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Greater than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection) #TODO need to change the metric to be "whenever price crosses MA", and not "every single time Price is over"
+            
+            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
+
         else:
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Less than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
 
         if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
             rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp.db, rsp.curr_rsi, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
