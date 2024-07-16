@@ -2,4 +2,6 @@
 /venv*
 .DS_Store
 */__pycache__/*
+/streamlit/functions/__pycache__
 stock_market_assessment.code-workspace
+/streamlit/functions/__pycache__

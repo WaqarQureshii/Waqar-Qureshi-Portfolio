@@ -65,7 +65,7 @@ class Generate_DB:
         Compares the current level price with the selected value.
 
         Args:
-        comparison_type: 'current price', '% change'
+        comparison_type: 'current price', '% change', 'price vs ma'
         comparator: 'Greater than', 'Less than'
 
         Output:
@@ -104,6 +104,7 @@ class Generate_DB:
             self.boolean_comp = ref_dict[comparison_type]['1st value'] < ref_dict[comparison_type]['2nd value']
 
             filtered_database = self.db[ref_dict[comparison_type]['1st col'] < ref_dict[comparison_type]['2nd col']]
+
         else:
             return "Check comparator value, should be either p greater or lower"
 
