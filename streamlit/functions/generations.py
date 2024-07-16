@@ -60,22 +60,35 @@ class Generate_DB:
         # get Current Price
         self.curr_p = int(self.db["Close"].iloc[-1])
 
-    def price_vs_selection(self, comparator:str, selected_value, sp500, ndx, rus2k):
+    def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame):
         '''
         Compares the current level price with the selected value.
 
         Args:
-        comparator: 'p greater', 'p lower'
+        comparison_type: 'current price', '% change'
+        comparator: 'Greater than', 'Less than'
 
         Output:
         self, sp500_intersection, ndx_intersection, rus2k_intersection
         '''
-        if comparator == 'p greater':
-            self.boolean_price_vs_selection = self.curr_p > selected_value
-            filtered_database = self.db[self.db['Close'] > selected_value]
-        elif comparator == 'p lower':
-            self.boolean_price_vs_selection = self.curr_p < selected_value
-            filtered_database = self.db[self.db['Close'] < selected_value]
+        ref_dict = {
+            "current price": {
+                "value": self.curr_p,
+                "col_name": "Close",
+                "multiplier": 1
+            },
+            "% change": {
+                "value": self.pctchg_int*100,
+                "col_name": "% Change",
+                "multiplier": 100
+            }
+        }
+        if comparator == 'Greater than':
+            self.boolean_comp = ref_dict[comparison_type]['value'] > selected_value
+            filtered_database = self.db[self.db[ref_dict[comparison_type]['col_name']]*ref_dict[comparison_type]['multiplier'] > selected_value]
+        elif comparator == 'Less than':
+            self.boolean_comp = ref_dict[comparison_type]['value'] < selected_value
+            filtered_database = self.db[self.db[ref_dict[comparison_type]['col_name']]*ref_dict[comparison_type]['multiplier'] < selected_value]
         else:
             return "Check comparator value, should be either p greater or lower"
 
@@ -84,6 +97,7 @@ class Generate_DB:
         rus2k.append(filtered_database)        
 
         return sp500, ndx, rus2k
+
     
 class Generate_Yield():
     def __init__(self, start_date: str, end_date: str, interval: str = "1d"):
