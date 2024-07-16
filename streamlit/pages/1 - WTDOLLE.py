@@ -142,7 +142,8 @@ header_show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
 if header_show_rsp == True:
     rspMAorRSI = st.sidebar.multiselect('Choose your RSP parameters', ['Moving Average (MA)', 'RSI (Relative Strength Index)'])
     st.sidebar.write("")
-    
+
+# BOTH Price vs MA and RSI selected
     if 'Moving Average (MA)' in rspMAorRSI and 'RSI (Relative Strength Index)' in rspMAorRSI:
         st.sidebar.subheader('RSP Moving Average') #---MOVING AVERAGE SECTION---
 
@@ -166,7 +167,7 @@ if header_show_rsp == True:
         #---database generator---
         rsp = Generate_DB()
         rsp.get_database('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length, rsi_value=rsp_rsi_length)
-
+# ONLY Price vs MA selected
         if rsp_macomparator_selection == "Price greater than MA": #---Moving Average Signal generator---
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Greater than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection) #TODO need to change the metric to be "whenever price crosses MA", and not "every single time Price is over"
             
@@ -177,12 +178,15 @@ if header_show_rsp == True:
 
             col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
 
+# ONLY RSI selected
         if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp.db, rsp.curr_rsi, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_rsi)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI > {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')
         else:
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(rsp.db, rsp.curr_rsi, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_rsi)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI < {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')
         
         col3.line_chart(rsp.db['ma'], height = 100, use_container_width = True)
         col4.line_chart(rsp.db['rsi'], height = 100, use_container_width = True)
@@ -201,11 +205,14 @@ if header_show_rsp == True:
                                                     index = 0)
         
         if rsp_comparator_selection == "Price greater than MA":
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
-            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Greater than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
+
         else:
-            rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_lower_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Lower than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
 
         col3.line_chart(rsp.db['ma'], height = 100, use_container_width = True)
 
@@ -229,11 +236,13 @@ if header_show_rsp == True:
                                               key='rsp rsi value selection'))
         
         if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_greater_than(rsp.db, rsp.curr_p, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_p)}')
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            
+            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')
         else:
-            rsp_rsi_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_rsi_lower_than(rsp.db, rsp.curr_p, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp_rsi_boolean} @ {"{:.0f}".format(rsp.curr_p)}')   
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+
+            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')   
         
         col4.line_chart(rsp.db['rsi'], height = 100, use_container_width = True)
 

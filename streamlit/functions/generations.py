@@ -76,22 +76,25 @@ class Generate_DB:
                 "1st value": self.curr_p,
                 "2nd value": selected_value,
                 "1st col": self.db["Close"],
-                "2nd col": selected_value,
-                "1st multiplier": 1
+                "2nd col": selected_value
             },
             "% change": {
                 "1st value": self.pctchg_int*100,
                 "2nd value": selected_value,
                 "1st col": self.db["% Change"]*100,
-                "2nd col": selected_value,
-                "1st multiplier": 100
+                "2nd col": selected_value
             },
             "price vs ma": {
                 "1st value": self.curr_p,
                 "2nd value": self.curr_ma,
                 "1st col": self.db["Close"],
-                "2nd col": self.db['ma'],
-                "1st multiplier": 1
+                "2nd col": self.db['ma']
+            },
+            "rsi vs selection": {
+                "1st value": self.curr_rsi,
+                "2nd value": selected_value,
+                "1st col": self.db["rsi"],
+                "2nd col": selected_value
             }
         }
 
