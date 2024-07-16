@@ -100,12 +100,10 @@ if header_show_vix == True:
         if subheader_comparator_vix == 'Greater than':
             sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_selection('% change', subheader_comparator_vix, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
 
-            # boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(vix.db, subheader_comparator_vix, selected_pct_change, vix.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
             col1.metric(label = f"VIX % > {selected_pct_change}", value = f'{vix.boolean_comp} @ {vix.pctchg_str}')
         else:
             sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_selection('% change', subheader_comparator_vix, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
 
-            # boolean_vix, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(vix.db, subheader_comparator_vix, selected_pct_change, vix.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
             col1.metric(label = f"VIX % < {selected_pct_change}", value = f'{vix.boolean_comp} @ {vix.pctchg_str}')
         
         col1.line_chart(vix.db['% Change']*100, height = 100, use_container_width = True)
@@ -127,11 +125,13 @@ if header_show_hyg == True:
     hyg.pctchg_ceil_int*100, key = 'HYG pct comparator value'))
     
     if subheader_comparator_hyg == 'Greater than':
-        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(hyg.db, subheader_comparator_hyg, selected_pct_change, hyg.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-        col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{boolean_hyg} @ {hyg.pctchg_str}')
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_selection('% change', subheader_comparator_hyg, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        
+        col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{hyg.boolean_comp} @ {hyg.pctchg_str}')
     else:
-        boolean_hyg, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_pct_change_manual(hyg.db, subheader_comparator_hyg, selected_pct_change, hyg.pctchg_int, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-        col2.metric(label = f"HYG % < {selected_pct_change}", value = f'{boolean_hyg} @ {hyg.pctchg_str}')
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_selection('% change', subheader_comparator_hyg, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        
+        col2.metric(label = f"HYG % < {selected_pct_change}", value = f'{hyg.boolean_comp} @ {hyg.pctchg_str}')
     
     col2.line_chart(hyg.db['% Change']*100, height = 100, use_container_width = True)
 
@@ -166,9 +166,7 @@ if header_show_rsp == True:
         #---database generator---
         rsp = Generate_DB()
         rsp.get_database('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length, rsi_value=rsp_rsi_length)
-        # db_rsp, rsp_price, rsp_ma, rsp_rsi_current_value = generate_rsp(input_start_date, input_end_date, input_interval, ma_length = rsp_ma_length, rsi_value = rsp_rsi_length)
-        #---database generator---
-        
+
         if rsp_macomparator_selection == "Price greater than MA": #---Moving Average Signal generator---
             rsp_ma_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_p_greater_than_MA(rsp.db, rsp.curr_p, rsp.curr_ma, sp500_intersection, nasdaq_intersection, rus2k_intersection)  
             col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp_ma_boolean} @ {"{:.0f}".format(rsp.curr_p)}')

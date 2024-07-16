@@ -73,22 +73,37 @@ class Generate_DB:
         '''
         ref_dict = {
             "current price": {
-                "value": self.curr_p,
-                "col_name": "Close",
-                "multiplier": 1
+                "1st value": self.curr_p,
+                "2nd value": selected_value,
+                "1st col": self.db["Close"],
+                "2nd col": selected_value,
+                "1st multiplier": 1
             },
             "% change": {
-                "value": self.pctchg_int*100,
-                "col_name": "% Change",
-                "multiplier": 100
+                "1st value": self.pctchg_int*100,
+                "2nd value": selected_value,
+                "1st col": self.db["% Change"]*100,
+                "2nd col": selected_value,
+                "1st multiplier": 100
+            },
+            "price vs ma": {
+                "1st value": self.curr_p,
+                "2nd value": self.curr_ma,
+                "1st col": self.db["Close"],
+                "2nd col": self.db['ma'],
+                "1st multiplier": 1
             }
         }
+
         if comparator == 'Greater than':
-            self.boolean_comp = ref_dict[comparison_type]['value'] > selected_value
-            filtered_database = self.db[self.db[ref_dict[comparison_type]['col_name']]*ref_dict[comparison_type]['multiplier'] > selected_value]
+            self.boolean_comp = ref_dict[comparison_type]['1st value'] > ref_dict[comparison_type]['2nd value']
+
+            filtered_database = self.db[ref_dict[comparison_type]['1st col'] > ref_dict[comparison_type]['2nd col']]
+
         elif comparator == 'Less than':
-            self.boolean_comp = ref_dict[comparison_type]['value'] < selected_value
-            filtered_database = self.db[self.db[ref_dict[comparison_type]['col_name']]*ref_dict[comparison_type]['multiplier'] < selected_value]
+            self.boolean_comp = ref_dict[comparison_type]['1st value'] < ref_dict[comparison_type]['2nd value']
+
+            filtered_database = self.db[ref_dict[comparison_type]['1st col'] < ref_dict[comparison_type]['2nd col']]
         else:
             return "Check comparator value, should be either p greater or lower"
 
