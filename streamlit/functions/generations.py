@@ -60,6 +60,13 @@ class Generate_DB:
         # get Current Price
         self.curr_p = int(self.db["Close"].iloc[-1])
 
+    def generate_ratio(self, numerator, denominator, start_date, end_date, interval, ):
+        numerator = Generate_DB()
+        numerator.get_database(ticker=numerator, start_date=start_date, end_date=end_date, interval=interval)
+
+        denominator = Generate_DB()
+        denominator.get_database(ticker=denominator, start_date=start_date, end_date=end_date, interval=interval)
+
     def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame):
         '''
         Compares the current level price with the selected value.
@@ -163,39 +170,6 @@ class Generate_Yield():
         self.curr_ltyield = round(self.yield_ratio['Long Term Yield'].iloc[-1],2)
         self.curr_styield = round(self.yield_ratio['Short Term Yield'].iloc[-1],2)
 
-    
-    def generate_yield_diff(self, numerator: str, denominator: str):
-        """
-        Provide a numerator that is either 3 month (^IRX) or 10 year (^TNX) and a denominator that is either 10 year (^TNX) or 30 year (^TYX), returns a ratio between the numerator and denominator in a database.
-        """
-        # Generating Short and Long-Term databases
-        self.num_diff, self.den_diff = self.generate_db(numerator), self.generate_db(denominator)
-        self.num_diff.rename(columns={'Close': "Short Term Yield"}, inplace=True)
-        self.den_diff.rename(columns={'Close': "Long Term Yield"}, inplace=True)
-
-        # Calculates Yield Figures
-        self.yield_diff = pd.concat([self.num_diff, self.den_diff], axis=1)
-        self.yield_diff['Yield Diff'] = self.yield_diff['Long Term Yield'] - self.yield_diff['Short Term Yield']
-        self.yield_diff['Yield Diff % Chg'] = self.yield_diff['Yield Diff'].pct_change()
-
-        # Value for UI
-        self.curr_yielddiff = round(self.yield_diff['Yield Diff'].iloc[-1],2)
-        self.curr_ltyield = round(self.yield_diff['Long Term Yield'].iloc[-1],2)
-        self.curr_styield = round(self.yield_diff['Short Term Yield'].iloc[-1],2)
-
-        return self
-
-    def calc_diffgreater(self, selected_value, sp500intersection, ndxintersection, rus2kintersection):
-
-        self.Boolean = self.curr_yielddiff >= selected_value
-        filtered_database = self.yield_diff[self.yield_diff['Yield Diff'] <= selected_value]
-        
-        sp500intersection.append(filtered_database)
-        ndxintersection.append(filtered_database)
-        rus2kintersection.append(filtered_database)
-
-        return sp500intersection, ndxintersection, rus2kintersection
-    
     def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame):
         type_dicts = {
             "ratio vs selection": {
