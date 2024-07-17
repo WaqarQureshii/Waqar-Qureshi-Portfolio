@@ -1,7 +1,6 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
-import streamlit as st
 
 import math
 
@@ -24,9 +23,6 @@ class Generate_DB:
             High Yield Corp Bond = HYG\n
         """
         self.db = None
-        self.curr_ratio = None
-        self.curr_ratio_pct = None
-        self.curr_ratio_pct_str = None
         self.curr_rsi = None
         self.curr_ma = None
         self.curr_p = None
@@ -43,6 +39,7 @@ class Generate_DB:
 
         # (-) Columns
         self.db = self.db.drop(['Adj Close'], axis=1)
+
         self.db['rsi'] = ta.rsi(close = self.db.Close, length=rsi_value)
         self.db['ma'] = ta.sma(close = self.db.Close, length=ma_length)
         
@@ -63,7 +60,7 @@ class Generate_DB:
         # get Current Price
         self.curr_p = int(self.db["Close"].iloc[-1])
 
-    def generate_ratio(self, numerator, denominator, start_date, end_date, interval):
+    def generate_ratio(self, numerator, denominator, start_date, end_date, interval, rsi_length:int=22, ma_length:int=50):
         '''
         Args:
         numerator or denominator: Nasdaq, S&P 500, Russel 2000, S&P 500 Equal Weight
@@ -74,25 +71,34 @@ class Generate_DB:
             "Russel 2000": "^RUT",
             "S&P 500 Equal Weight": "RSP"
         }
-        numerator = Generate_DB()
-        numerator.get_database(ticker=ticker_dict[numerator], start_date=start_date, end_date=end_date, interval=interval)
-        numerator.db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'rsi'], axis = 1, inplace=True)
-        numerator.db.rename(columns={'Close': f'{numerator} Close'}, inplace=True)
 
-        denominator = Generate_DB()
-        denominator.get_database(ticker=ticker_dict[denominator], start_date=start_date, end_date=end_date, interval=interval)
-        denominator.db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'rsi'], axis = 1, inplace=True)
-        denominator.db.rename(columns={'Close': f'{denominator} Close'},inplace=True)
+        numerator_cls = Generate_DB()
+        numerator_ticker=ticker_dict.get(numerator)
+        numerator_cls.get_database(ticker=numerator_ticker, start_date=start_date, end_date=end_date, interval=interval)
+        numerator_cls.db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'ma', 'rsi'], axis = 1, inplace=True)
+        numerator_cls.db.rename(columns={'Close': f'{numerator} Close'}, inplace=True)
+
+        denominator_cls = Generate_DB()
+        denominator_ticker=ticker_dict.get(denominator)
+        denominator_cls.get_database(ticker=denominator_ticker, start_date=start_date, end_date=end_date, interval=interval)
+        denominator_cls.db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'ma', 'rsi'], axis = 1, inplace=True)
+        denominator_cls.db.rename(columns={'Close': f'{denominator} Close'},inplace=True)
 
         #Create Ratio Columns
-        self.db = pd.concat([numerator.db, denominator.db], axis=1)
+        self.db = pd.concat([numerator_cls.db, denominator_cls.db], axis=1)
         self.db['Ratio']=self.db[f'{numerator} Close']/self.db[f'{denominator} Close']
         self.db['Ratio % Chg']=(self.db['Ratio'].pct_change()*100).round(2)
+        
+        #Create rsi and ma columns
+        self.db['rsi'] = ta.rsi(close = self.db['Ratio'], length=rsi_length)
+        self.db['ma'] = ta.sma(close = self.db['Ratio'], length=ma_length)
 
         #Creating variables for UI
-        self.curr_ratio = self.db['Ratio'].iloc[-1]
-        self.curr_ratio_pct = self.db['Ratio % Chg'].iloc[-1]
-        self.curr_ratio_pct_str = "{:.2%}".format(self.curr_ratio_pct / 100)
+        self.curr_rsi = self.db['rsi'].iloc[-1]
+        self.curr_ma = int(self.db['ma'].iloc[-1])
+        self.curr_p = self.db['Ratio'].iloc[-1]
+        self.pctchg_int = self.db['Ratio % Chg'].iloc[-1]
+        self.pctchg_str = "{:.2%}".format(self.pctchg_int / 100)
 
     def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame):
         '''
@@ -109,37 +115,37 @@ class Generate_DB:
             "current price": {
                 "1st value": self.curr_p,
                 "2nd value": selected_value,
-                "1st col": self.db["Close"],
+                "1st col": self.db.get("Close", 0),
                 "2nd col": selected_value
             },
             "% change": {
                 "1st value": self.pctchg_int*100,
                 "2nd value": selected_value,
-                "1st col": self.db["% Change"]*100,
+                "1st col": self.db.get("% Change", 0)*100,
                 "2nd col": selected_value
             },
             "price vs ma": {
                 "1st value": self.curr_p,
                 "2nd value": self.curr_ma,
-                "1st col": self.db["Close"],
+                "1st col": self.db.get("Close", 0),
                 "2nd col": self.db['ma']
             },
             "rsi vs selection": {
                 "1st value": self.curr_rsi,
                 "2nd value": selected_value,
-                "1st col": self.db["rsi"],
+                "1st col": self.db.get("rsi", 0),
                 "2nd col": selected_value
             },
             "ratio vs selection": {
-                "1st value": self.curr_ratio,
+                "1st value": self.curr_p,
                 "2nd value": selected_value,
-                "1st col": self.db["Ratio"],
+                "1st col": self.db.get("Ratio", 0),
                 "2nd col": selected_value
             },
             "ratio % change vs selection": {
-                "1st value": self.curr_ratio_pct*100,
+                "1st value": self.pctchg_int,
                 "2nd value": selected_value,
-                "1st col": self.db["Ratio % Chg"]*100,
+                "1st col": self.db.get("Ratio % Chg", 0),
                 "2nd col": selected_value
             }
         }

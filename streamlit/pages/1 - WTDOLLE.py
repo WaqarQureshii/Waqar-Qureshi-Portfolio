@@ -298,6 +298,8 @@ if header_show_ndxvssp500:
                                             ['Nasdaq vs SP500 Ratio', 'Nasdaq vs SP500 Ratio % Change'],
                                             index=0)
     
+    ndxvssp500 = Generate_DB()
+    ndxvssp500.generate_ratio(numerator='Nasdaq', denominator='S&P 500',start_date=input_start_date, end_date=input_end_date, interval=input_interval)
     if selected_signal_ndxvssp500 == 'Nasdaq vs SP500 Ratio':
         selected_comparator_ndxsp500 = st.sidebar.radio('Choose comparator',
                                                          ['Greater than', 'Less than'],
@@ -306,18 +308,16 @@ if header_show_ndxvssp500:
                                                            1,
                                                            key = 'Nasdaq vs Sp500 Ratio Level'))
 
-        ndxvssp500 = Generate_DB()
-        ndxvssp500.generate_ratio(numerator='Nasdaq', denominator='S&P 500',start_date=input_start_date, end_date=input_end_date, interval=input_interval)
 
         if selected_comparator_ndxsp500 == 'Greater than': #LEVEL - Greater than
             sp500_intersection, nasdaq_intersection, rus2k_intersection = ndxvssp500.metric_vs_selection(comparison_type='ratio vs selection', comparator=selected_comparator_ndxsp500, selected_value=selected_ratio_value_ndxsp500, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
-            col6.metric(label=f'NDX/SPY > {selected_ratio_value_ndxsp500}', value = f'{ndxvssp500.boolean_comp} @ {round(ndxvssp500.curr_ratio,2)}')
+            col6.metric(label=f'NDX/SPY > {selected_ratio_value_ndxsp500}', value = f'{ndxvssp500.boolean_comp} @ {round(ndxvssp500.curr_p,2)}')
 
         elif selected_comparator_ndxsp500 == 'Less than': #LEVEL - Lower than
             sp500_intersection, nasdaq_intersection, rus2k_intersection = ndxvssp500.metric_vs_selection(comparison_type='ratio vs selection', comparator=selected_comparator_ndxsp500, selected_value=selected_ratio_value_ndxsp500, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
-            col6.metric(label=f'NDX/SPY < {selected_ratio_value_ndxsp500}', value = f'{ndxvssp500.boolean_comp} @ {round(ndxvssp500.curr_ratio,2)}')
+            col6.metric(label=f'NDX/SPY < {selected_ratio_value_ndxsp500}', value = f'{ndxvssp500.boolean_comp} @ {round(ndxvssp500.curr_p,2)}')
         
         col6.line_chart(ndxvssp500.db['Ratio'], use_container_width = True, height = 100)
 
@@ -330,14 +330,14 @@ if header_show_ndxvssp500:
         db_ndxsp500, curr_ndxsp500_ratio, current_ratio_pct_ndxsp500, current_ratio_pct_ndxsp500_str, nasdaq, sp500 = nasdaqvssp500(input_start_date, input_end_date, input_interval)
 
         if selected_comparator_ndxsp500 == 'Greater than': #% Change - Greater than
-            ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_ndxsp500, selected_comparator_ndxsp500, current_ratio_pct_ndxsp500, ndxsp500_ratio_pct_selected, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = ndxvssp500.metric_vs_selection(comparison_type='ratio % change vs selection', comparator=selected_comparator_ndxsp500, selected_value=ndxsp500_ratio_pct_selected, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
-            col6.metric(label=f'NDX/SPY % Chg > {ndxsp500_ratio_pct_selected}', value = f'{ndxsp500_boolean} @ {current_ratio_pct_ndxsp500}')
+            col6.metric(label=f'NDX/SPY % Chg > {ndxsp500_ratio_pct_selected}', value = f'{ndxvssp500.boolean_comp} @ {ndxvssp500.pctchg_str}')
 
         elif selected_comparator_ndxsp500 == 'Less than': #% Change - Lower than
-            ndxsp500_boolean, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_ndxsp500, selected_comparator_ndxsp500, current_ratio_pct_ndxsp500, ndxsp500_ratio_pct_selected, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = ndxvssp500.metric_vs_selection(comparison_type='ratio % change vs selection', comparator=selected_comparator_ndxsp500, selected_value=ndxsp500_ratio_pct_selected, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
-            col6.metric(label=f'NDX/SPY % Chg < {ndxsp500_ratio_pct_selected}', value = f'{ndxsp500_boolean} @ {current_ratio_pct_ndxsp500_str}')
+            col6.metric(label=f'NDX/SPY % Chg < {ndxsp500_ratio_pct_selected}', value = f'{ndxvssp500.boolean_comp} @ {ndxvssp500.pctchg_str}')
     
         col6.line_chart(db_ndxsp500['Ratio % Chg'], use_container_width = True, height = 100)
 
