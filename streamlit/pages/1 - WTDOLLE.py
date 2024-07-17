@@ -290,7 +290,7 @@ if show_yieldratio == True:
     
 st.sidebar.divider()        
 
-#NASDAQ vs SP500 RATIO
+#NASDAQ vs SP500 RATIO #TODO make this dynamic, choose numerator and denominator.
 header_show_ndxvssp500 = st.sidebar.checkbox("Nasdaq vs SP500 Ratio", value = False, key = "show Nasdaq vs SP500")
 if header_show_ndxvssp500:
     sidebar_counter += 1
@@ -341,57 +341,6 @@ if header_show_ndxvssp500:
     
         col6.line_chart(db_ndxsp500['Ratio % Chg'], use_container_width = True, height = 100)
 
-st.sidebar.divider()
-
-#Russel 2000 vs SP500 RATIO
-header_show_rus2ksp500 = st.sidebar.checkbox("Russel 2000 vs SP500 Ratio", value = False, key = "show Russ2k vs SP500")
-if header_show_rus2ksp500:
-    sidebar_counter += 1
-    selected_signal_rus2ksp500 = st.sidebar.radio('Evaluate',
-                                            ['Russell 2000 vs SP500 Ratio', 'Russell 2000 vs SP500 Ratio % Change'],
-                                            index=0)
-    
-    if selected_signal_rus2ksp500 == 'Russell 2000 vs SP500 Ratio':
-        selected_comparator_rus2ksp500 = st.sidebar.radio('Choose comparator',
-                                                         ['Greater than', 'Lower than'],
-                                                         index = 0, key = 'rus2k vs SP500 Comparator Selection')
-        selected_ratio_rus2ksp500 = float(st.sidebar.text_input("Input Russell 2000 vs SP500 ratio to compare against",
-                                                           1,
-                                                           key = 'Russell 2000 vs Sp500 Ratio Level'))
-        
-        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, input_interval)
-
-        if selected_comparator_rus2ksp500 == 'Greater than': #LEVEL - Greater than
-            boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_rus2ksp500, selected_ratio_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-            col7.metric(label=f'Rus2k/SPY > {selected_ratio_rus2ksp500}', value = f'{boolean_rus2ksp500} @ {round(current_ratio_rus2ksp500,2)}')
-
-        elif selected_comparator_rus2ksp500 == 'Lower than': #LEVEL - Lower than
-            boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_rus2ksp500, selected_ratio_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-            col7.metric(label=f'Rus2k/SPY < {selected_ratio_rus2ksp500}', value = f'{boolean_rus2ksp500} @ {round(current_ratio_rus2ksp500,2)}')
-        
-        col7.line_chart(db_rus2ksp500['Ratio'], use_container_width = True, height = 100)
-
-    elif selected_signal_rus2ksp500 == 'Russell 2000 vs SP500 Ratio % Change':
-        selected_comparator_rus2ksp500 = st.sidebar.radio('Choose comparator',
-                                                         ['Greater than', 'Lower than'],
-                                                         index = 0, key = 'rus2k vs SP500 Comparator Selection')
-        selected_ratio_pct_rus2ksp500 = float(st.sidebar.text_input("Input Russell 2000 vs SP500 Ratio % Change to compare against", 1.2, key = 'Russell 2000 vs Sp500 Ratio Level % Change'))
-
-        db_rus2ksp500, current_ratio_rus2ksp500, current_ratio_pct_rus2ksp500, current_ratio_pct_str_rus2ksp500, rus2k, sp500 = rus2kvssp500(input_start_date, input_end_date, input_interval)
-
-        if selected_comparator_rus2ksp500 == 'Greater than': #% Change - Greater than
-            boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_pct_rus2ksp500, selected_ratio_pct_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-            col7.metric(label=f'NDX/SPY % Chg > {selected_ratio_pct_rus2ksp500}', value = f'{boolean_rus2ksp500} @ {current_ratio_pct_rus2ksp500}')
-
-        elif selected_comparator_rus2ksp500 == 'Lower than': #% Change - Lower than
-            boolean_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection = signal_ratio_pct_value(db_rus2ksp500, selected_comparator_rus2ksp500, current_ratio_pct_rus2ksp500, selected_ratio_pct_rus2ksp500, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-            col7.metric(label=f'Rus2k/SPY % Chg < {selected_ratio_pct_rus2ksp500}', value = f'{boolean_rus2ksp500} @ {current_ratio_pct_str_rus2ksp500}')
-    
-        col7.line_chart(db_rus2ksp500['Ratio % Chg'], use_container_width = True, height = 100)
 
 st.sidebar.divider()    
 
