@@ -24,7 +24,6 @@ class Generate_DB:
             High Yield Corp Bond = HYG\n
         """
         self.db = None
-        self.ratio_db = None
         self.curr_ratio = None
         self.curr_ratio_pct = None
         self.curr_ratio_pct_str = None
@@ -86,13 +85,13 @@ class Generate_DB:
         denominator.db.rename(columns={'Close': f'{denominator} Close'},inplace=True)
 
         #Create Ratio Columns
-        self.ratio_db = pd.concat([numerator.db, denominator.db], axis=1)
-        self.ratio_db['Ratio']=self.ratio_db[f'{numerator} Close']/self.ratio_db[f'{denominator} Close']
-        self.ratio_db['Ratio % Chg']=(self.ratio_db['Ratio'].pct_change()*100).round(2)
+        self.db = pd.concat([numerator.db, denominator.db], axis=1)
+        self.db['Ratio']=self.db[f'{numerator} Close']/self.db[f'{denominator} Close']
+        self.db['Ratio % Chg']=(self.db['Ratio'].pct_change()*100).round(2)
 
         #Creating variables for UI
-        self.curr_ratio = self.ratio_db['Ratio'].iloc[-1]
-        self.curr_ratio_pct = self.ratio_db['Ratio % Chg'].iloc[-1]
+        self.curr_ratio = self.db['Ratio'].iloc[-1]
+        self.curr_ratio_pct = self.db['Ratio % Chg'].iloc[-1]
         self.curr_ratio_pct_str = "{:.2%}".format(self.curr_ratio_pct / 100)
 
     def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame):
@@ -100,7 +99,7 @@ class Generate_DB:
         Compares the current level price with the selected value.
 
         Args:
-        comparison_type: 'current price', '% change', 'price vs ma'
+        comparison_type: current price, % change, price vs ma, rsi vs selection, ratio vs selection, ratio % change vs selection
         comparator: 'Greater than', 'Less than'
 
         Output:
@@ -134,13 +133,13 @@ class Generate_DB:
             "ratio vs selection": {
                 "1st value": self.curr_ratio,
                 "2nd value": selected_value,
-                "1st col": self.ratio_db["Ratio"],
+                "1st col": self.db["Ratio"],
                 "2nd col": selected_value
             },
             "ratio % change vs selection": {
                 "1st value": self.curr_ratio_pct*100,
                 "2nd value": selected_value,
-                "1st col": self.ratio_db["Ratio % Chg"]*100,
+                "1st col": self.db["Ratio % Chg"]*100,
                 "2nd col": selected_value
             }
         }
