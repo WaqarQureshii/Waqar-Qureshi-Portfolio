@@ -41,10 +41,30 @@ elif selection_interval == 'Monthly':
     input_interval = '1mo'
     grammatical_selection = 'months'
 
+sidebar_counter = 0
+inpcol1, inpcol2, inpcol3 = st.columns(3)
+# EQUITY MARKET
+with inpcol1.expander("Equity Market"):
+    st.subheader("Volatility Index")
+# EQUITY MARKET -> VOLATILITY INDEX
+    eqcol1, eqcol2 = st.columns(2)
+    vix_level_on = eqcol1.toggle("Price Level")
+    if vix_level_on:
+        sidebar_counter+=1
+        vix_level_db = Generate_DB()
+        vix_level_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
+        vix_pct_sel = eqcol1.slider("Test?", value=[-15.0,15.0], step=0.5)
+
+    vix_pct_on = eqcol2.toggle("% Change")
+
+with inpcol2.expander("Debt Market"):
+    st.write("Test2")
+
+with inpcol3.expander("Economic Figures"):
+    st.write("Test3")
 
 #Creating the sidebar with the different signal creations
 st.sidebar.subheader("Global Parameters used with WTDOLLE")
-sidebar_counter = 0
 
 # --- Dataframes Set Up ---
 # ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
