@@ -169,7 +169,7 @@ class Generate_DB:
 
         return sp500, ndx, rus2k
     
-    def metric_vs_comparison_cross(self, comparison_type:str, comparator:str, selected_value:float, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def metric_vs_comparison_cross(self, comparison_type:str, comparator:str, first_selected_value:float, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, second_selected_value:float=None) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
         Compares the current level price with the selected value.
 
@@ -183,15 +183,23 @@ class Generate_DB:
         ref_dict = {
             "current price": {
                 "1st value": self.curr_p,
-                "2nd value": selected_value,
+                "2nd value": first_selected_value,
                 "1st col": "Close",
-                "2nd col": selected_value
+                "2nd col": first_selected_value
             },
             "% change": {
                 "1st value": self.pctchg_int*100,
-                "2nd value": selected_value,
+                "2nd value": first_selected_value,
                 "1st col": "% Change",
-                "2nd col": selected_value
+                "2nd col": first_selected_value
+            },
+            "% change between": {
+                "1st value": self.pctchg_int*100,
+                "2nd value": first_selected_value,
+                "3rd value": second_selected_value,
+                "1st col": "% Change",
+                "2nd col": first_selected_value,
+                "3rd col": second_selected_value
             },
             "price vs ma": {
                 "1st value": self.curr_p,
@@ -201,21 +209,21 @@ class Generate_DB:
             },
             "rsi vs selection": {
                 "1st value": self.curr_rsi,
-                "2nd value": selected_value,
+                "2nd value": first_selected_value,
                 "1st col": "rsi",
-                "2nd col": selected_value
+                "2nd col": first_selected_value
             },
             "ratio vs selection": {
                 "1st value": self.curr_p,
-                "2nd value": selected_value,
+                "2nd value": first_selected_value,
                 "1st col": "Ratio",
-                "2nd col": selected_value
+                "2nd col": first_selected_value
             },
             "ratio % change vs selection": {
                 "1st value": self.pctchg_int,
-                "2nd value": selected_value,
+                "2nd value": first_selected_value,
                 "1st col": "Ratio % Chg",
-                "2nd col": selected_value
+                "2nd col": first_selected_value
             }
         }
 
@@ -233,19 +241,29 @@ class Generate_DB:
                     column1 = row[ref_dict[comparison_type]['1st col']]
                 else:
                     column1 = ref_dict[comparison_type]['1st col']
+
                 if isinstance(ref_dict[comparison_type]['2nd col'], str):
                     column2 = row[ref_dict[comparison_type]['2nd col']]
                 else:
                     column2 = ref_dict[comparison_type]['2nd col']
 
-                current_comparison = column1 > column2
+                if isinstance(ref_dict[comparison_type]['3rd col'], str):
+                    column3 = row[ref_dict[comparison_type]['3rd col']]
+                elif isinstance(ref_dict[comparison_type['3rd col']], float):
+                    column3 = ref_dict[comparison_type]['3rd col']
+                else: column3 = None
 
-                # Check if the previous row was not greater and the current row is greater
-                if not prev_comparison and current_comparison:
-                    filtered_rows.append(row)
+                if column3:
+                    current_comparison = column2 >= column1 <= column3
+                else:
+                    current_comparison = column1 > column2
 
-                # Update the previous comparison for the next iteration
-                prev_comparison = current_comparison
+                    # Check if the previous row was not greater and the current row is greater
+                    if not prev_comparison and current_comparison:
+                        filtered_rows.append(row)
+
+                    # Update the previous comparison for the next iteration
+                    prev_comparison = current_comparison
 
             # Convert the filtered rows to a DataFrame
             filtered_database = pd.DataFrame(filtered_rows)
