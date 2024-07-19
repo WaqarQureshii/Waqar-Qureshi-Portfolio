@@ -51,9 +51,9 @@ sidebar_counter = 0
 
 inpcol1, inpcol2, inpcol3 = st.columns(3)
 # EQUITY MARKET
-with inpcol1.expander("Equity Market"):
+inpcol1.subheader("Equity Market")
 # EQUITY MARKET -> VOLATILITY INDEX
-    st.subheader("Volatility Index")
+with inpcol1.expander("Volatility Index"):
     vix = Generate_DB()
     vix.get_database('^VIX', input_start_date, input_end_date, input_interval)
     vix_line_chart = vix.db[['% Change', 'Close']]
@@ -81,37 +81,35 @@ with inpcol1.expander("Equity Market"):
     st.divider()
 
 # EQUITY MARKET -> RSP
-    st.subheader("Volatility Index")
-    vix = Generate_DB()
-    vix.get_database('^VIX', input_start_date, input_end_date, input_interval)
-    vix_line_chart = vix.db[['% Change', 'Close']]
-    vix_line_chart['% Change'] = vix_line_chart['% Change'] * 100
-    st.line_chart(vix_line_chart, height=200, use_container_width=True)
-    eqcol1, eqcol2 = st.columns(2)
-# EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
-    vix_level_on = eqcol1.toggle("Price Level", key="vix p toggle")
-    vix_pct_on = eqcol2.toggle("% Change", key="vix pct toggle")
-# EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
-    if vix_level_on:
-        sidebar_counter+=1
-        vix_level_db = Generate_DB()
-        vix_level_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_level_comparator = eqcol1.selectbox("Comparison",('Greater than', 'Less than'))
-        vix_level_selection = eqcol1.number_input("Select value", min_value=0.0, step=0.5)
-        sp500_intersection, nasdaq_intersection, rus2k_intersection = vix_level_db.metric_vs_comparison_cross(comparison_type='current price', comparator=vix_level_comparator, selected_value=vix_level_selection, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-#  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
-    if vix_pct_on:
-        sidebar_counter+=1
-        vix_pct_db = Generate_DB()
-        vix_pct_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_pct_sel = eqcol2.slider("vix % selector", value=[-15.0,15.0], step=0.5, key="vix pct range selector")
-    st.divider()
+    with inpcol1.expander("Equal-Weighted S&P"):
+        rsp = Generate_DB()
+        rsp.get_database('RSP', input_start_date, input_end_date, input_interval)
+        rsp_line_chart = rsp.db[['% Change', 'Close']]
+        rsp_line_chart['% Change'] = rsp_line_chart['% Change'] * 100
+        st.line_chart(rsp_line_chart, height=200, use_container_width=True)
+        eqcol1, eqcol2 = st.columns(2)
+    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
+        rsp_level_on = eqcol1.toggle("Price Level", key="rsp p toggle")
+        rsp_pct_on = eqcol2.toggle("% Change", key="rsp pct toggle")
+    # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
+        if rsp_level_on:
+            sidebar_counter+=1
+            rsp_level_db = Generate_DB()
+            rsp_level_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
+            rsp_level_comparator = eqcol1.selectbox("Comparison",('Greater than', 'Less than'))
+            rsp_level_selection = eqcol1.number_input("Select value", min_value=0.0, step=0.5)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_level_db.metric_vs_comparison_cross(comparison_type='current price', comparator=rsp_level_comparator, selected_value=rsp_level_selection, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
+        if rsp_pct_on:
+            sidebar_counter+=1
+            rsp_pct_db = Generate_DB()
+            rsp_pct_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
+            rsp_pct_sel = eqcol2.slider("rsp % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
+        st.divider()
 
-with inpcol2.expander("Debt Market"):
-    st.write("Test2")
+inpcol2.subheader("Debt Market")
 
-with inpcol3.expander("Economic Figures"):
-    st.write("Test3")
+inpcol3.subheader("Economic Figures")
 
 #Creating the sidebar with the different signal creations
 st.sidebar.subheader("Global Parameters used with WTDOLLE")
