@@ -100,7 +100,7 @@ class Generate_DB:
         self.pctchg_int = self.db['Ratio % Chg'].iloc[-1]
         self.pctchg_str = "{:.2%}".format(self.pctchg_int / 100)
 
-    def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame):
+    def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
         Compares the current level price with the selected value.
 
@@ -159,6 +159,128 @@ class Generate_DB:
             self.boolean_comp = ref_dict[comparison_type]['1st value'] < ref_dict[comparison_type]['2nd value']
 
             filtered_database = self.db[ref_dict[comparison_type]['1st col'] < ref_dict[comparison_type]['2nd col']]
+
+        else:
+            return "Check comparator value, should be either p greater or lower"
+
+        sp500.append(filtered_database)
+        ndx.append(filtered_database)
+        rus2k.append(filtered_database)        
+
+        return sp500, ndx, rus2k
+    
+    def metric_vs_comparison_cross(self, comparison_type:str, comparator:str, selected_value:float, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        '''
+        Compares the current level price with the selected value.
+
+        Args:
+        comparison_type: current price, % change, price vs ma, rsi vs selection, ratio vs selection, ratio % change vs selection
+        comparator: 'Greater than', 'Less than'
+
+        Output:
+        self, sp500_intersection, ndx_intersection, rus2k_intersection
+        '''
+        ref_dict = {
+            "current price": {
+                "1st value": self.curr_p,
+                "2nd value": selected_value,
+                "1st col": "Close",
+                "2nd col": selected_value
+            },
+            "% change": {
+                "1st value": self.pctchg_int*100,
+                "2nd value": selected_value,
+                "1st col": "% Change",
+                "2nd col": selected_value
+            },
+            "price vs ma": {
+                "1st value": self.curr_p,
+                "2nd value": self.curr_ma,
+                "1st col": "Close",
+                "2nd col": 'ma'
+            },
+            "rsi vs selection": {
+                "1st value": self.curr_rsi,
+                "2nd value": selected_value,
+                "1st col": "rsi",
+                "2nd col": selected_value
+            },
+            "ratio vs selection": {
+                "1st value": self.curr_p,
+                "2nd value": selected_value,
+                "1st col": "Ratio",
+                "2nd col": selected_value
+            },
+            "ratio % change vs selection": {
+                "1st value": self.pctchg_int,
+                "2nd value": selected_value,
+                "1st col": "Ratio % Chg",
+                "2nd col": selected_value
+            }
+        }
+
+        if comparator == 'Greater than':
+            # Initialize a variable to store the previous row's comparison result
+            prev_comparison = False
+
+            # Initialize an empty list to store the filtered rows
+            filtered_rows = []
+
+            # Iterate over the rows in the database
+            for index, row in self.db.iterrows():
+                # Check if the current row meets the existing condition
+                if isinstance(ref_dict[comparison_type]['1st col'], str):
+                    column1 = row[ref_dict[comparison_type]['1st col']]
+                else:
+                    column1 = ref_dict[comparison_type]['1st col']
+                if isinstance(ref_dict[comparison_type]['2nd col'], str):
+                    column2 = row[ref_dict[comparison_type]['2nd col']]
+                else:
+                    column2 = ref_dict[comparison_type]['2nd col']
+
+                current_comparison = column1 > column2
+
+                # Check if the previous row was not greater and the current row is greater
+                if not prev_comparison and current_comparison:
+                    filtered_rows.append(row)
+
+                # Update the previous comparison for the next iteration
+                prev_comparison = current_comparison
+
+            # Convert the filtered rows to a DataFrame
+            filtered_database = pd.DataFrame(filtered_rows)
+
+
+        elif comparator == 'Less than':
+            # Initialize a variable to store the previous row's comparison result
+            prev_comparison = False
+
+            # Initialize an empty list to store the filtered rows
+            filtered_rows = []
+
+            # Iterate over the rows in the database
+            for index, row in self.db.iterrows():
+                # Check if the current row meets the existing condition
+                if isinstance(ref_dict[comparison_type]['1st col'], str):
+                    column1 = row[ref_dict[comparison_type]['1st col']]
+                else:
+                    column1 = ref_dict[comparison_type]['1st col']
+                if isinstance(ref_dict[comparison_type]['2nd col'], str):
+                    column2 = row[ref_dict[comparison_type]['2nd col']]
+                else:
+                    column2 = ref_dict[comparison_type]['2nd col']
+
+                current_comparison = column1 > column2
+
+                # Check if the previous row was not greater and the current row is greater
+                if not prev_comparison and current_comparison:
+                    filtered_rows.append(row)
+
+                # Update the previous comparison for the next iteration
+                prev_comparison = current_comparison
+
+            # Convert the filtered rows to a DataFrame
+            filtered_database = pd.DataFrame(filtered_rows)
 
         else:
             return "Check comparator value, should be either p greater or lower"
