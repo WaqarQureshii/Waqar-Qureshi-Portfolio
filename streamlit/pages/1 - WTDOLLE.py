@@ -48,14 +48,21 @@ with inpcol1.expander("Equity Market"):
     st.subheader("Volatility Index")
 # EQUITY MARKET -> VOLATILITY INDEX
     eqcol1, eqcol2 = st.columns(2)
-    vix_level_on = eqcol1.toggle("Price Level")
+# EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
+    vix_level_on = eqcol1.toggle("Price Level", key="vix p toggle")
+    vix_pct_on = eqcol2.toggle("% Change", key="vix pct toggle")
     if vix_level_on:
         sidebar_counter+=1
         vix_level_db = Generate_DB()
         vix_level_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_pct_sel = eqcol1.slider("Test?", value=[-15.0,15.0], step=0.5)
-
-    vix_pct_on = eqcol2.toggle("% Change")
+# EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
+        vix_level_comparator = eqcol1.selectbox("Comparison",('Greater than', 'Less than'))
+        vix_level_selection = eqcol1.number_input("Select value", min_value=0.0, step=0.5)
+    if vix_pct_on:
+        sidebar_counter+=1
+        vix_pct_db = Generate_DB()
+        vix_pct_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
+        vix_pct_sel = eqcol2.slider("Test?", value=[-15.0,15.0], step=0.5)
 
 with inpcol2.expander("Debt Market"):
     st.write("Test2")
