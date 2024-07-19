@@ -59,52 +59,55 @@ with inpcol1.expander("Volatility Index"):
     vix_line_chart = vix.db[['% Change', 'Close']]
     vix_line_chart['% Change'] = vix_line_chart['% Change'] * 100
     st.line_chart(vix_line_chart, height=200, use_container_width=True)
-    eqcol1, eqcol2 = st.columns(2)
+    vixcol1, vixcol2 = st.columns(2)
 # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
-    vix_level_on = eqcol1.toggle("Price Level", key="vix p toggle")
-    vix_pct_on = eqcol2.toggle("% Change", key="vix pct toggle")
+    vix_level_on = vixcol1.toggle("Price Level", key="vix p toggle")
+    vix_pct_on = vixcol2.toggle("% Change", key="vix pct toggle")
 # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
     if vix_level_on:
         sidebar_counter+=1
         vix_level_db = Generate_DB()
         vix_level_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_level_comparator = eqcol1.selectbox("Comparison",('Greater than', 'Less than'))
-        vix_level_selection = eqcol1.number_input("Select value", min_value=0.0, step=0.5)
+        vix_level_comparator = vixcol1.selectbox("Comparison",('Greater than', 'Less than'))
+        vix_level_selection = vixcol1.number_input("Select value", min_value=0.0, step=0.5)
         sp500_intersection, nasdaq_intersection, rus2k_intersection = vix_level_db.metric_vs_comparison_cross(comparison_type='current price', comparator=vix_level_comparator, selected_value=vix_level_selection, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
     if vix_pct_on:
         sidebar_counter+=1
         vix_pct_db = Generate_DB()
         vix_pct_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_pct_sel = eqcol2.slider("vix % selector", value=[-15.0,15.0], step=0.5, key="vix pct range selector")
+        vix_pct_sel = vixcol2.slider("vix % selector", value=[-15.0,15.0], step=0.5, key="vix pct range selector")
 
     st.divider()
 
 # EQUITY MARKET -> RSP
     with inpcol1.expander("Equal-Weighted S&P"):
+        rsp_chart_col1, rsp_chart_col2 = st.columns(2)
+        rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22)
+        rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50)
+
         rsp = Generate_DB()
-        rsp.get_database('RSP', input_start_date, input_end_date, input_interval)
-        rsp_line_chart = rsp.db[['% Change', 'Close']]
-        rsp_line_chart['% Change'] = rsp_line_chart['% Change'] * 100
+        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
+        rsp_line_chart = rsp.db[['Close', 'ma', 'rsi']]
         st.line_chart(rsp_line_chart, height=200, use_container_width=True)
-        eqcol1, eqcol2 = st.columns(2)
-    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
-        rsp_level_on = eqcol1.toggle("Price Level", key="rsp p toggle")
-        rsp_pct_on = eqcol2.toggle("% Change", key="rsp pct toggle")
-    # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
-        if rsp_level_on:
+        rsp_col1, rsp_col2=st.columns(2)
+    # EQUITY MARKET -> RSP -> RSP / Moving Average
+        rsp_rsi_on = rsp_col1.toggle("RSI", key="rsp rsi toggle")
+        rsp_ma_on = rsp_col2.toggle("Moving Average", key="rsp ma toggle")
+    # EQUITY MARKET -> RSP -> RSI
+        if rsp_rsi_on:
             sidebar_counter+=1
-            rsp_level_db = Generate_DB()
-            rsp_level_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-            rsp_level_comparator = eqcol1.selectbox("Comparison",('Greater than', 'Less than'))
-            rsp_level_selection = eqcol1.number_input("Select value", min_value=0.0, step=0.5)
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_level_db.metric_vs_comparison_cross(comparison_type='current price', comparator=rsp_level_comparator, selected_value=rsp_level_selection, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            rsp_rsi_db = Generate_DB()
+            rsp_rsi_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
+            rsp_rsi_comparator = rsp_col1.selectbox("Comparison",('Greater than', 'Less than'))
+            rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=rsp_rsi_selection, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
     #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
-        if rsp_pct_on:
+        if rsp_ma_on:
             sidebar_counter+=1
-            rsp_pct_db = Generate_DB()
-            rsp_pct_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-            rsp_pct_sel = eqcol2.slider("rsp % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
+            rsp_ma_db = Generate_DB()
+            rsp_ma_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
+            rsp_ma_sel = rsp_col2.slider("rsp % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
         st.divider()
 
 inpcol2.subheader("Debt Market")
