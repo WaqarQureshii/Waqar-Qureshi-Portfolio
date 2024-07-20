@@ -68,17 +68,16 @@ with inpcol1.expander("Volatility Index"):
         sidebar_counter+=1
         vix_level_db = Generate_DB()
         vix_level_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_level_comparator = vixcol1.selectbox("Comparison",('Greater than', 'Less than'))
+        vix_level_comparator = vixcol1.selectbox("VIX Comparator",('Greater than', 'Less than'))
         vix_level_selection = vixcol1.number_input("Select value", min_value=0.0, step=0.5)
-        sp500_intersection, nasdaq_intersection, rus2k_intersection = vix_level_db.metric_vs_comparison_cross(comparison_type='current price', comparator=vix_level_comparator, selected_value=vix_level_selection, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = vix_level_db.metric_vs_comparison_cross(comparison_type='current price', comparator=vix_level_comparator, selected_value=[vix_level_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
     if vix_pct_on:
         sidebar_counter+=1
         vix_pct_db = Generate_DB()
         vix_pct_db.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_pct_sel = vixcol2.slider("vix % selector", value=[-15.0,15.0], step=0.5, key="vix pct range selector")
-
-    st.divider()
+        vix_pct_sel = vixcol2.slider("VIX % selector", value=[-15.0,15.0], step=0.5, key="vix pct range selector")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = vix_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[vix_pct_sel[0], vix_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> RSP
     with inpcol1.expander("Equal-Weighted S&P"):
@@ -91,24 +90,40 @@ with inpcol1.expander("Volatility Index"):
         rsp_line_chart = rsp.db[['Close', 'ma', 'rsi']]
         st.line_chart(rsp_line_chart, height=200, use_container_width=True)
         rsp_col1, rsp_col2=st.columns(2)
-    # EQUITY MARKET -> RSP -> RSP / Moving Average
+    # EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
         rsp_rsi_on = rsp_col1.toggle("RSI", key="rsp rsi toggle")
         rsp_ma_on = rsp_col2.toggle("Moving Average", key="rsp ma toggle")
+
     # EQUITY MARKET -> RSP -> RSI
         if rsp_rsi_on:
             sidebar_counter+=1
             rsp_rsi_db = Generate_DB()
             rsp_rsi_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
-            rsp_rsi_comparator = rsp_col1.selectbox("Comparison",('Greater than', 'Less than'))
-            rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0)
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=rsp_rsi_selection, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-    #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
+            rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
+            rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    #  EQUITY MARKET -> RSP -> RSP Moving Average
         if rsp_ma_on:
             sidebar_counter+=1
             rsp_ma_db = Generate_DB()
             rsp_ma_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
-            rsp_ma_sel = rsp_col2.slider("rsp % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
-        st.divider()
+            rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Less than'))
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rsp_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+        
+        # EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
+        rsp_pct_on = rsp_col1.toggle("% Change", key="rsp % Change toggle")
+
+        # EQUITY MARKET -> RSP -> % Change
+        if rsp_pct_on:
+            sidebar_counter+=1
+            rsp_pct_db = Generate_DB()
+            rsp_pct_db.get_database('RSP', input_start_date, input_end_date, input_interval)
+            rsp_pct_sel = rsp_col1.slider("RSP % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_sel[0], rsp_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+
+        
+
 
 inpcol2.subheader("Debt Market")
 
@@ -148,119 +163,6 @@ if header_show_hyg == True:
     
     col2.line_chart(hyg.db['% Change']*100, height = 100, use_container_width = True)
 
-st.sidebar.divider()
-
-    # --- RSP OPTIONS ---
-header_show_rsp = st.sidebar.checkbox("Overall S&P Market Thrust", value=False)
-if header_show_rsp == True:
-    rspMAorRSI = st.sidebar.multiselect('Choose your RSP parameters', ['Moving Average (MA)', 'RSI (Relative Strength Index)'])
-    st.sidebar.write("")
-
-# BOTH Price vs MA and RSI selected
-    if 'Moving Average (MA)' in rspMAorRSI and 'RSI (Relative Strength Index)' in rspMAorRSI:
-        st.sidebar.subheader('RSP Moving Average') #---MOVING AVERAGE SECTION---
-
-        sidebar_counter += 2
-        rsp_ma_length = int(st.sidebar.text_input(f"Input Moving Average Length (in {grammatical_selection})", 50, key='rsp ma length'))
-        rsp_macomparator_selection = st.sidebar.radio('Choose RSP comparator',
-                                                    ['Price greater than MA', "Price less than MA"],
-                                                    index = 0)
-        
-        st.sidebar.write("")
-
-        st.sidebar.subheader('RSP RSI') #---RSI SECTION ---
-        rsp_rsi_length = int(st.sidebar.text_input('Input RSI length', 22, key = 'rsp rsi length'))
-        rsp_rsi_comparator = st.sidebar.radio('Choose RSP RSI comparator',
-                                            ['Greater than', 'Less than'],
-                                            index=0,
-                                            key = 'rsp rsi comparator')
-        rsp_rsi_value_selection = int(st.sidebar.text_input("Input RSI value to compare against",
-                                              70,
-                                              key='rsp rsi value selection'))
-        #---database generator---
-        rsp = Generate_DB()
-        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length, rsi_value=rsp_rsi_length)
-# ONLY Price vs MA selected
-        if rsp_macomparator_selection == "Price greater than MA": #---Moving Average Signal generator---
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Greater than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection) #TODO need to change the metric to be "whenever price crosses MA", and not "every single time Price is over"
-            
-            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
-
-        else:
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Less than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-
-            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
-
-# ONLY RSI selected
-        if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI > {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')
-        else:
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-            col4.metric(label=f'RSP {rsp_rsi_length} {grammatical_selection} RSI < {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')
-        
-        col3.line_chart(rsp.db['ma'], height = 100, use_container_width = True)
-        col4.line_chart(rsp.db['rsi'], height = 100, use_container_width = True)
-
-    elif 'Moving Average (MA)' in rspMAorRSI:
-        st.sidebar.subheader('RSP Moving Average')
-
-        sidebar_counter += 1
-        rsp_ma_length = int(st.sidebar.text_input("Input Moving Average Length (interval)", 50, key='rsp ma length'))
-
-        rsp = Generate_DB()
-        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, ma_length=rsp_ma_length)
-
-        rsp_comparator_selection = st.sidebar.radio('Choose RSP comparator',
-                                                    ['Price greater than MA', "Price less than MA"],
-                                                    index = 0)
-        
-        if rsp_comparator_selection == "Price greater than MA":
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Greater than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-
-            col3.metric(label=f'Price > {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
-
-        else:
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('price vs ma', 'Lower than', selected_value=None, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-
-            col3.metric(label=f'Price < {rsp_ma_length} {grammatical_selection} MA {"{:.0f}".format(rsp.curr_ma)}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_p)}')
-
-        col3.line_chart(rsp.db['ma'], height = 100, use_container_width = True)
-
-        st.sidebar.write("")
-    
-    elif 'RSI (Relative Strength Index)' in rspMAorRSI:
-        st.sidebar.subheader('RSP RSI')
-        rsp_rsi_length = int(st.sidebar.text_input('Input RSI length', 22, key = 'rsp rsi length'))
-
-        sidebar_counter += 1
-        rsp = Generate_DB()
-        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length)
-        
-        rsp_rsi_comparator = st.sidebar.radio('Choose RSP RSI comparator',
-                                            ['Greater than', 'Less than'],
-                                            index=0,
-                                            key = 'rsp rsi comparator')
-
-        rsp_rsi_value_selection = int(st.sidebar.text_input("Input RSI value to compare against",
-                                              70,
-                                              key='rsp rsi value selection'))
-        
-        if rsp_rsi_comparator == 'Greater than': #---RSI Signal generator---
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-            
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI > {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')
-        else:
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_selection('rsi vs selection', rsp_rsi_comparator, rsp_rsi_value_selection, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-
-            col4.metric(label=f'RSP ({rsp_rsi_length}) RSI < {rsp_rsi_value_selection}', value = f'{rsp.boolean_comp} @ {"{:.0f}".format(rsp.curr_rsi)}')   
-        
-        col4.line_chart(rsp.db['rsi'], height = 100, use_container_width = True)
-
-else:
-    pass
 st.sidebar.divider()
 
     # --- YIELD CURVE ---
