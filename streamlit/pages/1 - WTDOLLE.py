@@ -82,19 +82,19 @@ with inpcol1.expander("Volatility Index"):
 # EQUITY MARKET -> RSP
     with inpcol1.expander("Equal-Weighted S&P"):
         rsp_chart_col1, rsp_chart_col2 = st.columns(2)
-        rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22)
-        rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50)
+        rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="rsp rsi length selection")
+        rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="rsp ma length selection")
 
         rsp = Generate_DB()
         rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
-        rsp_line_chart = rsp.db[['Close', 'ma', 'rsi']]
-        st.line_chart(rsp_line_chart, height=200, use_container_width=True)
+        rsp_linechart = rsp.db[['Close', 'ma', 'rsi']]
+        st.line_chart(rsp_linechart, height=200, use_container_width=True)
         rsp_col1, rsp_col2=st.columns(2)
     # EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
         rsp_rsi_on = rsp_col1.toggle("RSI", key="rsp rsi toggle")
         rsp_ma_on = rsp_col2.toggle("Moving Average", key="rsp ma toggle")
 
-    # EQUITY MARKET -> RSP -> RSI
+        # EQUITY MARKET -> RSP -> RSI
         if rsp_rsi_on:
             sidebar_counter+=1
             rsp_rsi_db = Generate_DB()
@@ -102,7 +102,7 @@ with inpcol1.expander("Volatility Index"):
             rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
             rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-    #  EQUITY MARKET -> RSP -> RSP Moving Average
+        # EQUITY MARKET -> RSP -> RSP Moving Average
         if rsp_ma_on:
             sidebar_counter+=1
             rsp_ma_db = Generate_DB()
@@ -121,8 +121,31 @@ with inpcol1.expander("Volatility Index"):
             rsp_pct_sel = rsp_col1.slider("RSP % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_sel[0], rsp_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
+# EQUITY MARKET -> S&P 500
+    with inpcol1.expander("S&P 500"):
+        sp500_chartcol1, sp500_chartcol2 = st.columns(2)
+        #EQUITY MARKET -> S&P500 -> RSI and MA selection & CHART
+        sp500_rsi_length=sp500_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="S&P500 rsi length selection")
+        sp500_ma_length=sp500_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="S&P500 ma length selection")
+        sp500 = Generate_DB()
+        sp500.get_database("^GSPC", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=sp500_rsi_length, ma_length=sp500_ma_length)
+        sp500_chart_p_ma, sp500_chart_rsi=sp500.db[['Close', 'ma']], sp500.db[['rsi']]
+        sp500_chartcol1.line_chart(sp500_chart_rsi, height=200, use_container_width=True)
+        sp500_chartcol2.line_chart(sp500_chart_p_ma, height=200, use_container_width=True)
 
-        
+        # EQUITY MARKET -> S&P 500 -> % CHANGE / Price vs MA / RSI
+        sp500_col1,sp500_col2=st.columns(2)
+        sp500_rsi_on = sp500_col1.toggle("RSI", key="sp500 RSI toggle")
+        sp500_ma_on = sp500_col2.toggle("Moving Average", key="sp500 MA toggle")
+
+        # EQUITY MARKET -> S&P 500 -> RSI
+        if sp500_rsi_on:
+            sidebar_counter+=1
+            sp500_rsi_db = Generate_DB()
+            sp500_rsi_db.get_database("^GSPC", input_start_date, input_end_date, input_interval, sp500_rsi_length)
+            sp500_rsi_comparator = sp500_col1.selectbox("S&P comparator",('Greater than', 'Less than'))
+            sp500_rsi_selection = sp500_col1.number_input("Select value", min_value=0.0, step=1.0, key="S&P rsi selection")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=sp500_rsi_comparator, selected_value=[sp500_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 
 inpcol2.subheader("Debt Market")
