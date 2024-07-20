@@ -6,6 +6,7 @@ import math
 
 class Generate_DB:
     def __init__(self):
+        #TODO add this documentation to get_database method.
         """
         Generates database with all of its metrics by providing it parameters.
 
@@ -31,7 +32,7 @@ class Generate_DB:
         self.pctchg_floor_int = None
         self.pctchg_ceil_int = None
     
-    def get_database(self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50):
+    def get_database(self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50): #TODO modify so that MA and RSI don't automatically generate.
         self.db = yf.download([ticker], start=start_date, end=end_date, interval=interval)
         
         # Database Massage
