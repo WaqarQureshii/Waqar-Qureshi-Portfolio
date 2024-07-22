@@ -80,180 +80,192 @@ with inpcol1.expander("Volatility Index"):
         sp500_intersection, nasdaq_intersection, rus2k_intersection = vix_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[vix_pct_sel[0], vix_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> RSP
-    with inpcol1.expander("Equal-Weighted S&P"):
-        rsp_chart_col1, rsp_chart_col2 = st.columns(2)
-        rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="rsp rsi length selection")
-        rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="rsp ma length selection")
+with inpcol1.expander("Equal-Weighted S&P"):
+    rsp_chart_col1, rsp_chart_col2 = st.columns(2)
+    rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="rsp rsi length selection")
+    rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="rsp ma length selection")
 
-        rsp = Generate_DB()
-        rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
-        rsp_linechart = rsp.db[['Close', 'ma', 'rsi']]
-        st.line_chart(rsp_linechart, height=200, use_container_width=True)
-        rsp_col1, rsp_col2=st.columns(2)
+    rsp = Generate_DB()
+    rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
+    rsp_linechart = rsp.db[['Close', 'ma', 'rsi']]
+    st.line_chart(rsp_linechart, height=200, use_container_width=True)
+    rsp_col1, rsp_col2=st.columns(2)
+# EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
+    rsp_rsi_on = rsp_col1.toggle("RSI", key="rsp rsi toggle")
+    rsp_ma_on = rsp_col2.toggle("Moving Average", key="rsp ma toggle")
+
+    # EQUITY MARKET -> RSP -> RSI
+    if rsp_rsi_on:
+        sidebar_counter+=1
+        rsp_rsi_db = Generate_DB()
+        rsp_rsi_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
+        rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
+        rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    # EQUITY MARKET -> RSP -> RSP Moving Average
+    if rsp_ma_on:
+        sidebar_counter+=1
+        rsp_ma_db = Generate_DB()
+        rsp_ma_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
+        rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Less than'))
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rsp_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    
     # EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
-        rsp_rsi_on = rsp_col1.toggle("RSI", key="rsp rsi toggle")
-        rsp_ma_on = rsp_col2.toggle("Moving Average", key="rsp ma toggle")
+    rsp_pct_on = rsp_col1.toggle("% Change", key="rsp % Change toggle")
 
-        # EQUITY MARKET -> RSP -> RSI
-        if rsp_rsi_on:
-            sidebar_counter+=1
-            rsp_rsi_db = Generate_DB()
-            rsp_rsi_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
-            rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
-            rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        # EQUITY MARKET -> RSP -> RSP Moving Average
-        if rsp_ma_on:
-            sidebar_counter+=1
-            rsp_ma_db = Generate_DB()
-            rsp_ma_db.get_database('^VIX', input_start_date, input_end_date, input_interval,rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
-            rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Less than'))
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rsp_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        
-        # EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
-        rsp_pct_on = rsp_col1.toggle("% Change", key="rsp % Change toggle")
-
-        # EQUITY MARKET -> RSP -> % Change
-        if rsp_pct_on:
-            sidebar_counter+=1
-            rsp_pct_db = Generate_DB()
-            rsp_pct_db.get_database('RSP', input_start_date, input_end_date, input_interval)
-            rsp_pct_sel = rsp_col1.slider("RSP % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_sel[0], rsp_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    # EQUITY MARKET -> RSP -> % Change
+    if rsp_pct_on:
+        sidebar_counter+=1
+        rsp_pct_db = Generate_DB()
+        rsp_pct_db.get_database('RSP', input_start_date, input_end_date, input_interval)
+        rsp_pct_sel = rsp_col1.slider("RSP % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_sel[0], rsp_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> S&P 500
-    with inpcol1.expander("S&P 500"):
-        sp500_chartcol1, sp500_chartcol2 = st.columns(2)
-        #EQUITY MARKET -> S&P500 -> RSI and MA selection & CHART
-        sp500_rsi_length=sp500_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="S&P500 rsi length selection")
-        sp500_ma_length=sp500_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="S&P500 ma length selection")
-        sp500 = Generate_DB()
-        sp500.get_database("^GSPC", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=sp500_rsi_length, ma_length=sp500_ma_length)
-        sp500_chart_p_ma, sp500_chart_rsi=sp500.db[['Close', 'ma']], sp500.db[['rsi']]
-        sp500_chartcol1.line_chart(sp500_chart_rsi, height=200, use_container_width=True)
-        sp500_chartcol2.line_chart(sp500_chart_p_ma, height=200, use_container_width=True)
+with inpcol1.expander("S&P 500"):
+    sp500_chartcol1, sp500_chartcol2 = st.columns(2)
+    #EQUITY MARKET -> S&P500 -> RSI and MA selection & CHART
+    sp500_rsi_length=sp500_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="S&P500 rsi length selection")
+    sp500_ma_length=sp500_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="S&P500 ma length selection")
+    sp500 = Generate_DB()
+    sp500.get_database("^GSPC", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=sp500_rsi_length, ma_length=sp500_ma_length)
+    sp500_chart_p_ma, sp500_chart_rsi=sp500.db[['Close', 'ma']], sp500.db[['rsi']]
+    sp500_chartcol1.line_chart(sp500_chart_rsi, height=200, use_container_width=True)
+    sp500_chartcol2.line_chart(sp500_chart_p_ma, height=200, use_container_width=True)
 
-        # EQUITY MARKET -> S&P 500 -> % CHANGE / Price vs MA / RSI
-        sp500_col1,sp500_col2=st.columns(2)
-        sp500_rsi_on = sp500_col1.toggle("RSI", key="sp500 RSI toggle")
-        sp500_ma_on = sp500_col2.toggle("Moving Average", key="sp500 MA toggle")
+    # EQUITY MARKET -> S&P 500 -> % CHANGE / Price vs MA / RSI
+    sp500_col1,sp500_col2=st.columns(2)
+    sp500_rsi_on = sp500_col1.toggle("RSI", key="sp500 RSI toggle")
+    sp500_ma_on = sp500_col2.toggle("Moving Average", key="sp500 MA toggle")
 
-        # EQUITY MARKET -> S&P 500 -> RSI
-        if sp500_rsi_on:
-            sidebar_counter+=1
-            sp500_rsi_db = Generate_DB()
-            sp500_rsi_db.get_database("^GSPC", input_start_date, input_end_date, input_interval, sp500_rsi_length)
-            sp500_rsi_comparator = sp500_col1.selectbox("S&P comparator",('Greater than', 'Less than'))
-            sp500_rsi_selection = sp500_col1.number_input("Select value", min_value=0.0, step=1.0, key="S&P rsi selection")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=sp500_rsi_comparator, selected_value=[sp500_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        # EQUITY MARKET -> S&P 500 -> Moving Average
-        if sp500_ma_on:
-            sidebar_counter+=1
-            sp500_ma_db = Generate_DB()
-            sp500_ma_db.get_database('^GSPC', input_start_date, input_end_date, input_interval, ma_length=sp500_ma_length)
-            sp500_ma_comparator = sp500_col2.selectbox(f"sp500 Price > or < {sp500_ma_length} day Moving Average", ('Greater than', 'Less than'))
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=sp500_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        
-        # EQUITY MARKET -> S&P 500 -> % CHANGE / Price vs MA / RSI
-        sp500_pct_on = sp500_col1.toggle("% Change", key="sp500 % Change toggle")
+    # EQUITY MARKET -> S&P 500 -> RSI
+    if sp500_rsi_on:
+        sidebar_counter+=1
+        sp500_rsi_db = Generate_DB()
+        sp500_rsi_db.get_database("^GSPC", input_start_date, input_end_date, input_interval, sp500_rsi_length)
+        sp500_rsi_comparator = sp500_col1.selectbox("S&P comparator",('Greater than', 'Less than'))
+        sp500_rsi_selection = sp500_col1.number_input("Select value", min_value=0.0, step=1.0, key="S&P rsi selection")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=sp500_rsi_comparator, selected_value=[sp500_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    # EQUITY MARKET -> S&P 500 -> Moving Average
+    if sp500_ma_on:
+        sidebar_counter+=1
+        sp500_ma_db = Generate_DB()
+        sp500_ma_db.get_database('^GSPC', input_start_date, input_end_date, input_interval, ma_length=sp500_ma_length)
+        sp500_ma_comparator = sp500_col2.selectbox(f"sp500 Price > or < {sp500_ma_length} day Moving Average", ('Greater than', 'Less than'))
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=sp500_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    
+    # EQUITY MARKET -> S&P 500 -> % CHANGE / Price vs MA / RSI
+    sp500_pct_on = sp500_col1.toggle("% Change", key="sp500 % Change toggle")
 
-        # EQUITY MARKET -> S&P 500 -> % CHANGE
-        if rsp_pct_on:
-            sidebar_counter+=1
-            sp500_pct_db = Generate_DB()
-            sp500_pct_db.get_database('sp500', input_start_date, input_end_date, input_interval)
-            sp500_pct_sel = sp500_col1.slider("sp500 % selector", value=[-15.0,15.0], step=0.5, key="sp500 pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_sel[0], sp500_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-
+    # EQUITY MARKET -> S&P 500 -> % CHANGE
+    if sp500_pct_on:
+        sidebar_counter+=1
+        sp500_pct_db = Generate_DB()
+        sp500_pct_db.get_database('sp500', input_start_date, input_end_date, input_interval)
+        sp500_pct_sel = sp500_col1.slider("sp500 % selector", value=[-15.0,15.0], step=0.5, key="sp500 pct range selector")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_sel[0], sp500_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> Nasdaq
-    with inpcol1.expander("Nasdaq"):
-        ndx_chartcol1, ndx_chartcol2 = st.columns(2)
-        #EQUITY MARKET -> NASDAQ -> RSI and MA selection & CHART
-        ndx_rsi_length=ndx_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="Nasdaq rsi length selection")
-        ndx_ma_length=ndx_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="Nasdaq ma length selection")
-        ndx = Generate_DB()
-        ndx.get_database("^IXIC", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=ndx_rsi_length, ma_length=ndx_ma_length)
-        ndx_chart_p_ma, ndx_chart_rsi=ndx.db[['Close', 'ma']], ndx.db[['rsi']]
-        ndx_chartcol1.line_chart(ndx_chart_rsi, height=200, use_container_width=True)
-        ndx_chartcol2.line_chart(ndx_chart_p_ma, height=200, use_container_width=True)
+with inpcol1.expander("Nasdaq"):
+    ndx_chartcol1, ndx_chartcol2 = st.columns(2)
+    #EQUITY MARKET -> NASDAQ -> RSI and MA selection & CHART
+    ndx_rsi_length=ndx_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="Nasdaq rsi length selection")
+    ndx_ma_length=ndx_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="Nasdaq ma length selection")
+    ndx = Generate_DB()
+    ndx.get_database("^IXIC", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=ndx_rsi_length, ma_length=ndx_ma_length)
+    ndx_chart_p_ma, ndx_chart_rsi=ndx.db[['Close', 'ma']], ndx.db[['rsi']]
+    ndx_chartcol1.line_chart(ndx_chart_rsi, height=200, use_container_width=True)
+    ndx_chartcol2.line_chart(ndx_chart_p_ma, height=200, use_container_width=True)
 
-        # EQUITY MARKET -> Nasdaq -> % CHANGE / Price vs MA / RSI
-        ndx_col1,ndx_col2=st.columns(2)
-        ndx_rsi_on = ndx_col1.toggle("RSI", key="ndx RSI toggle")
-        ndx_ma_on = ndx_col2.toggle("Moving Average", key="ndx MA toggle")
+    # EQUITY MARKET -> Nasdaq -> % CHANGE / Price vs MA / RSI
+    ndx_col1,ndx_col2=st.columns(2)
+    ndx_rsi_on = ndx_col1.toggle("RSI", key="ndx RSI toggle")
+    ndx_ma_on = ndx_col2.toggle("Moving Average", key="ndx MA toggle")
 
-        # EQUITY MARKET -> Nasdaq -> RSI
-        if ndx_rsi_on:
-            sidebar_counter+=1
-            ndx_rsi_db = Generate_DB()
-            ndx_rsi_db.get_database("^IXIC", input_start_date, input_end_date, input_interval, ndx_rsi_length)
-            ndx_rsi_comparator = ndx_col1.selectbox("Nasdaq comparator",('Greater than', 'Less than'))
-            ndx_rsi_selection = ndx_col1.number_input("Select value", min_value=0.0, step=1.0, key="Nasdaq rsi selection")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=ndx_rsi_comparator, selected_value=[ndx_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        # EQUITY MARKET -> Nasdaq -> Moving Average
-        if ndx_ma_on:
-            sidebar_counter+=1
-            ndx_ma_db = Generate_DB()
-            ndx_ma_db.get_database('^IXIC', input_start_date, input_end_date, input_interval, ma_length=ndx_ma_length)
-            ndx_ma_comparator = ndx_col2.selectbox(f"ndx Price > or < {ndx_ma_length} day Moving Average", ('Greater than', 'Less than'))
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=ndx_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        
-        # EQUITY MARKET -> Nasdaq -> % CHANGE / Price vs MA / RSI
-        ndx_pct_on = ndx_col1.toggle("% Change", key="ndx % Change toggle")
+    # EQUITY MARKET -> Nasdaq -> RSI
+    if ndx_rsi_on:
+        sidebar_counter+=1
+        ndx_rsi_db = Generate_DB()
+        ndx_rsi_db.get_database("^IXIC", input_start_date, input_end_date, input_interval, ndx_rsi_length)
+        ndx_rsi_comparator = ndx_col1.selectbox("Nasdaq comparator",('Greater than', 'Less than'))
+        ndx_rsi_selection = ndx_col1.number_input("Select value", min_value=0.0, step=1.0, key="Nasdaq rsi selection")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=ndx_rsi_comparator, selected_value=[ndx_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    # EQUITY MARKET -> Nasdaq -> Moving Average
+    if ndx_ma_on:
+        sidebar_counter+=1
+        ndx_ma_db = Generate_DB()
+        ndx_ma_db.get_database('^IXIC', input_start_date, input_end_date, input_interval, ma_length=ndx_ma_length)
+        ndx_ma_comparator = ndx_col2.selectbox(f"ndx Price > or < {ndx_ma_length} day Moving Average", ('Greater than', 'Less than'))
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=ndx_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    
+    # EQUITY MARKET -> Nasdaq -> % CHANGE / Price vs MA / RSI
+    ndx_pct_on = ndx_col1.toggle("% Change", key="ndx % Change toggle")
 
-        # EQUITY MARKET -> Nasdaq -> % CHANGE
-        if ndx_pct_on:
-            sidebar_counter+=1
-            ndx_pct_db = Generate_DB()
-            ndx_pct_db.get_database('^IXIC', input_start_date, input_end_date, input_interval)
-            ndx_pct_sel = ndx_col1.slider("ndx % selector", value=[-15.0,15.0], step=0.5, key="ndx pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[ndx_pct_sel[0], ndx_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    # EQUITY MARKET -> Nasdaq -> % CHANGE
+    if ndx_pct_on:
+        sidebar_counter+=1
+        ndx_pct_db = Generate_DB()
+        ndx_pct_db.get_database('^IXIC', input_start_date, input_end_date, input_interval)
+        ndx_pct_sel = ndx_col1.slider("ndx % selector", value=[-15.0,15.0], step=0.5, key="ndx pct range selector")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[ndx_pct_sel[0], ndx_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> Russell 2000
-    with inpcol1.expander("Russell 2000"):
-        rus2k_chartcol1, rus2k_chartcol2 = st.columns(2)
-        #EQUITY MARKET -> Russell 2000 -> RSI and MA selection & CHART
-        rus2k_rsi_length=rus2k_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="Russell 2000 rsi length selection")
-        rus2k_ma_length=rus2k_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="Russell 2000 ma length selection")
-        rus2k = Generate_DB()
-        rus2k.get_database("^RUT", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=rus2k_rsi_length, ma_length=rus2k_ma_length)
-        rus2k_chart_p_ma, rus2k_chart_rsi=rus2k.db[['Close', 'ma']], rus2k.db[['rsi']]
-        rus2k_chartcol1.line_chart(rus2k_chart_rsi, height=200, use_container_width=True)
-        rus2k_chartcol2.line_chart(rus2k_chart_p_ma, height=200, use_container_width=True)
+with inpcol1.expander("Russell 2000"):
 
-        # EQUITY MARKET -> Russell 2000 -> % CHANGE / Price vs MA / RSI
-        rus2k_col1,rus2k_col2=st.columns(2)
-        rus2k_rsi_on = rus2k_col1.toggle("RSI", key="rus2k RSI toggle")
-        rus2k_ma_on = rus2k_col2.toggle("Moving Average", key="rus2k MA toggle")
+    rus2k_chartcol1, rus2k_chartcol2 = st.columns(2)
+    #EQUITY MARKET -> Russell 2000 -> RSI and MA selection & CHART
+    rus2k_rsi_length=rus2k_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="Russell 2000 rsi length selection")
+    rus2k_ma_length=rus2k_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="Russell 2000 ma length selection")
+    rus2k = Generate_DB()
+    rus2k.get_database("^RUT", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=rus2k_rsi_length, ma_length=rus2k_ma_length)
+    rus2k_chart_p_ma, rus2k_chart_rsi=rus2k.db[['Close', 'ma']], rus2k.db[['rsi']]
+    rus2k_chartcol1.line_chart(rus2k_chart_rsi, height=200, use_container_width=True)
+    rus2k_chartcol2.line_chart(rus2k_chart_p_ma, height=200, use_container_width=True)
 
-        # EQUITY MARKET -> Russell 2000 -> RSI
-        if rus2k_rsi_on:
-            sidebar_counter+=1
-            rus2k_rsi_db = Generate_DB()
-            rus2k_rsi_db.get_database("^RUT", input_start_date, input_end_date, input_interval, rus2k_rsi_length)
-            rus2k_rsi_comparator = rus2k_col1.selectbox("Russell 2000 comparator",('Greater than', 'Less than'))
-            rus2k_rsi_selection = rus2k_col1.number_input("Select value", min_value=0.0, step=1.0, key="Russell 2000 rsi selection")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rus2k_rsi_comparator, selected_value=[rus2k_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        # EQUITY MARKET -> Nasdaq -> Moving Average
-        if rus2k_ma_on:
-            sidebar_counter+=1
-            rus2k_ma_db = Generate_DB()
-            rus2k_ma_db.get_database('^RUT', input_start_date, input_end_date, input_interval, ma_length=rus2k_ma_length)
-            rus2k_ma_comparator = rus2k_col2.selectbox(f"rus2k Price > or < {rus2k_ma_length} day Moving Average", ('Greater than', 'Less than'))
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rus2k_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        
-        # EQUITY MARKET -> Russell 2000 -> % CHANGE / Price vs MA / RSI
-        rus2k_pct_on = rus2k_col1.toggle("% Change", key="rus2k % Change toggle")
+    # EQUITY MARKET -> Russell 2000 -> % CHANGE / Price vs MA / RSI
+    rus2k_col1,rus2k_col2=st.columns(2)
+    rus2k_rsi_on=rus2k_col1.toggle("RSI", key="rus2k RSI toggle")
+    rus2k_ma_on=rus2k_col2.toggle("Moving Average", key="rus2k MA toggle")
 
-        # EQUITY MARKET -> Russell 2000 -> % CHANGE
-        if rus2k_pct_on:
-            sidebar_counter+=1
-            rus2k_pct_db = Generate_DB()
-            rus2k_pct_db.get_database('^RUT', input_start_date, input_end_date, input_interval)
-            rus2k_pct_sel = rus2k_col1.slider("rus2k % selector", value=[-15.0,15.0], step=0.5, key="rus2k pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rus2k_pct_sel[0], rus2k_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    # EQUITY MARKET -> Russell 2000 -> RSI
+    if rus2k_rsi_on:
+        sidebar_counter+=1
+        rus2k_rsi_db = Generate_DB()
+        rus2k_rsi_db.get_database("^RUT", input_start_date, input_end_date, input_interval, rsi_value=rus2k_rsi_length)
+        rus2k_rsi_comparator = rus2k_col1.selectbox("Russell 2000 comparator",('Greater than', 'Less than'))
+        rus2k_rsi_selection = rus2k_col1.number_input("Select value", min_value=0.0, step=1.0, key="Russell 2000 rsi selection")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k_rsi_db.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rus2k_rsi_comparator, selected_value=[rus2k_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    # EQUITY MARKET -> Nasdaq -> Moving Average
+    if rus2k_ma_on:
+        sidebar_counter+=1
+        rus2k_ma_db = Generate_DB()
+        rus2k_ma_db.get_database('^RUT', input_start_date, input_end_date, input_interval, ma_length=rus2k_ma_length)
+        rus2k_ma_comparator = rus2k_col2.selectbox(f"rus2k Price > or < {rus2k_ma_length} day Moving Average", ('Greater than', 'Less than'))
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k_ma_db.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rus2k_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+    
+    # EQUITY MARKET -> Russell 2000 -> % CHANGE / Price vs MA / RSI
+    rus2k_pct_on = rus2k_col1.toggle("% Change", key="rus2k % Change toggle")
 
+    # EQUITY MARKET -> Russell 2000 -> % CHANGE
+    if rus2k_pct_on:
+        sidebar_counter+=1
+        rus2k_pct_db = Generate_DB()
+        rus2k_pct_db.get_database('^RUT', input_start_date, input_end_date, input_interval) #TODO utilize previous get_database method
+        rus2k_pct_sel = rus2k_col1.slider("rus2k % selector", value=[-15.0,15.0], step=0.5, key="rus2k pct range selector")
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rus2k_pct_sel[0], rus2k_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+# EQUITY MARKET -> EQUTIY RATIO
+with inpcol1.expander("Equity Ratio"):
+    eq_ratio_col1, eq_ratio_col2 = st.columns(2)
+    eq_ratio_numerator_selection = eq_ratio_col1.selectbox("Numerator", ("None", "Nasdaq", "S&P 500", "S&P 500 Equally Weighted", "Russell 2000"), key="equity ratio numerator selector")
+    eq_ratio_denominator_selection = eq_ratio_col2.selectbox("Denominator", ("None", "Nasdaq", "S&P 500", "S&P 500 Equally Weighted", "Russell 2000"), key="equity ratio denominator selector")
+    
+    if not eq_ratio_numerator_selection == "None" and not eq_ratio_denominator_selection == "None":
+        equity_ratio = Generate_DB()
+        equity_ratio.generate_ratio(eq_ratio_numerator_selection, eq_ratio_denominator_selection, input_start_date, input_end_date, input_interval)
+        equity_chart_ratio, equity_chart_ma_rsi = equity_ratio.db[["Ratio", "ma"]], equity_ratio.db[["rsi"]]
+        eq_ratio_col1.line_chart(equity_chart_ratio, height=200, use_container_width=True)
+        eq_ratio_col2.line_chart(equity_chart_ma_rsi, height=200, use_container_width=True)
 
 inpcol2.subheader("Debt Market")
 
