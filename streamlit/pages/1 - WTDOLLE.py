@@ -250,7 +250,7 @@ if equityratio_check:
             eq_ratio_ma_length = eq_ratio_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="equity ratio MA length")
             equity_ratio = Generate_DB()
             equity_ratio.generate_ratio(eq_ratio_numerator_selection, eq_ratio_denominator_selection, input_start_date, input_end_date, input_interval, eq_ratio_rsi_length, eq_ratio_ma_length)
-            equity_chart_ratio, equity_chart_ma_rsi = equity_ratio.db[["Ratio", "ma"]], equity_ratio.db[["rsi"]]
+            equity_chart_ratio, equity_chart_ma_rsi = equity_ratio.db[["Close", "ma"]], equity_ratio.db[["rsi"]]
             eq_ratio_col1.line_chart(equity_chart_ma_rsi, height=200, use_container_width=True)
             eq_ratio_col2.line_chart(equity_chart_ratio, height=200, use_container_width=True)
 
@@ -270,6 +270,17 @@ if equityratio_check:
                 sidebar_counter+=1
                 eq_ratio_ma_comparator = eq_ratio_col2.selectbox(f"Equity Ratio > or < {eq_ratio_ma_length} day Moving Average", ('Greater than','Less than'))
                 sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=eq_ratio_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            # EQUITY MARKET -> EQUITY RATIO -> % CHANGE
+            eq_ratio_pct_on=eq_ratio_col1.toggle("% Change", key="equity ratio % change")
+
+            # EQUITY MARKET -> EQUITY RATIO -> % CHANGE
+            if eq_ratio_pct_on:
+                sidebar_counter+=1
+                eqratio_pct_selection = eq_ratio_col1.slider("Equity Ratio % selector", value=[-15.0, 15.0], step=0.5, key="equity ratio pct range selector")
+                sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_sel[0], sp500_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+
 
 inpcol2.subheader("Debt Market")
 
