@@ -87,18 +87,18 @@ class Generate_DB:
 
         #Create Ratio Columns
         self.db = pd.concat([numerator_cls.db, denominator_cls.db], axis=1)
-        self.db['Ratio']=self.db[f'{numerator} Close']/self.db[f'{denominator} Close']
-        self.db['Ratio % Chg']=(self.db['Ratio'].pct_change()*100).round(2)
+        self.db['Close']=self.db[f'{numerator} Close']/self.db[f'{denominator} Close']
+        self.db['% Change']=(self.db['Close'].pct_change()*100).round(2)
         
         #Create rsi and ma columns
-        self.db['rsi'] = ta.rsi(close = self.db['Ratio'], length=rsi_length)
-        self.db['ma'] = ta.sma(close = self.db['Ratio'], length=ma_length)
+        self.db['rsi'] = ta.rsi(close = self.db['Close'], length=rsi_length)
+        self.db['ma'] = ta.sma(close = self.db['Close'], length=ma_length)
 
         #Creating variables for UI
         self.curr_rsi = self.db['rsi'].iloc[-1]
         self.curr_ma = int(self.db['ma'].iloc[-1])
-        self.curr_p = self.db['Ratio'].iloc[-1]
-        self.pctchg_int = self.db['Ratio % Chg'].iloc[-1]
+        self.curr_p = self.db['Close'].iloc[-1]
+        self.pctchg_int = self.db['% Change'].iloc[-1]
         self.pctchg_str = "{:.2%}".format(self.pctchg_int / 100)
 
     def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
