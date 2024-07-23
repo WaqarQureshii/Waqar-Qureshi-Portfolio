@@ -1,11 +1,12 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
+import streamlit as st
 
 import math
 
 class Generate_DB:
-    def __init__(self):
+    def __init__(_self):
         #TODO add this documentation to get_database method.
         """
         Generates database with all of its metrics by providing it parameters.
@@ -23,45 +24,45 @@ class Generate_DB:
             VIX = ^VIX\n
             High Yield Corp Bond = HYG\n
         """
-        self.db = None
-        self.curr_rsi = None
-        self.curr_ma = None
-        self.curr_p = None
-        self.pctchg_int = None
-        self.pctchg_str = None
-        self.pctchg_floor_int = None
-        self.pctchg_ceil_int = None
+        _self.db = None
+        _self.curr_rsi = None
+        _self.curr_ma = None
+        _self.curr_p = None
+        _self.pctchg_int = None
+        _self.pctchg_str = None
+        _self.pctchg_floor_int = None
+        _self.pctchg_ceil_int = None
     
-    def get_database(self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50): #TODO modify so that MA and RSI don't automatically generate.
-        self.db = yf.download([ticker], start=start_date, end=end_date, interval=interval)
+    def get_database(_self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50): #TODO modify so that MA and RSI don't automatically generate.
+        _self.db = yf.download([ticker], start=start_date, end=end_date, interval=interval)
         
         # Database Massage
-        self.db['% Change'] = self.db['Close'].pct_change()
+        _self.db['% Change'] = _self.db['Close'].pct_change()
 
         # (-) Columns
-        self.db = self.db.drop(['Adj Close'], axis=1)
+        _self.db = _self.db.drop(['Adj Close'], axis=1)
 
-        self.db['rsi'] = ta.rsi(close = self.db.Close, length=rsi_value)
-        self.db['ma'] = ta.sma(close = self.db.Close, length=ma_length)
+        _self.db['rsi'] = ta.rsi(close = _self.db.Close, length=rsi_value)
+        _self.db['ma'] = ta.sma(close = _self.db.Close, length=ma_length)
         
         # (+) % Change
-        self.pctchg_int = self.db["% Change"].iloc[-1] # % Change COLUMN
-        self.pctchg_str = "{:.2%}".format(self.db["% Change"].iloc[-1]) # %Change current value
+        _self.pctchg_int = _self.db["% Change"].iloc[-1] # % Change COLUMN
+        _self.pctchg_str = "{:.2%}".format(_self.db["% Change"].iloc[-1]) # %Change current value
         # ---% Change FLOOR & CEILING
-        self.pctchg_floor_int = math.floor(self.pctchg_int*100)/100
-        self.pctchg_ceil_int = math.ceil(self.pctchg_int*100)/100
+        _self.pctchg_floor_int = math.floor(_self.pctchg_int*100)/100
+        _self.pctchg_ceil_int = math.ceil(_self.pctchg_int*100)/100
         
         # (+) RSI
-        self.curr_rsi = self.db['rsi'].iloc[-1]
-        # self.curr_rsi = int(self.db['rsi'].iloc[-1])
+        _self.curr_rsi = _self.db['rsi'].iloc[-1]
+        # _self.curr_rsi = int(_self.db['rsi'].iloc[-1])
 
         # (+) Moving Average
-        self.curr_ma = (self.db['ma'].iloc[-1])
+        _self.curr_ma = (_self.db['ma'].iloc[-1])
 
         # get Current Price
-        self.curr_p = int(self.db["Close"].iloc[-1])
+        _self.curr_p = int(_self.db["Close"].iloc[-1])
 
-    def generate_ratio(self, numerator, denominator, start_date, end_date, interval, rsi_length:int=22, ma_length:int=50):
+    def generate_ratio(_self, numerator, denominator, start_date, end_date, interval, rsi_length:int=22, ma_length:int=50):
         '''
         Args:
         numerator or denominator: Nasdaq, S&P 500, Russel 2000, S&P 500 Equal Weight
@@ -86,22 +87,22 @@ class Generate_DB:
         denominator_cls.db.rename(columns={'Close': f'{denominator} Close'},inplace=True)
 
         #Create Ratio Columns
-        self.db = pd.concat([numerator_cls.db, denominator_cls.db], axis=1)
-        self.db['Close']=self.db[f'{numerator} Close']/self.db[f'{denominator} Close']
-        self.db['% Change']=(self.db['Close'].pct_change()*100).round(2)
+        _self.db = pd.concat([numerator_cls.db, denominator_cls.db], axis=1)
+        _self.db['Close']=_self.db[f'{numerator} Close']/_self.db[f'{denominator} Close']
+        _self.db['% Change']=(_self.db['Close'].pct_change()*100).round(2)
         
         #Create rsi and ma columns
-        self.db['rsi'] = ta.rsi(close = self.db['Close'], length=rsi_length)
-        self.db['ma'] = ta.sma(close = self.db['Close'], length=ma_length)
+        _self.db['rsi'] = ta.rsi(close = _self.db['Close'], length=rsi_length)
+        _self.db['ma'] = ta.sma(close = _self.db['Close'], length=ma_length)
 
         #Creating variables for UI
-        self.curr_rsi = self.db['rsi'].iloc[-1]
-        self.curr_ma = int(self.db['ma'].iloc[-1])
-        self.curr_p = self.db['Close'].iloc[-1]
-        self.pctchg_int = self.db['% Change'].iloc[-1]
-        self.pctchg_str = "{:.2%}".format(self.pctchg_int / 100)
+        _self.curr_rsi = _self.db['rsi'].iloc[-1]
+        _self.curr_ma = int(_self.db['ma'].iloc[-1])
+        _self.curr_p = _self.db['Close'].iloc[-1]
+        _self.pctchg_int = _self.db['% Change'].iloc[-1]
+        _self.pctchg_str = "{:.2%}".format(_self.pctchg_int / 100)
 
-    def metric_vs_selection(self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def metric_vs_selection(_self, comparison_type:str, comparator:str, selected_value, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
         Compares the current level price with the selected value.
 
@@ -110,56 +111,56 @@ class Generate_DB:
         comparator: 'Greater than', 'Less than'
 
         Output:
-        self, sp500_intersection, ndx_intersection, rus2k_intersection
+        _self, sp500_intersection, ndx_intersection, rus2k_intersection
         '''
         ref_dict = {
             "current price": {
-                "1st value": self.curr_p,
+                "1st value": _self.curr_p,
                 "2nd value": selected_value,
-                "1st col": self.db.get("Close", 0),
+                "1st col": _self.db.get("Close", 0),
                 "2nd col": selected_value
             },
             "% change": {
-                "1st value": self.pctchg_int*100,
+                "1st value": _self.pctchg_int*100,
                 "2nd value": selected_value,
-                "1st col": self.db.get("% Change", 0)*100,
+                "1st col": _self.db.get("% Change", 0)*100,
                 "2nd col": selected_value
             },
             "price vs ma": {
-                "1st value": self.curr_p,
-                "2nd value": self.curr_ma,
-                "1st col": self.db.get("Close", 0),
-                "2nd col": self.db['ma']
+                "1st value": _self.curr_p,
+                "2nd value": _self.curr_ma,
+                "1st col": _self.db.get("Close", 0),
+                "2nd col": _self.db['ma']
             },
             "rsi vs selection": {
-                "1st value": self.curr_rsi,
+                "1st value": _self.curr_rsi,
                 "2nd value": selected_value,
-                "1st col": self.db.get("rsi", 0),
+                "1st col": _self.db.get("rsi", 0),
                 "2nd col": selected_value
             },
             "ratio vs selection": {
-                "1st value": self.curr_p,
+                "1st value": _self.curr_p,
                 "2nd value": selected_value,
-                "1st col": self.db.get("Ratio", 0),
+                "1st col": _self.db.get("Ratio", 0),
                 "2nd col": selected_value
             },
             "ratio % change vs selection": {
-                "1st value": self.pctchg_int,
+                "1st value": _self.pctchg_int,
                 "2nd value": selected_value,
-                "1st col": self.db.get("Ratio % Chg", 0),
+                "1st col": _self.db.get("Ratio % Chg", 0),
                 "2nd col": selected_value
             }
         }
 
         if comparator == 'Greater than':
-            self.boolean_comp = ref_dict[comparison_type]['1st value'] > ref_dict[comparison_type]['2nd value']
+            _self.boolean_comp = ref_dict[comparison_type]['1st value'] > ref_dict[comparison_type]['2nd value']
 
-            filtered_database = self.db[ref_dict[comparison_type]['1st col'] > ref_dict[comparison_type]['2nd col']]
+            filtered_database = _self.db[ref_dict[comparison_type]['1st col'] > ref_dict[comparison_type]['2nd col']]
 
         elif comparator == 'Less than':
-            self.boolean_comp = ref_dict[comparison_type]['1st value'] < ref_dict[comparison_type]['2nd value']
+            _self.boolean_comp = ref_dict[comparison_type]['1st value'] < ref_dict[comparison_type]['2nd value']
 
-            filtered_database = self.db[ref_dict[comparison_type]['1st col'] < ref_dict[comparison_type]['2nd col']]
+            filtered_database = _self.db[ref_dict[comparison_type]['1st col'] < ref_dict[comparison_type]['2nd col']]
 
         else:
             return "Check comparator value, should be either p greater or lower"
@@ -170,7 +171,7 @@ class Generate_DB:
 
         return sp500, ndx, rus2k
     
-    def metric_vs_comparison_cross(self, comparison_type:str, selected_value:tuple, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def metric_vs_comparison_cross(_self, comparison_type:str, selected_value:tuple, sp500:pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
         Compares the current level price with the selected value.
 
@@ -179,7 +180,7 @@ class Generate_DB:
         comparator: 'Greater than', 'Less than', 'Between'
 
         Output:
-        self, sp500_intersection, ndx_intersection, rus2k_intersection
+        _self, sp500_intersection, ndx_intersection, rus2k_intersection
         '''
         if len(selected_value) ==2:
             second_value = selected_value[0]
@@ -194,7 +195,7 @@ class Generate_DB:
         else: third_value = None
         ref_dict = {
             "current price": {
-                "1st value": self.curr_p,
+                "1st value": _self.curr_p,
                 "2nd value": second_value,
                 "1st col": "Close",
                 "1st col x": 1,
@@ -202,7 +203,7 @@ class Generate_DB:
                 "3rd col": 0
             },
             "% change": {
-                "1st value": self.pctchg_int*100,
+                "1st value": _self.pctchg_int*100,
                 "2nd value": second_value,
                 "1st col": "% Change",
                 "1st col x": 100,
@@ -210,7 +211,7 @@ class Generate_DB:
                 "3rd col": 0
             },
             "% change between": {
-                "1st value": self.pctchg_int*100,
+                "1st value": _self.pctchg_int*100,
                 "2nd value": second_value,
                 "3rd value": third_value,
                 "1st col": "% Change",
@@ -219,15 +220,15 @@ class Generate_DB:
                 "3rd col": third_value
             },
             "price vs ma": {
-                "1st value": self.curr_p,
-                "2nd value": self.curr_ma,
+                "1st value": _self.curr_p,
+                "2nd value": _self.curr_ma,
                 "1st col": "Close",
                 "1st col x": 1,
                 "2nd col": 'ma',
                 "3rd col": 0
             },
             "rsi vs selection": {
-                "1st value": self.curr_rsi,
+                "1st value": _self.curr_rsi,
                 "2nd value": second_value,
                 "1st col": "rsi",
                 "1st col x": 1,
@@ -235,7 +236,7 @@ class Generate_DB:
                 "3rd col": 0
             },
             "ratio vs selection": {
-                "1st value": self.curr_p,
+                "1st value": _self.curr_p,
                 "2nd value": second_value,
                 "1st col": "Ratio",
                 "1st col x": 1,
@@ -243,7 +244,7 @@ class Generate_DB:
                 "3rd col": 0
             },
             "ratio % change vs selection": {
-                "1st value": self.pctchg_int,
+                "1st value": _self.pctchg_int,
                 "2nd value": second_value,
                 "1st col": "Ratio % Chg",
                 "1st col x": 1,
@@ -256,8 +257,8 @@ class Generate_DB:
         prev_comparison = False
         # Initialize an empty list to store the filtered rows
         filtered_rows = []
-        # self.db.to_csv('test.csv')
-        for index, row in self.db.iterrows():
+        # _self.db.to_csv('test.csv')
+        for index, row in _self.db.iterrows():
             # Check if the current row meets the existing condition
             if isinstance(ref_dict[comparison_type]['1st col'], str):
                 column1 = row[ref_dict[comparison_type]['1st col']]*ref_dict[comparison_type]['1st col x']
