@@ -41,7 +41,7 @@ elif selection_interval == 'Monthly':
     input_interval = '1mo'
     grammatical_selection = 'months'
 
-input_returninterval = header_col3.number_input(f"Calculate over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection")
+input_returninterval = header_col3.number_input(f"Calculate over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection") #TODO need to link to Indices graph input, after deprecating existing individual selection.
 
 # --- Dataframes Set Up ---
 # ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
