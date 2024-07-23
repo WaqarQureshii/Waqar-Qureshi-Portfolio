@@ -53,6 +53,7 @@ sidebar_counter = 0
 
 inpcol1, inpcol2, inpcol3 = st.columns(3)
 # EQUITY MARKET
+equity_filters_applied_sentence = "Equity filters applied:"
 equity_market = inpcol1.popover("Equity Market")
 volatility_index_check = equity_market.checkbox("Volatility Index (VIX)", False)
 equalweighted_sp500_check = equity_market.checkbox("Equal-Weighted S&P 500 (RSP)", False)
@@ -74,15 +75,23 @@ if volatility_index_check:
         vix_pct_on = vixcol2.toggle("% Change", key="vix pct toggle")
     # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
         if vix_level_on:
-            sidebar_counter+=1
             vix_level_comparator = vixcol1.selectbox("VIX Comparator",('Greater than', 'Less than'))
             vix_level_selection = vixcol1.number_input("Select value", min_value=0.0, step=0.5)
             sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='current price', comparator=vix_level_comparator, selected_value=[vix_level_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            equity_filters_applied_sentence+=f" VIX level {vix_level_comparator} {vix_level_selection}"
+            sidebar_counter+=1
     #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
         if vix_pct_on:
+            vix_pct_lower = vixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
+            vix_pct_higher = vixcol2.number_input("Between higher value", step=0.6, key="vix between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[vix_pct_lower, vix_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" VIX % change between {vix_pct_lower} and {vix_pct_higher}"
+            else:
+                equity_filters_applied_sentence+=f", VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
             sidebar_counter+=1
-            vix_pct_sel = vixcol2.slider("VIX % selector", value=[-15.0,15.0], step=0.5, key="vix pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[vix_pct_sel[0], vix_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> RSP
 if equalweighted_sp500_check:
@@ -102,24 +111,40 @@ if equalweighted_sp500_check:
 
         # EQUITY MARKET -> RSP -> RSI
         if rsp_rsi_on:
-            sidebar_counter+=1
             rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
             rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" RSP Price {rsp_rsi_comparator} {rsp_rsi_selection}"
+            else:
+                equity_filters_applied_sentence+=f", RSP Price {rsp_rsi_comparator} {rsp_rsi_selection}"
+            sidebar_counter+=1
         # EQUITY MARKET -> RSP -> RSP Moving Average
         if rsp_ma_on:
-            sidebar_counter+=1
             rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Less than'))
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rsp_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" RSP Price {rsp_ma_comparator} RSP {rsp_ma_length} day Moving Average"
+            else:
+                equity_filters_applied_sentence+=f", RSP Price {rsp_ma_comparator} RSP {rsp_ma_length} day Moving Average"
+            sidebar_counter+=1
         
         # EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
         rsp_pct_on = rsp_col1.toggle("% Change", key="rsp % Change toggle")
 
         # EQUITY MARKET -> RSP -> % Change
         if rsp_pct_on:
+            rsp_pct_lower = rsp_col1.number_input("Between lower value", step=0.5, key="rsp between lower value")
+            rsp_pct_higher = rsp_col1.number_input("Between higher value", step=0.6, key="rsp between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_lower, rsp_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" RSP % change between {rsp_pct_lower} and {rsp_pct_higher}"
+            else:
+                equity_filters_applied_sentence+=f", RSP % change between {rsp_pct_lower} and {rsp_pct_higher}%"
             sidebar_counter+=1
-            rsp_pct_sel = rsp_col1.slider("RSP % selector", value=[-15.0,15.0], step=0.5, key="rsp pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_sel[0], rsp_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> S&P 500
 if sp500_check:
@@ -141,24 +166,40 @@ if sp500_check:
 
         # EQUITY MARKET -> S&P 500 -> RSI
         if sp500_rsi_on:
-            sidebar_counter+=1
             sp500_rsi_comparator = sp500_col1.selectbox("S&P comparator",('Greater than', 'Less than'))
             sp500_rsi_selection = sp500_col1.number_input("Select value", min_value=0.0, step=1.0, key="S&P rsi selection")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=sp500_rsi_comparator, selected_value=[sp500_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" S&P500 Price {sp500_rsi_comparator} {sp500_rsi_selection}"
+            else:
+                equity_filters_applied_sentence+=f", S&P500 Price {sp500_rsi_comparator} {sp500_rsi_selection}"
+            sidebar_counter+=1
         # EQUITY MARKET -> S&P 500 -> Moving Average
         if sp500_ma_on:
-            sidebar_counter+=1
             sp500_ma_comparator = sp500_col2.selectbox(f"sp500 Price > or < {sp500_ma_length} day Moving Average", ('Greater than', 'Less than'))
             sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=sp500_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" S&P500 Price {sp500_ma_comparator} S&P500 {sp500_ma_length} day Moving Average"
+            else:
+                equity_filters_applied_sentence+=f", S&P500 Price {sp500_ma_comparator} S&P500 {sp500_ma_length} day Moving Average"
+            sidebar_counter+=1
         
         # EQUITY MARKET -> S&P 500 -> % CHANGE / Price vs MA / RSI
         sp500_pct_on = sp500_col1.toggle("% Change", key="sp500 % Change toggle")
 
         # EQUITY MARKET -> S&P 500 -> % CHANGE
         if sp500_pct_on:
+            sp500_pct_lower = sp500_col1.number_input("Between lower value", step=0.5, key="sp500 between lower value")
+            sp500_pct_higher = sp500_col1.number_input("Between higher value", step=0.6, key="sp500 between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_lower, sp500_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" S&P500 % change between {sp500_pct_lower}% and {sp500_pct_higher}%"
+            else:
+                equity_filters_applied_sentence+=f", S&P500 % change between {sp500_pct_lower}% and {sp500_pct_higher}%"
             sidebar_counter+=1
-            sp500_pct_sel = sp500_col1.slider("sp500 % selector", value=[-15.0,15.0], step=0.5, key="sp500 pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_sel[0], sp500_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> Nasdaq
 if nasdaq_check:
@@ -180,24 +221,39 @@ if nasdaq_check:
 
         # EQUITY MARKET -> Nasdaq -> RSI
         if ndx_rsi_on:
-            sidebar_counter+=1
             ndx_rsi_comparator = ndx_col1.selectbox("Nasdaq comparator",('Greater than', 'Less than'))
             ndx_rsi_selection = ndx_col1.number_input("Select value", min_value=0.0, step=1.0, key="Nasdaq rsi selection")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=ndx_rsi_comparator, selected_value=[ndx_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" Nasdaq Price {ndx_rsi_comparator} {ndx_rsi_selection}"
+            else:
+                equity_filters_applied_sentence+=f", Nasdaq Price {ndx_rsi_comparator} {ndx_rsi_selection}"
+            sidebar_counter+=1
         # EQUITY MARKET -> Nasdaq -> Moving Average
         if ndx_ma_on:
-            sidebar_counter+=1
             ndx_ma_comparator = ndx_col2.selectbox(f"ndx Price > or < {ndx_ma_length} day Moving Average", ('Greater than', 'Less than'))
             sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=ndx_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        
+
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" Nasdaq Price {ndx_ma_comparator} Nasdaq {ndx_ma_length} day Moving Average"
+            else:
+                equity_filters_applied_sentence+=f", Nasdaq Price {ndx_ma_comparator} Nasdaq {ndx_ma_length} day Moving Average"
+            sidebar_counter+=1
         # EQUITY MARKET -> Nasdaq -> % CHANGE / Price vs MA / RSI
         ndx_pct_on = ndx_col1.toggle("% Change", key="ndx % Change toggle")
 
         # EQUITY MARKET -> Nasdaq -> % CHANGE
         if ndx_pct_on:
+            ndx_pct_lower = ndx_col1.number_input("Between lower value", step=0.5, key="ndx between lower value")
+            ndx_pct_higher = ndx_col1.number_input("Between higher value", step=0.6, key="ndx between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[ndx_pct_lower, ndx_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" Nasdaq % change between {ndx_pct_lower}% and {ndx_pct_higher}%"
+            else:
+                equity_filters_applied_sentence+=f", Nasdaq % change between {ndx_pct_lower}% and {ndx_pct_higher}%"
             sidebar_counter+=1
-            ndx_pct_sel = ndx_col1.slider("ndx % selector", value=[-15.0,15.0], step=0.5, key="ndx pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = ndx.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[ndx_pct_sel[0], ndx_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 # EQUITY MARKET -> Russell 2000
 if russell2000_check:
@@ -219,27 +275,39 @@ if russell2000_check:
 
         # EQUITY MARKET -> Russell 2000 -> RSI
         if rus2k_rsi_on:
-            sidebar_counter+=1
             rus2k_rsi_comparator = rus2k_col1.selectbox("Russell 2000 comparator",('Greater than', 'Less than'))
             rus2k_rsi_selection = rus2k_col1.number_input("Select value", min_value=0.0, step=1.0, key="Russell 2000 rsi selection")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rus2k_rsi_comparator, selected_value=[rus2k_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" Russell 2000 Price {rus2k_rsi_comparator} {rus2k_rsi_selection}"
+            else:
+                equity_filters_applied_sentence+=f", Russell 2000 Price {rus2k_rsi_comparator} {rus2k_rsi_selection}"
+            sidebar_counter+=1
         # EQUITY MARKET -> Nasdaq -> Moving Average
         if rus2k_ma_on:
-            sidebar_counter+=1
             rus2k_ma_comparator = rus2k_col2.selectbox(f"rus2k Price > or < {rus2k_ma_length} day Moving Average", ('Greater than', 'Less than'))
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rus2k_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-        
+
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" Russell 2000 Price {rus2k_ma_comparator} Russell 2000 {rus2k_ma_length} day Moving Average"
+            else:
+                equity_filters_applied_sentence+=f", Russell 2000 Price {rus2k_ma_comparator} Russell 2000 {rus2k_ma_length} day Moving Average"
+            sidebar_counter+=1
         # EQUITY MARKET -> Russell 2000 -> % CHANGE / Price vs MA / RSI
         rus2k_pct_on = rus2k_col1.toggle("% Change", key="rus2k % Change toggle")
 
         # EQUITY MARKET -> Russell 2000 -> % CHANGE
         if rus2k_pct_on:
-            sidebar_counter+=1
-            rus2k_pct_db = Generate_DB()
-            rus2k_pct_db.get_database('^RUT', input_start_date, input_end_date, input_interval) #TODO utilize previous get_database method
-            rus2k_pct_sel = rus2k_col1.slider("rus2k % selector", value=[-15.0,15.0], step=0.5, key="rus2k pct range selector")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k_pct_db.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rus2k_pct_sel[0], rus2k_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            rus2k_pct_lower = rus2k_col1.number_input("Between lower value", step=0.5, key="rus2k between lower value")
+            rus2k_pct_higher = rus2k_col1.number_input("Between higher value", step=0.6, key="rus2k between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = rus2k.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rus2k_pct_lower, rus2k_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" Russell 2000 % change between {rus2k_pct_lower}% and {rus2k_pct_higher}%"
+            else:
+                equity_filters_applied_sentence+=f", Russell 2000 % change between {rus2k_pct_lower}% and {rus2k_pct_higher}%"
+            sidebar_counter+=1
 # EQUITY MARKET -> EQUTIY RATIO
 if equityratio_check:
     with inpcol1.expander("Equity Ratio"):
@@ -262,26 +330,43 @@ if equityratio_check:
 
             # EQUITY MARKET -> EQUITY RATIO -> RSI
             if eq_ratio_rsi_on:
-                sidebar_counter+=1
                 eq_ratio_comparator = eq_ratio_col1.selectbox("Ratio comparator", ("Greater than", "Less than"), key="equity ratio comparator")
                 eq_ratio_rsi_selection = eq_ratio_col2.number_input("Select RSI value", min_value=0.0, step=1.0, key="equity ratio RSI selection")
                 sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type="rsi vs selection", comparator=eq_ratio_comparator, selected_value=[eq_ratio_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+                
+                if sidebar_counter==0:
+                    equity_filters_applied_sentence+=f" Equity Ratio Price {eq_ratio_comparator} {eq_ratio_rsi_selection}"
+                else:
+                    equity_filters_applied_sentence+=f", Equity Ratio Price {eq_ratio_comparator} {eq_ratio_rsi_selection}"
+                sidebar_counter+=1
             
             # EQUITY MARKET -> EQUITY RATIO -> MA
             if eq_ratio_ma_on:
-                sidebar_counter+=1
                 eq_ratio_ma_comparator = eq_ratio_col2.selectbox(f"Equity Ratio > or < {eq_ratio_ma_length} day Moving Average", ('Greater than','Less than'))
                 sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=eq_ratio_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+                
+                if sidebar_counter==0:
+                    equity_filters_applied_sentence+=f" Equity Ratio Price {eq_ratio_ma_comparator} Equity Ratio {eq_ratio_ma_length} day Moving Average"
+                else:
+                    equity_filters_applied_sentence+=f", Equity Ratio Price {eq_ratio_ma_comparator} Equity Ratio {eq_ratio_ma_length} day Moving Average"
+                sidebar_counter+=1
             
             # EQUITY MARKET -> EQUITY RATIO -> % CHANGE
             eq_ratio_pct_on=eq_ratio_col1.toggle("% Change", key="equity ratio % change")
 
             # EQUITY MARKET -> EQUITY RATIO -> % CHANGE
             if eq_ratio_pct_on:
-                sidebar_counter+=1
-                eqratio_pct_selection = eq_ratio_col1.slider("Equity Ratio % selector", value=[-15.0, 15.0], step=0.5, key="equity ratio pct range selector")
-                sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_sel[0], sp500_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+                eqratio_pct_lower = eq_ratio_col1.number_input("Between lower value", step=0.5, key="equity ratio between lower value")
+                eqratio_pct_higher = eq_ratio_col1.number_input("Between higher value", step=0.6, key="equity ratio between higher value")
+                sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[eqratio_pct_lower, eqratio_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
+                if sidebar_counter==0:
+                    equity_filters_applied_sentence+=f" Equity Ratio % change between {eqratio_pct_lower}% and {eqratio_pct_higher}%"
+                else:
+                    equity_filters_applied_sentence+=f", Equity Ratio % change between {eqratio_pct_lower}% and {eqratio_pct_higher}%"
+                sidebar_counter+=1
+
+inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
 
 inpcol2.subheader("Debt Market")
