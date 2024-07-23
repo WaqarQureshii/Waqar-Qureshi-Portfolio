@@ -21,7 +21,7 @@ st.title('What Transpired During Our Last Encounter (WTDOLLE)?')
 today_date = datetime.today()
 start_date = '2001-01-01 00:00:00'
 start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
-header_col1, header_col2 = st.columns(2)
+header_col1, header_col2, header_col3 = st.columns(3)
 input_start_date = header_col1.date_input(label = "Choose start date", value = start_date)
 input_end_date = header_col1.date_input(label = 'Choose end date', value = today_date)
 
@@ -40,6 +40,8 @@ elif selection_interval == 'Weekly':
 elif selection_interval == 'Monthly':
     input_interval = '1mo'
     grammatical_selection = 'months'
+
+input_returninterval = header_col3.number_input(f"Calculate over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection")
 
 # --- Dataframes Set Up ---
 # ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
@@ -250,7 +252,7 @@ if equityratio_check:
             eq_ratio_ma_length = eq_ratio_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="equity ratio MA length")
             equity_ratio = Generate_DB()
             equity_ratio.generate_ratio(eq_ratio_numerator_selection, eq_ratio_denominator_selection, input_start_date, input_end_date, input_interval, eq_ratio_rsi_length, eq_ratio_ma_length)
-            equity_chart_ratio, equity_chart_ma_rsi = equity_ratio.db[["Close", "ma"]], equity_ratio.db[["rsi"]]
+            equity_chart_ratio, equity_chart_ma_rsi = equity_ratio.db[["Close", "ma", "% Change"]], equity_ratio.db[["rsi"]]
             eq_ratio_col1.line_chart(equity_chart_ma_rsi, height=200, use_container_width=True)
             eq_ratio_col2.line_chart(equity_chart_ratio, height=200, use_container_width=True)
 
@@ -278,7 +280,7 @@ if equityratio_check:
             if eq_ratio_pct_on:
                 sidebar_counter+=1
                 eqratio_pct_selection = eq_ratio_col1.slider("Equity Ratio % selector", value=[-15.0, 15.0], step=0.5, key="equity ratio pct range selector")
-                sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_sel[0], sp500_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+                sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_sel[0], sp500_pct_sel[1]], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
 
 
