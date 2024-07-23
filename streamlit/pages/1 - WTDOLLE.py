@@ -88,7 +88,7 @@ if volatility_index_check:
             sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[vix_pct_lower, vix_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
             if sidebar_counter==0:
-                equity_filters_applied_sentence+=f" VIX % change between {vix_pct_lower} and {vix_pct_higher}"
+                equity_filters_applied_sentence+=f" VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
             else:
                 equity_filters_applied_sentence+=f", VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
             sidebar_counter+=1
@@ -141,7 +141,7 @@ if equalweighted_sp500_check:
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_lower, rsp_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
             if sidebar_counter==0:
-                equity_filters_applied_sentence+=f" RSP % change between {rsp_pct_lower} and {rsp_pct_higher}"
+                equity_filters_applied_sentence+=f" RSP % change between {rsp_pct_lower}% and {rsp_pct_higher}%"
             else:
                 equity_filters_applied_sentence+=f", RSP % change between {rsp_pct_lower} and {rsp_pct_higher}%"
             sidebar_counter+=1
