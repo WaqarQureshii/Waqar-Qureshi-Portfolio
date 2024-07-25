@@ -116,9 +116,9 @@ if equalweighted_sp500_check:
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
             if sidebar_counter==0:
-                equity_filters_applied_sentence+=f" RSP Price {rsp_rsi_comparator} {rsp_rsi_selection}"
+                equity_filters_applied_sentence+=f" RSP {rsp_rsi_length}-day RSI {rsp_rsi_comparator} {rsp_rsi_selection}"
             else:
-                equity_filters_applied_sentence+=f", RSP Price {rsp_rsi_comparator} {rsp_rsi_selection}"
+                equity_filters_applied_sentence+=f", RSP {rsp_rsi_length}-day RSI {rsp_rsi_comparator} {rsp_rsi_selection}"
             sidebar_counter+=1
         # EQUITY MARKET -> RSP -> RSP Moving Average
         if rsp_ma_on:
@@ -575,7 +575,7 @@ with col3.expander("Russell 2000 Parameter Section"):
 # --- Indices Generation ---
 if sidebar_counter > 0:
     #---S&P500 DATABASE GENERATION---
-    db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500.db, sp500_intersection, sp500_return_interval)
+    db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500.db, sp500_intersection, input_returninterval)
     #-------S&P500 GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('S&P500')
@@ -583,11 +583,11 @@ if sidebar_counter > 0:
     ax.scatter(db_filtered_sp500.index, db_filtered_sp500['Close'], marker='.', color='red', s = 10)
     graph1.pyplot(fig)
     #-------S&P500 GENERATE STATEMENTS--------
-    graph1.write(f'This occurred {no_of_occurrences_sp500} of time(s) and is {positive_percentage_sp500} positive in {sp500_return_interval} days.' )
+    graph1.write(f'This occurred {no_of_occurrences_sp500} of time(s) and is {positive_percentage_sp500} positive in {input_returninterval} days.' )
     graph1.write('{:.2%}'.format(avg_sp500_return))
 
     #---NASDAQ DATABASE GENERATION---
-    db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx.db, nasdaq_intersection, ndx_return_interval)
+    db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx.db, nasdaq_intersection, input_returninterval)
     #-------NASDAQ GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('Nasdaq 100')
@@ -595,11 +595,11 @@ if sidebar_counter > 0:
     ax.scatter(db_filtered_ndx.index, db_filtered_ndx['Close'], marker='.', color='red', s = 10)
     graph2.pyplot(fig)
     #-------NASDAQ GENERATE STATEMENTS-------
-    graph2.write(f'This occurred {no_of_occurrences_ndx} time(s) and is {positive_percentage_ndx} positive in {ndx_return_interval} days.' )
+    graph2.write(f'This occurred {no_of_occurrences_ndx} time(s) and is {positive_percentage_ndx} positive in {input_returninterval} days.' )
     graph2.write('{:.2%}'.format(avg_ndx_return))
 
     #--RUSSEL 2000 DATABASE GENERATION
-    db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k.db, rus2k_intersection, rus2k_return_interval)
+    db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k.db, rus2k_intersection, input_returninterval)
     #-----RUSSELL 2000 GRAPH-----
     fig, ax = plt.subplots()
     ax.set_title('Russel 2000')
@@ -607,7 +607,7 @@ if sidebar_counter > 0:
     ax.scatter(db_filtered_rus2k.index, db_filtered_rus2k['Close'], marker='.', color='red', s = 10)
     graph3.pyplot(fig)
     #-------NASDAQ GENERATE STATEMENTS-------
-    graph3.write(f'This occurred {no_of_occurrences_rus2k} of time(s) and is {positive_percentage_rus2k} positive in {rus2k_return_interval} days.' )
+    graph3.write(f'This occurred {no_of_occurrences_rus2k} of time(s) and is {positive_percentage_rus2k} positive in {input_returninterval} days.' )
     graph3.write('{:.2%}'.format(avg_rus2k_return))
 
 else:
