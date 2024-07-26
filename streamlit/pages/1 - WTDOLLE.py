@@ -485,105 +485,31 @@ graph1, graph2, graph3= st.columns(3)
 
 #-------INDICES PARAMETER SELECTION-------
 col1.subheader("S&P 500")
-with col1.expander("S&P500 Parameter Selection"):
-    sp500col1, sp500col2 = st.columns(2)
-    with sp500col1:
-        sp500_return_interval = int(st.text_input(f"# of {grammatical_selection} to calculate return over", 10, key="sp500 return interval"))
-    with sp500col2:
-        sp500rsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='sp500 RSI show')
-        if sp500rsishow:
-            sp500_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "sp500 RSI length"))
-            sp500 = Generate_DB()
-            sp500.get_database('^GSPC', input_start_date, input_end_date, input_interval, sp500_rsi_length)
-            sp500comparator = st.radio(f'Choose comparator, current RSI {sp500.curr_rsi}',
-                                       ['Greater than', 'Lower than'],
-                                       index = 0,
-                                       key="sp500 RSI comparator")
-            sp500rsivalue = int(st.text_input('Input RSI value',
-                                              sp500.curr_rsi - 1,
-                                              key="sp500rsivalue"))
-
-            if sp500comparator == 'Greater than':
-                filtered_sp500rsi_metric = sp500.db[sp500.db['rsi'] > sp500rsivalue]
-                sp500_intersection.append(filtered_sp500rsi_metric)
-            else:
-                filtered_sp500rsi_metric = sp500.db[sp500.db['rsi'] < sp500rsivalue]
-                sp500_intersection.append(filtered_sp500rsi_metric)
-        else:
-            sp500 = Generate_DB()
-            sp500.get_database('^GSPC', input_start_date, input_end_date, input_interval)
 
 col2.subheader("Nasdaq")
-with col2.expander("Nasdaq Parameter Section"):
-    ndxcol1, ndxcol2 = st.columns(2)
-    with ndxcol1:
-        ndx_return_interval = int(st.text_input(f"# of {grammatical_selection} to calculate return over", 10, key="ndx return interval"))
-    with ndxcol2:
-        ndxrsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='ndx RSI show')
-        if ndxrsishow:
-            ndx_rsi_length = int(st.text_input('Select RSI length (in intervals)', 22, key = "ndx RSI length"))
-            ndx = Generate_DB()
-            ndx.get_database('^IXIC', input_start_date, input_end_date, input_interval, ndx_rsi_length)
-            ndxcomparator = st.radio(f'Choose comparator, current RSI {ndx.curr_rsi}',
-                                       ['Greater than', 'Lower than'],
-                                       index = 0,
-                                       key="ndx RSI comparator")
-            ndxrsivalue = int(st.text_input('Input RSI value',
-                                            ndx.curr_rsi - 1,
-                                            key="ndxrsivalue"))
-            
-            if ndxcomparator =='Greater than':
-                filtered_ndxrsi_metric = ndx.db[ndx.db['rsi'] > ndxrsivalue]
-                nasdaq_intersection.append(filtered_ndxrsi_metric)
-            else:
-                filtered_ndxrsi_metric = ndx.db[ndx.db['rsi'] < ndxrsivalue]
-                nasdaq_intersection.append(filtered_ndxrsi_metric)
-        else:
-            ndx = Generate_DB()
-            ndx.get_database('^IXIC', input_start_date, input_end_date, input_interval)
 
 col3.subheader("Russell 2000")
-with col3.expander("Russell 2000 Parameter Section"):
-    rus2kcol1, rus2kcol2 = st.columns(2)
-    with rus2kcol1:
-        rus2k_return_interval = int(st.text_input(f"# of {grammatical_selection} to calculate return over", 10, key="rus2k return interval"))
-    with rus2kcol2:
-        rus2krsishow = st.checkbox("Overbought/Oversold RSI Indicator", value=False, key='rus2k RSI show')
-        if rus2krsishow:
-            rus2k_rsi_length = int(st.text_input('Select RSI lenght (in intervals)', 22, key = "rus2k RSI length"))
-            rus2k = Generate_DB()
-            rus2k.get_database('^RUT', input_start_date, input_end_date, input_interval, rus2k_rsi_length)
-            rus2kcomparator = st.radio(f'Choose comparator, current RSI {rus2k.curr_rsi}',
-                                       ['Greater than', 'Lower than'],
-                                       index = 0,
-                                       key="rus2k RSI comparator")
-            rus2krsivalue = int(st.text_input('Input RSI value',
-                                            rus2k.curr_rsi - 1,
-                                            key='rus2krsivalue'))
-            
-            if rus2kcomparator == 'Greater than':
-                filtered_rus2krsi_metric = rus2k.db[rus2k.db['rsi'] > rus2krsivalue]
-                rus2k_intersection.append(filtered_rus2krsi_metric)
-
-            else:
-                filtered_rus2krsi_metric = rus2k.db[rus2k.db['rsi'] < rus2krsivalue]
-                rus2k_intersection.append(filtered_rus2krsi_metric)
-        else:
-            rus2k = Generate_DB()
-            rus2k.get_database('^RUT', input_start_date, input_end_date, input_interval)
 
 # --- Indices Generation ---
 if sidebar_counter > 0:
     #---S&P500 DATABASE GENERATION---
-    db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500.db, sp500_intersection, input_returninterval)
+    try: sp500
+    except NameError:
+        sp500 = Generate_DB()
+        sp500.get_database("^GSPC", input_start_date, input_end_date, input_interval)
+
+    # db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500.db, sp500_intersection, input_returninterval)
+
+    sp500.generate_common_dates([sp500_intersection, nasdaq_intersection, rus2k_intersection],selected_returninterval=input_returninterval)
+
     #-------S&P500 GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('S&P500')
     ax.plot(sp500.db.index, sp500.db['Close'], linewidth = 0.5, color='black')
-    ax.scatter(db_filtered_sp500.index, db_filtered_sp500['Close'], marker='.', color='red', s = 10)
+    ax.scatter(sp500.common_dates.index, sp500.common_dates['Close'], marker='.', color='red', s = 10)
     graph1.pyplot(fig)
     #-------S&P500 GENERATE STATEMENTS--------
-    graph1.write(f'This occurred {no_of_occurrences_sp500} of time(s) and is {positive_percentage_sp500} positive in {input_returninterval} days.' )
+    graph1.write(f'This occurred {sp500.no_of_occurrences} of time(s) and is {sp500.positive_percentage} positive in {input_returninterval} days.' )
     graph1.write('{:.2%}'.format(avg_sp500_return))
 
     #---NASDAQ DATABASE GENERATION---

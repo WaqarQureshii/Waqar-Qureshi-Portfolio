@@ -3,6 +3,7 @@ import pandas_ta as ta
 import pandas as pd
 
 import math
+from functools import reduce
 
 class Generate_DB:
     def __init__(self):
@@ -308,6 +309,21 @@ class Generate_DB:
         rus2k.append(filtered_database)        
 
         return sp500, ndx, rus2k
+    
+    def generate_common_dates(self, intersection_dbs:list, selected_returninterval:int):
+        appended_dates = [df.index for df in intersection_dbs]
+        if appended_dates:
+            unique_dates = reduce(lambda left,right: left.intersection(right), appended_dates).to_list()
+
+            self.db['% Change Sel Interval'] = self.db['Close'].pct_change(selected_returninterval).shift(-selected_returninterval)
+
+            self.common_dates = self.db[self.db.index.isin(unique_dates)]
+
+            self.avg_return = self.filtered_db['% Change Sel Interval'].mean()
+            self.no_of_occurrences = len(self.filtered_db['% Change Sel Interval'])
+            self.no_of_positives = (self.filtered_db['% Change Sel Interval'] > 0).sum()
+            positive_percentage = self.no_of_positives/self.no_of_occurrences
+            self.positive_percentage = '{:.2%}'.format(positive_percentage)
 
     
 class Generate_Yield():
