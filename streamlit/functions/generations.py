@@ -319,9 +319,9 @@ class Generate_DB:
 
             self.common_dates = self.db[self.db.index.isin(unique_dates)]
 
-            self.avg_return = self.filtered_db['% Change Sel Interval'].mean()
-            self.no_of_occurrences = len(self.filtered_db['% Change Sel Interval'])
-            self.no_of_positives = (self.filtered_db['% Change Sel Interval'] > 0).sum()
+            self.avg_return = self.common_dates['% Change Sel Interval'].mean()
+            self.no_of_occurrences = len(self.common_dates['% Change Sel Interval'])
+            self.no_of_positives = (self.common_dates['% Change Sel Interval'] > 0).sum()
             positive_percentage = self.no_of_positives/self.no_of_occurrences
             self.positive_percentage = '{:.2%}'.format(positive_percentage)
 
