@@ -16,7 +16,7 @@ class Generate_DB:
         self.pctchg_floor_int = None
         self.pctchg_ceil_int = None
     
-    def get_database(self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50): #TODO modify so that MA and RSI don't automatically generate.
+    def get_database(self, ticker: str, start_date: str, end_date: str, interval: str ="1d", rsi_value: int =22, ma_length: int = 50): 
         """
         Generates database with all of its metrics by providing it parameters.
 
@@ -164,9 +164,9 @@ class Generate_DB:
         else:
             return "Check comparator value, should be either p greater or lower"
 
-        sp500.append(filtered_database)
-        ndx.append(filtered_database)
-        rus2k.append(filtered_database)        
+        sp500.append([filtered_database['Close']])
+        ndx.append(filtered_database['Close'])
+        rus2k.append(filtered_database['Close'])        
 
         return sp500, ndx, rus2k
     
@@ -303,9 +303,9 @@ class Generate_DB:
         # Convert the filtered rows to a DataFrame
         filtered_database = pd.DataFrame(filtered_rows)
 
-        sp500.append(filtered_database)
-        ndx.append(filtered_database)
-        rus2k.append(filtered_database)        
+        sp500.append(filtered_database['Close'])
+        ndx.append(filtered_database['Close'])
+        rus2k.append(filtered_database['Close'])        
 
         return sp500, ndx, rus2k
     
@@ -323,5 +323,3 @@ class Generate_DB:
             self.no_of_positives = (self.common_dates['% Change Sel Interval'] > 0).sum()
             positive_percentage = self.no_of_positives/self.no_of_occurrences
             self.positive_percentage = '{:.2%}'.format(positive_percentage)
-
-    
