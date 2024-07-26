@@ -40,7 +40,7 @@ elif selection_interval == 'Monthly':
     input_interval = '1mo'
     grammatical_selection = 'months'
 
-input_returninterval = header_col3.number_input(f"Calculate over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection") #TODO need to link to Indices graph input, after deprecating existing individual selection.
+input_returninterval = header_col3.number_input(f"Calculate over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection")
 
 # --- Dataframes Set Up ---
 # ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
@@ -199,7 +199,6 @@ if hyg_check:
                 equity_filters_applied_sentence+=f", HYG % change between {hyg_pct_lower} and {hyg_pct_higher}%"
             sidebar_counter+=1
 
-
 # EQUITY MARKET -> S&P 500
 if sp500_check:
     with inpcol1.expander("S&P 500"):
@@ -254,6 +253,9 @@ if sp500_check:
             else:
                 equity_filters_applied_sentence+=f", S&P500 % change between {sp500_pct_lower}% and {sp500_pct_higher}%"
             sidebar_counter+=1
+            
+            sp500.db['% Change PCT'] = sp500.db['% Change']*100
+            sp500_col2.line_chart(sp500.db[['% Change PCT']], height=200, use_container_width=True)
 
 # EQUITY MARKET -> Nasdaq
 if nasdaq_check:
@@ -309,6 +311,9 @@ if nasdaq_check:
                 equity_filters_applied_sentence+=f", Nasdaq % change between {ndx_pct_lower}% and {ndx_pct_higher}%"
             sidebar_counter+=1
 
+            ndx.db['% Change PCT'] = ndx.db['% Change']*100
+            ndx.line_chart(ndx.db[['% Change PCT']], height=200, use_container_width=True)
+
 # EQUITY MARKET -> Russell 2000
 if russell2000_check:
     with inpcol1.expander("Russell 2000"):
@@ -362,6 +367,9 @@ if russell2000_check:
             else:
                 equity_filters_applied_sentence+=f", Russell 2000 % change between {rus2k_pct_lower}% and {rus2k_pct_higher}%"
             sidebar_counter+=1
+
+            rus2k.db['% Change PCT'] = rus2k.db['% Change']*100
+            rus2k.line_chart(rus2k.db[['% Change PCT']], height=200, use_container_width=True)
 
 # EQUITY MARKET -> EQUTIY RATIO
 if equityratio_check:
@@ -436,32 +444,6 @@ st.sidebar.subheader("Global Parameters used with WTDOLLE")
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
 # ------- SIDEBAR SELECTIONS ---------
-st.sidebar.divider()
-
-    # --- HYG OPTIONS ---
-header_show_hyg = st.sidebar.checkbox("High Yield Junk Bonds - HYG", value=False)
-if header_show_hyg == True:
-    sidebar_counter += 1
-    hyg = Generate_DB()
-    hyg.get_database('HYG', input_start_date, input_end_date, input_interval)
-
-    subheader_comparator_hyg = st.sidebar.radio('Choose HYG comparator',
-    ['Greater than', "Less than"],
-    index = 1, key = "comparator hyg pct selector")
-    selected_pct_change = float(st.sidebar.text_input("Input percent increase/decrease", value = 
-    hyg.pctchg_ceil_int*100, key = 'HYG pct comparator value'))
-    
-    if subheader_comparator_hyg == 'Greater than':
-        sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_selection('% change', subheader_comparator_hyg, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-        
-        col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{hyg.boolean_comp} @ {hyg.pctchg_str}')
-    else:
-        sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_selection('% change', subheader_comparator_hyg, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
-        
-        col2.metric(label = f"HYG % < {selected_pct_change}", value = f'{hyg.boolean_comp} @ {hyg.pctchg_str}')
-    
-    col2.line_chart(hyg.db['% Change']*100, height = 100, use_container_width = True)
-
 st.sidebar.divider()
 
     # --- YIELD CURVE ---
