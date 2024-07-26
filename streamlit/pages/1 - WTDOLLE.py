@@ -8,9 +8,8 @@ import sys
 from functools import reduce
 
 sys.path.append(".")
-from functions.generate_db import *
-from functions.signal_generators import *
-from functions.generations import Generate_DB, Generate_Yield
+from functions.generation_equities import Generate_DB
+from functions.generation_debt import Generate_Yield
 
 st.set_page_config(layout="wide")
 
@@ -57,6 +56,7 @@ equity_filters_applied_sentence = "Equity filters applied:"
 equity_market = inpcol1.popover("Equity Market")
 volatility_index_check = equity_market.checkbox("Volatility Index (VIX)", False)
 equalweighted_sp500_check = equity_market.checkbox("Equal-Weighted S&P 500 (RSP)", False)
+hyg_check = equity_market.checkbox("High-Yield Corporate Bonds (HYG)", False)
 sp500_check = equity_market.checkbox("S&P 500 (GSPC)", False)
 nasdaq_check = equity_market.checkbox("Nasdaq (IXIC)", False)
 russell2000_check = equity_market.checkbox("Russell 2000 (RUT)", False)
@@ -145,6 +145,60 @@ if equalweighted_sp500_check:
             else:
                 equity_filters_applied_sentence+=f", RSP % change between {rsp_pct_lower} and {rsp_pct_higher}%"
             sidebar_counter+=1
+
+# EQUITY MARKET -> HYG
+if hyg_check:
+    with inpcol1.expander("High-Yield Corporate Bonds"):
+        hyg_chart_col1, hyg_chart_col2 = st.columns(2)
+        hyg_rsi_length=hyg_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="hyg rsi length selection")
+        hyg_ma_length=hyg_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="hyg ma length selection")
+
+        hyg = Generate_DB()
+        hyg.get_database('HYG', input_start_date, input_end_date, input_interval, rsi_value=hyg_rsi_length, ma_length=hyg_ma_length)
+        hyg_linechart = hyg.db[['Close', 'ma', 'rsi']]
+        st.line_chart(hyg_linechart, height=200, use_container_width=True)
+        hyg_col1, hyg_col2=st.columns(2)
+    # EQUITY MARKET -> HYG -> HYG RSI / Moving Average / % Change
+        hyg_rsi_on = hyg_col1.toggle("RSI", key="hyg rsi toggle")
+        hyg_ma_on = hyg_col2.toggle("Moving Average", key="hyg ma toggle")
+
+        # EQUITY MARKET -> HYG -> RSI
+        if hyg_rsi_on:
+            hyg_rsi_comparator = hyg_col1.selectbox("HYG comparator",('Greater than', 'Less than'))
+            hyg_rsi_selection = hyg_col1.number_input("Select value", min_value=0.0, step=1.0, key="hyg rsi selection")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=hyg_rsi_comparator, selected_value=[hyg_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" HYG {hyg_rsi_length}-day RSI {hyg_rsi_comparator} {hyg_rsi_selection}"
+            else:
+                equity_filters_applied_sentence+=f", HYG {hyg_rsi_length}-day RSI {hyg_rsi_comparator} {hyg_rsi_selection}"
+            sidebar_counter+=1
+        # EQUITY MARKET -> HYG -> HYG Moving Average
+        if hyg_ma_on:
+            hyg_ma_comparator = hyg_col2.selectbox(f"HYG Price > or < {hyg_ma_length} day Moving Average", ('Greater than', 'Less than'))
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=hyg_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" HYG Price {hyg_ma_comparator} HYG {hyg_ma_length} day Moving Average"
+            else:
+                equity_filters_applied_sentence+=f", HYG Price {hyg_ma_comparator} HYG {hyg_ma_length} day Moving Average"
+            sidebar_counter+=1
+        
+        # EQUITY MARKET -> HYG -> HYG RSI / Moving Average / % Change
+        hyg_pct_on = hyg_col1.toggle("% Change", key="hyg % Change toggle")
+
+        # EQUITY MARKET -> HYG -> % Change
+        if hyg_pct_on:
+            hyg_pct_lower = hyg_col1.number_input("Between lower value", step=0.5, key="hyg between lower value")
+            hyg_pct_higher = hyg_col1.number_input("Between higher value", step=0.6, key="hyg between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[hyg_pct_lower, hyg_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            if sidebar_counter==0:
+                equity_filters_applied_sentence+=f" HYG % change between {hyg_pct_lower}% and {hyg_pct_higher}%"
+            else:
+                equity_filters_applied_sentence+=f", HYG % change between {hyg_pct_lower} and {hyg_pct_higher}%"
+            sidebar_counter+=1
+
 
 # EQUITY MARKET -> S&P 500
 if sp500_check:
@@ -308,6 +362,7 @@ if russell2000_check:
             else:
                 equity_filters_applied_sentence+=f", Russell 2000 % change between {rus2k_pct_lower}% and {rus2k_pct_higher}%"
             sidebar_counter+=1
+
 # EQUITY MARKET -> EQUTIY RATIO
 if equityratio_check:
     with inpcol1.expander("Equity Ratio"):
@@ -366,8 +421,8 @@ if equityratio_check:
                     equity_filters_applied_sentence+=f", Equity Ratio % change between {eqratio_pct_lower}% and {eqratio_pct_higher}%"
                 sidebar_counter+=1
 
+# EQUITY MARKET -> SUMMARY
 inpcol1.write("*"+equity_filters_applied_sentence+"*")
-
 
 inpcol2.subheader("Debt Market")
 
@@ -448,19 +503,6 @@ if show_yieldratio == True:
                     height = 100)
 
 st.sidebar.divider()    
-
-# show_consumer = st.sidebar.checkbox("Consumer Index - XLY")
-# if show_consumer == True:
-#         sidebar_counter += 1
-
-# show_utility = st.sidebar.checkbox("Utility (safe investment index) XLU")
-# if show_utility == True:
-#         sidebar_counter += 1
-
-#TODO Implement Index Ratio parameter
-# show_ndxVSsp = st.sidebar.checkbox("Nasdaq vs S&P500 ratio", value=True)
-# if show_ndxVSsp == True:
-#         sidebar_counter += 1
 
 
 # --- MAIN PAGE OF WTDOLLE - CHARTS AND PARAMETERS
