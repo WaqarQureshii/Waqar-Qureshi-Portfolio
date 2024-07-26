@@ -397,7 +397,7 @@ if header_show_hyg == True:
     hyg.pctchg_ceil_int*100, key = 'HYG pct comparator value'))
     
     if subheader_comparator_hyg == 'Greater than':
-        ndx_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_selection('% change', subheader_comparator_hyg, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
+        sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_selection('% change', subheader_comparator_hyg, selected_pct_change, sp500_intersection, nasdaq_intersection, rus2k_intersection)
         
         col2.metric(label = f"HYG % > {selected_pct_change}", value = f'{hyg.boolean_comp} @ {hyg.pctchg_str}')
     else:
@@ -497,11 +497,7 @@ if sidebar_counter > 0:
     except NameError:
         sp500 = Generate_DB()
         sp500.get_database("^GSPC", input_start_date, input_end_date, input_interval)
-
-    # db_filtered_sp500, avg_sp500_return, no_of_occurrences_sp500, positive_percentage_sp500 = signal_pct_positive(sp500.db, sp500_intersection, input_returninterval)
-
-    sp500.generate_common_dates([sp500_intersection, nasdaq_intersection, rus2k_intersection],selected_returninterval=input_returninterval)
-
+    sp500.generate_common_dates(sp500_intersection,selected_returninterval=input_returninterval)
     #-------S&P500 GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('S&P500')
@@ -510,31 +506,39 @@ if sidebar_counter > 0:
     graph1.pyplot(fig)
     #-------S&P500 GENERATE STATEMENTS--------
     graph1.write(f'This occurred {sp500.no_of_occurrences} of time(s) and is {sp500.positive_percentage} positive in {input_returninterval} days.' )
-    graph1.write('{:.2%}'.format(avg_sp500_return))
+    graph1.write('{:.2%}'.format(sp500.avg_return))
 
     #---NASDAQ DATABASE GENERATION---
-    db_filtered_ndx, avg_ndx_return, no_of_occurrences_ndx, positive_percentage_ndx = signal_pct_positive(ndx.db, nasdaq_intersection, input_returninterval)
+    try: ndx
+    except NameError:
+        ndx = Generate_DB()
+        ndx.get_database("^IXIC", input_start_date, input_end_date, input_interval)
+    ndx.generate_common_dates(nasdaq_intersection, selected_returninterval=input_returninterval)
     #-------NASDAQ GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('Nasdaq 100')
     ax.plot(ndx.db.index, ndx.db['Close'], linewidth = 0.5, color='black')
-    ax.scatter(db_filtered_ndx.index, db_filtered_ndx['Close'], marker='.', color='red', s = 10)
+    ax.scatter(ndx.common_dates.index, ndx.common_dates['Close'], marker='.', color='red', s = 10)
     graph2.pyplot(fig)
     #-------NASDAQ GENERATE STATEMENTS-------
-    graph2.write(f'This occurred {no_of_occurrences_ndx} time(s) and is {positive_percentage_ndx} positive in {input_returninterval} days.' )
-    graph2.write('{:.2%}'.format(avg_ndx_return))
+    graph2.write(f'This occurred {ndx.no_of_occurrences} time(s) and is {ndx.positive_percentage} positive in {input_returninterval} days.' )
+    graph2.write('{:.2%}'.format(ndx.avg_return))
 
     #--RUSSEL 2000 DATABASE GENERATION
-    db_filtered_rus2k, avg_rus2k_return, no_of_occurrences_rus2k, positive_percentage_rus2k = signal_pct_positive(rus2k.db, rus2k_intersection, input_returninterval)
+    try: rus2k
+    except NameError:
+        rus2k = Generate_DB()
+        rus2k.get_database("^RUT", input_start_date, input_end_date, input_interval)
+    rus2k.generate_common_dates(rus2k_intersection, selected_returninterval=input_returninterval)
     #-----RUSSELL 2000 GRAPH-----
     fig, ax = plt.subplots()
     ax.set_title('Russel 2000')
     ax.plot(rus2k.db.index, rus2k.db['Close'], linewidth = 0.5, color='black')
-    ax.scatter(db_filtered_rus2k.index, db_filtered_rus2k['Close'], marker='.', color='red', s = 10)
+    ax.scatter(rus2k.common_dates.index, rus2k.common_dates['Close'], marker='.', color='red', s = 10)
     graph3.pyplot(fig)
     #-------NASDAQ GENERATE STATEMENTS-------
-    graph3.write(f'This occurred {no_of_occurrences_rus2k} of time(s) and is {positive_percentage_rus2k} positive in {input_returninterval} days.' )
-    graph3.write('{:.2%}'.format(avg_rus2k_return))
+    graph3.write(f'This occurred {rus2k.no_of_occurrences} of time(s) and is {rus2k.positive_percentage} positive in {input_returninterval} days.' )
+    graph3.write('{:.2%}'.format(rus2k.avg_return))
 
 else:
     pass
