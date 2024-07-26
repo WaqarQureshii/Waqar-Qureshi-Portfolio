@@ -12,3 +12,4 @@ streamlit/functions/__pycache__/generations.cpython-311.pyc
 streamlit/functions/__pycache__/signal_generators.cpython-311.pyc
 streamlit/functions/scratch_paper.py
 streamlit/functions/scratch_paper.py
+env_var.py
