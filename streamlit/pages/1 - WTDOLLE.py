@@ -312,7 +312,7 @@ if nasdaq_check:
             sidebar_counter+=1
 
             ndx.db['% Change PCT'] = ndx.db['% Change']*100
-            ndx.line_chart(ndx.db[['% Change PCT']], height=200, use_container_width=True)
+            ndx_col2.line_chart(ndx.db[['% Change PCT']], height=200, use_container_width=True)
 
 # EQUITY MARKET -> Russell 2000
 if russell2000_check:
@@ -369,7 +369,7 @@ if russell2000_check:
             sidebar_counter+=1
 
             rus2k.db['% Change PCT'] = rus2k.db['% Change']*100
-            rus2k.line_chart(rus2k.db[['% Change PCT']], height=200, use_container_width=True)
+            rus2k_col2.line_chart(rus2k.db[['% Change PCT']], height=200, use_container_width=True)
 
 # EQUITY MARKET -> EQUTIY RATIO
 if equityratio_check:
@@ -433,6 +433,7 @@ if equityratio_check:
 inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
 inpcol2.subheader("Debt Market")
+
 
 inpcol3.subheader("Economic Figures")
 
