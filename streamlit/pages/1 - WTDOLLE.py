@@ -518,8 +518,7 @@ col3.subheader("Russell 2000")
 # --- Indices Generation ---
 if sidebar_counter > 0:
     #---S&P500 DATABASE GENERATION---
-    try: sp500
-    except NameError:
+    if 'sp500' not in globals():
         sp500 = Generate_DB()
         sp500.get_database("^GSPC", input_start_date, input_end_date, input_interval)
     sp500.generate_common_dates(sp500_intersection,selected_returninterval=input_returninterval)
@@ -534,8 +533,7 @@ if sidebar_counter > 0:
     graph1.write('{:.2%}'.format(sp500.avg_return))
 
     #---NASDAQ DATABASE GENERATION---
-    try: ndx
-    except NameError:
+    if 'ndx' not in globals():
         ndx = Generate_DB()
         ndx.get_database("^IXIC", input_start_date, input_end_date, input_interval)
     ndx.generate_common_dates(nasdaq_intersection, selected_returninterval=input_returninterval)
@@ -550,8 +548,7 @@ if sidebar_counter > 0:
     graph2.write('{:.2%}'.format(ndx.avg_return))
 
     #--RUSSEL 2000 DATABASE GENERATION
-    try: rus2k
-    except NameError:
+    if 'rus2k' not in globals():
         rus2k = Generate_DB()
         rus2k.get_database("^RUT", input_start_date, input_end_date, input_interval)
     rus2k.generate_common_dates(rus2k_intersection, selected_returninterval=input_returninterval)
