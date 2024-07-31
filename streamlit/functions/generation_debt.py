@@ -1,8 +1,74 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
+from fredapi import Fred
+import polars as pl
+
+import sys
+sys.path.append(".")
+import env_var
 
 class Generate_Yield():
+    def __init__(self):
+        self.db = None
+        self.yielddiff_lf = None
+        self.maturity_options = {
+            "1m": "DGS1MO",
+            "3m": "DGS3MO",
+            "6m": "DGS6MO",
+            "1y": "DGS1",
+            "2y": "DGS2",
+            "3y": "DGS3",
+            "5y": "DGS5",
+            "7y": "DGS7",
+            "10y": "DGS10",
+            "20y": "DGS20",
+            "30y": "DGS30",
+        }
+
+    def get_database(self, selection: str, start_date, end_date, frequency):
+        '''
+        Provide bond yield maturity length, start and end dates, and frequency 
+        
+        Args:
+        selection: str -> 1m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y
+        frequency: str -> Daily, Weekly, Monthly
+        start_date: str -> 2023-01-01
+        end_date: str -> 2023-12-31
+
+        Output:
+        '''
+        frequency_options = {"Daily": "d", "Weekly": "w", "Monthly": "m"}
+        fred = Fred(api_key=env_var.FRED_API_KEY)
+        pd_df = fred.get_series(self.maturity_options.get(selection), start_date, end_date, frequency=frequency_options.get(frequency)).reset_index()
+        df = pl.LazyFrame(pd_df)
+        df = df.cast({'index': pl.Date})
+        df = df.rename({"0":f"{selection} Rate",
+                        "index": "Date"})
+        df = df.drop_nulls()
+        return df
+
+    def generate_yield_spread(self, start_date, end_date, frequency, numerator, denominator):
+        '''
+        Provide two selections of 2 different maturity terms, to return a LazyFrame with a spread between the two.
+        Typically the longer yield term is in the numerator.
+
+        Args:
+        numerator: str -> 1m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y
+        denominator: str -> 1m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y
+        frequency: str -> Daily, Weekly, Monthly
+        start_date: str -> 2023-01-01
+        end_date: str -> 2023-12-31
+        '''
+        lf_numerator = self.get_database(numerator, start_date, end_date, frequency)
+        lf_denominator = self.get_database(denominator, start_date, end_date, frequency)
+        self.yielddiff_lf = lf_numerator.join(lf_denominator, on="Date")
+        self.yielddiff_lf = self.yielddiff_lf.with_columns((pl.col(f"{numerator} Rate") / pl.col(f"{denominator} Rate")).round(3).alias("Rate Spread"))
+        self.yielddiff_lf = self.yielddiff_lf.with_columns(pl.col("Rate Spread").pct_change().alias("Spread % Change"))
+        self.yielddiff_lf = self.yielddiff_lf.with_columns((pl.col("Spread % Change")*100).round(1))
+
+
+class Generate_Yields():
     def __init__(self):
         self.db = None
         self.db_graph = None

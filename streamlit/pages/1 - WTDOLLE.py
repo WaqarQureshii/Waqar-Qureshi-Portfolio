@@ -10,6 +10,7 @@ from functools import reduce
 sys.path.append(".")
 from functions.generation_equities import Generate_DB
 from functions.generation_debt import Generate_Yield
+from functions.env_var import FRED_API_KEY
 
 st.set_page_config(layout="wide")
 
@@ -432,7 +433,16 @@ if equityratio_check:
 # EQUITY MARKET -> SUMMARY
 inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
-inpcol2.subheader("Debt Market")
+# DEBT MARKET
+debt_filters_applied_sentence = "Debt filters applied:"
+debt_market = inpcol2.popover("Debt Market")
+yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
+
+
+# DEBT MARKET -> YIELD SPREAD
+if yieldspread_check:
+    with inpcol2.expander("Yield Spread"):
+        pass
 
 
 inpcol3.subheader("Economic Figures")
