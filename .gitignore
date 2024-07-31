@@ -15,3 +15,5 @@ streamlit/functions/scratch_paper.py
 env_var.py
 streamlit/functions/scratch_paper.py
 env_var.py
+streamlit/secrets.toml
+streamlit/functions/scratch_paper.py

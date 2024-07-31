@@ -1,12 +1,12 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
-from fredapi import Fred
 import polars as pl
+import streamlit as st
+from fredapi import Fred
 
 import sys
 sys.path.append(".")
-import env_var
 
 class Generate_Yield():
     def __init__(self):
@@ -38,14 +38,21 @@ class Generate_Yield():
 
         Output:
         '''
+        # fred_key = st.secrets[fred_API_key]
         frequency_options = {"Daily": "d", "Weekly": "w", "Monthly": "m"}
-        fred = Fred(api_key=env_var.FRED_API_KEY)
+        fred = Fred(api_key=st.secrets["fred_API_key"].FRED_API_KEY)
         pd_df = fred.get_series(self.maturity_options.get(selection), start_date, end_date, frequency=frequency_options.get(frequency)).reset_index()
         df = pl.LazyFrame(pd_df)
-        df = df.cast({'index': pl.Date})
-        df = df.rename({"0":f"{selection} Rate",
-                        "index": "Date"})
         df = df.drop_nulls()
+        
+        df = df.with_columns(pl.col("index")
+                            .cast({'index': pl.Date})
+                            ).drop_nulls()
+        
+        df = df.rename({"0":f"{selection} Rate", "index": "Date"})
+        print(df.describe())
+        # df = df.cast({'index': pl.Date})
+        #                 "index": "Date"})
         return df
 
     def generate_yield_spread(self, start_date, end_date, frequency, numerator, denominator):

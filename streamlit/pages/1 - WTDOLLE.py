@@ -10,7 +10,6 @@ from functools import reduce
 sys.path.append(".")
 from functions.generation_equities import Generate_DB
 from functions.generation_debt import Generate_Yield
-from functions.env_var import FRED_API_KEY
 
 st.set_page_config(layout="wide")
 
