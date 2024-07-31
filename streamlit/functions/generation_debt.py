@@ -7,6 +7,7 @@ from fredapi import Fred
 
 import sys
 sys.path.append(".")
+import fred_api_key
 
 class Generate_Yield():
     def __init__(self):
@@ -40,22 +41,15 @@ class Generate_Yield():
         '''
         # fred_key = st.secrets[fred_API_key]
         frequency_options = {"Daily": "d", "Weekly": "w", "Monthly": "m"}
-        fred = Fred(api_key=st.secrets["fred_API_key"].FRED_API_KEY)
+        fred = Fred(api_key=fred_api_key.key)
         pd_df = fred.get_series(self.maturity_options.get(selection), start_date, end_date, frequency=frequency_options.get(frequency)).reset_index()
-        df = pl.LazyFrame(pd_df)
-        df = df.drop_nulls()
+        l_df = pl.LazyFrame(pd_df)
+        l_df = l_df.with_columns().drop_nulls().cast({'index': pl.Date})
         
-        df = df.with_columns(pl.col("index")
-                            .cast({'index': pl.Date})
-                            ).drop_nulls()
-        
-        df = df.rename({"0":f"{selection} Rate", "index": "Date"})
-        print(df.describe())
-        # df = df.cast({'index': pl.Date})
-        #                 "index": "Date"})
-        return df
+        l_df = l_df.rename({"0":f"{selection} Rate", "index": "Date"})
+        return l_df
 
-    def generate_yield_spread(self, start_date, end_date, frequency, numerator, denominator):
+    def generate_yield_spread(self, start_date, end_date, frequency, numerator, denominator) -> None:
         '''
         Provide two selections of 2 different maturity terms, to return a LazyFrame with a spread between the two.
         Typically the longer yield term is in the numerator.
@@ -70,9 +64,64 @@ class Generate_Yield():
         lf_numerator = self.get_database(numerator, start_date, end_date, frequency)
         lf_denominator = self.get_database(denominator, start_date, end_date, frequency)
         self.yielddiff_lf = lf_numerator.join(lf_denominator, on="Date")
-        self.yielddiff_lf = self.yielddiff_lf.with_columns((pl.col(f"{numerator} Rate") / pl.col(f"{denominator} Rate")).round(3).alias("Rate Spread"))
-        self.yielddiff_lf = self.yielddiff_lf.with_columns(pl.col("Rate Spread").pct_change().alias("Spread % Change"))
-        self.yielddiff_lf = self.yielddiff_lf.with_columns((pl.col("Spread % Change")*100).round(1))
+        self.yielddiff_lf.with_columns(
+            (
+            (pl.col(F"{numerator} Rate") / pl.col(F"{denominator} Rate"))
+                .round(3).alias("Rate Spread")
+            ),
+            (
+            (pl.col("Rate Spread").pct_change().alias("Spread % Change"))*100
+             )
+                .round(1)
+        )
+
+    def metric_vs_selection_cross(self, comparison_type: str, selected_value: tuple, sp500: pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+        '''
+        Provide comparison metrics and return back dates in the sp500, ndx, and rus2k DataFrames where these comparison logics were applied.
+
+        Args:
+        comparison_type: str -> current price, % change between
+        selected_value: tuple -> range between two numbers, where the first number is the lower value
+        comparator: str -> Greater than, Lower than, Between
+
+        Output:
+        self, sp500_intersection, ndx_intersection, rus2k_intersection
+        '''
+        
+        if len(selected_value)==2:
+            comparison_value_lower = selected_value[0]
+            comparison_value_higher = float(selected_value[1])
+        elif len(selected_value)==1:
+            comparison_value_lower = selected_value[0]
+            comparison_value_higher = None
+        elif len(selected_value)==0:
+            comparison_value_lower = None
+            comparison_value_higher = None
+        else:
+            comparison_value_higher=None
+
+        selection_dict = {
+            "current price": {
+                "current db value": self.yielddiff_lf.select(pl.last("Rate Spread")),
+                "db values": "Rate Spread",
+                "db values x": 1,
+                "comparison value lower": comparison_value_lower,
+                "comparison value higher": 0
+            },
+            "% change between": {
+                "current db value": self.yielddiff_lf.select(pl.last("Spread % Change")),
+                "db values": "Spread % Change",
+                "db values x": 100,
+                "comparison value lower": comparison_value_lower,
+                "comparison value higher": comparison_value_higher
+            }
+        }
+
+        if comparator =='Greater than':
+            try: #TODO build logic that isn't row-by-row.
+                pass
+            except:
+                pass
 
 
 class Generate_Yields():
