@@ -64,16 +64,15 @@ class Generate_Yield():
         lf_numerator = self.get_database(numerator, start_date, end_date, frequency)
         lf_denominator = self.get_database(denominator, start_date, end_date, frequency)
         self.yielddiff_lf = lf_numerator.join(lf_denominator, on="Date")
-        self.yielddiff_lf.with_columns(
+
+        self.yielddiff_lf = self.yielddiff_lf.with_columns
+        (
             (
-            (pl.col(F"{numerator} Rate") / pl.col(F"{denominator} Rate"))
-                .round(3).alias("Rate Spread")
-            ),
-            (
-            (pl.col("Rate Spread").pct_change().alias("Spread % Change"))*100
-             )
-                .round(1)
+                (pl.col(f"{numerator} Rate") - pl.col(f"{denominator} Rate"))
+                    .round(3).alias("Rate Spread")
+            )
         )
+
 
     def metric_vs_selection_cross(self, comparison_type: str, selected_value: tuple, sp500: pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
@@ -119,7 +118,12 @@ class Generate_Yield():
 
         if comparator =='Greater than':
             try: #TODO build logic that isn't row-by-row.
-                pass
+                appended_df = self.yielddiff_lf.with_columns(
+                    ((pl.col(selection_dict[comparison_type][comparator]) > comparison_value_lower)
+                     &
+                     (pl.col(selection_dict[comparison_type][comparator]).shift(1) < comparison_value_lower)
+                     )
+                )
             except:
                 pass
 
