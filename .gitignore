@@ -17,3 +17,4 @@ streamlit/functions/scratch_paper.py
 env_var.py
 streamlit/secrets.toml
 streamlit/functions/scratch_paper.py
+streamlit/functions/fred_api_key.py
