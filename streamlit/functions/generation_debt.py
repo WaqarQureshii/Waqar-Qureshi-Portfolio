@@ -65,23 +65,21 @@ class Generate_Yield():
         lf_denominator = self.get_database(denominator, start_date, end_date, frequency)
         self.yielddiff_lf = lf_numerator.join(lf_denominator, on="Date")
 
-        self.yielddiff_lf = self.yielddiff_lf.with_columns
-        (
-            (
-                (pl.col(f"{numerator} Rate") - pl.col(f"{denominator} Rate"))
-                    .round(3).alias("Rate Spread")
-            )
-        )
-
+        self.yielddiff_lf = (self.yielddiff_lf.with_columns(
+            (pl.col(f"{numerator} Rate") - pl.col(f"{denominator} Rate")).alias('Rate Spread')
+        ).select(
+            pl.col('*'),
+            (pl.col('Rate Spread').pct_change()*100).alias('% Change')
+        ))
 
     def metric_vs_selection_cross(self, comparison_type: str, selected_value: tuple, sp500: pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
         Provide comparison metrics and return back dates in the sp500, ndx, and rus2k DataFrames where these comparison logics were applied.
 
-        Args:
-        comparison_type: str -> current price, % change between
-        selected_value: tuple -> range between two numbers, where the first number is the lower value
-        comparator: str -> Greater than, Lower than, Between
+        Args:\n
+        comparison_type: str -> current price, % change between\n
+        selected_value: tuple -> range between two numbers, where the first number is the lower value\n
+        comparator: str -> Greater than, Lower than, Between\n
 
         Output:
         self, sp500_intersection, ndx_intersection, rus2k_intersection
@@ -109,23 +107,32 @@ class Generate_Yield():
             },
             "% change between": {
                 "current db value": self.yielddiff_lf.select(pl.last("Spread % Change")),
-                "db values": "Spread % Change",
+                "db values": "% Change",
                 "db values x": 100,
                 "comparison value lower": comparison_value_lower,
                 "comparison value higher": comparison_value_higher
             }
         }
-
-        if comparator =='Greater than':
-            try: #TODO build logic that isn't row-by-row.
-                appended_df = self.yielddiff_lf.with_columns(
-                    ((pl.col(selection_dict[comparison_type][comparator]) > comparison_value_lower)
-                     &
-                     (pl.col(selection_dict[comparison_type][comparator]).shift(1) < comparison_value_lower)
-                     )
-                )
-            except:
-                pass
+        if comparator == 'Greater than':
+            filtered_database = self.yielddiff_lf.filter(
+                (pl.col(selection_dict[comparison_type]["db values"]) > comparison_value_lower) &
+                (pl.col(selection_dict[comparison_type]["db values"]).shift(1) < comparison_value_lower)
+            )
+        elif comparator == 'Lower Than':
+            filtered_database = self.yielddiff_lf.filter(
+                (pl.col(selection_dict[comparison_type]["db values"]) < comparison_value_lower) &
+                (pl.col(selection_dict[comparison_type]["db values"]).shift(1) > comparison_value_lower)
+            )
+        elif comparator == 'Between':
+            filtered_database = self.yielddiff_lf.filter(
+                (pl.col(selection_dict[comparison_type]["db values"]).is_between(comparison_value_lower, comparison_value_higher)) &
+                ~(pl.col(selection_dict[comparison_type]["db values"]).shift(1).is_between(comparison_value_lower, comparison_value_higher))
+            )
+        sp500.append(filtered_database)
+        ndx.append(filtered_database)
+        rus2k.append(filtered_database)
+        
+        return sp500, ndx, rus2k
 
 
 class Generate_Yields():
