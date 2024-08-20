@@ -1,4 +1,4 @@
-# What Transpired During Our Last Encounter (WTDOLLE)
+# What Transpired During Our Last Encounter (WTDOLLE) - visit website: wqureshi.streamlit.app[wqureshi.streamlit.app]
 
  This is a project to assess what happened to the stock market in an X number of days given when certain indicators or market conditions existed. Examples of such indicators are:
  - Nasdaq vs SP500 Ratio or Russell 2000 vs SP500 Ratio
