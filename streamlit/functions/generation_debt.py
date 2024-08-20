@@ -7,7 +7,6 @@ from fredapi import Fred
 
 import sys
 sys.path.append(".")
-import fred_api_key
 
 class Generate_Yield():
     def __init__(self):
@@ -41,7 +40,8 @@ class Generate_Yield():
         '''
         # fred_key = st.secrets[fred_API_key]
         frequency_options = {"Daily": "d", "Weekly": "w", "Monthly": "m"}
-        fred = Fred(api_key=fred_api_key.key)
+        fred_api = st.secrets.fred_api
+        fred = Fred(api_key=fred_api)
         pd_df = fred.get_series(self.maturity_options.get(selection), start_date, end_date, frequency=frequency_options.get(frequency)).reset_index()
         l_df = pl.LazyFrame(pd_df)
         l_df = l_df.with_columns().drop_nulls().cast({'index': pl.Date})
@@ -49,7 +49,7 @@ class Generate_Yield():
         l_df = l_df.rename({"0":f"{selection} Rate", "index": "Date"})
         return l_df
 
-    def generate_yield_spread(self, start_date, end_date, frequency, numerator, denominator) -> None:
+    def generate_yield_spread(self, start_date, end_date, frequency, long_term_yield, short_term_yield) -> None:
         '''
         Provide two selections of 2 different maturity terms, to return a LazyFrame with a spread between the two.
         Typically the longer yield term is in the numerator.
@@ -61,16 +61,17 @@ class Generate_Yield():
         start_date: str -> 2023-01-01
         end_date: str -> 2023-12-31
         '''
-        lf_numerator = self.get_database(numerator, start_date, end_date, frequency)
-        lf_denominator = self.get_database(denominator, start_date, end_date, frequency)
-        self.yielddiff_lf = lf_numerator.join(lf_denominator, on="Date")
+        self.lf_ltyield = self.get_database(long_term_yield, start_date, end_date, frequency)
+        self.lf_styield = self.get_database(short_term_yield, start_date, end_date, frequency)
+        self.yielddiff_lf = self.lf_ltyield.join(self.lf_styield, on="Date")
 
         self.yielddiff_lf = (self.yielddiff_lf.with_columns(
-            (pl.col(f"{numerator} Rate") - pl.col(f"{denominator} Rate")).alias('Rate Spread')
+            (pl.col(f"{long_term_yield} Rate") - pl.col(f"{short_term_yield} Rate")).alias('Rate Spread')
         ).select(
             pl.col('*'),
             (pl.col('Rate Spread').pct_change()*100).alias('% Change')
         ))
+
 
     def metric_vs_selection_cross(self, comparison_type: str, selected_value: tuple, sp500: pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''

@@ -14,6 +14,14 @@ from functions.generation_debt import Generate_Yield
 st.set_page_config(layout="wide")
 
 st.title('What Transpired During Our Last Encounter (WTDOLLE)?')
+st.subheader("User Guide:")
+st.write('''
+Currently the Equity Market options are available for use.
+''')
+st.write("1) Select the time period you want to assess the equity market over (start date and end date)")
+st.write("2) Select the interval you'd like to assess the market: Daily, Weekly, Monthly. all the figures and metrics will be over the selected interval.")
+st.write("3) Determine whether it is positive over X number of Days/Weeks/Months")
+st.write("4) Click on the Equity Market drop down and choose the metrics you'd like to filter the market by. I.e. You can choose when the S&P last went up by 2% and the VIX was below 15.")
 
 # -------- DATE SELECTION SECTION --------
     # --- DATE SELECTION ---
@@ -40,7 +48,7 @@ elif selection_interval == 'Monthly':
     input_interval = '1mo'
     grammatical_selection = 'months'
 
-input_returninterval = header_col3.number_input(f"Calculate over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection")
+input_returninterval = header_col3.number_input(f"Calculate return over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection")
 
 # --- Dataframes Set Up ---
 # ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
@@ -50,6 +58,7 @@ rus2k_intersection = []
 
 sidebar_counter = 0
 
+st.subheader("")
 inpcol1, inpcol2, inpcol3 = st.columns(3)
 # EQUITY MARKET
 equity_filters_applied_sentence = "Equity filters applied:"
@@ -434,67 +443,36 @@ inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
 # DEBT MARKET
 debt_filters_applied_sentence = "Debt filters applied:"
-debt_market = inpcol2.popover("Debt Market")
+debt_market = inpcol2.popover("Debt Market - IN PROGRESS")
 yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
 
 
 # DEBT MARKET -> YIELD SPREAD
 if yieldspread_check:
     with inpcol2.expander("Yield Spread"):
-        pass
+        yieldspread = Generate_Yield()
+        spreadcol1, spreadcol2 = st.columns(2)
+
+        # DEBT MARKET -> YIELD SPREAD -> Long Term
+        lt_maturity_selection = spreadcol1.selectbox("Long-Term Maturity", ("1m", "3m", "6m", "1y", "2y", "3y", "5y", "7y", "10y", "20y", "30y"), index=8)
+
+        # DEBT MARKET -> YIELD SPREAD -> Short Term
+        st_maturity_selection = spreadcol2.selectbox("Short-Term Maturity", ("1m", "3m", "6m", "1y", "2y", "3y", "5y", "7y", "10y", "20y", "30y"), index=4)
+
+        # DEBT MARKET -> YIELD SPREAD
+        yieldspread.generate_yield_spread(input_start_date, input_end_date, selection_interval, lt_maturity_selection, st_maturity_selection)
+        spread_linechart = yieldspread.yielddiff_lf.select("Date", f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread').collect().to_pandas()
+        st.line_chart(spread_linechart, height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
 
 
-inpcol3.subheader("Economic Figures")
 
-#Creating the sidebar with the different signal creations
-st.sidebar.subheader("Global Parameters used with WTDOLLE")
+inpcol3.subheader("Economic Figures - IN PROGRESS")
+
+
 
 
 # --- SELECTED VARIABLES COLUMNS ---
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
-
-# ------- SIDEBAR SELECTIONS ---------
-st.sidebar.divider()
-
-    # --- YIELD CURVE ---
-show_yieldratio = st.sidebar.checkbox("US Yield Ratio", value=False, key='show yield ratio')
-if show_yieldratio == True:
-    yield_dict = {
-        "30-year": '^TYX',
-        "10-year": '^TNX'
-    }
-    sidebar_counter += 1
-    show_yield_option = st.sidebar.radio('3 month vs',
-                                    ['10-year',
-                                    '30-year'],
-                                    index = 1,
-                                    key = 'show yield option')
-    yieldcurve_comparator_selection = st.sidebar.radio('Choose Yield Curve comparator',
-                                ['Diff greater than', 'Diff less than'],
-                                index = 0)
-    selected_yieldratio = float(st.sidebar.text_input("Input Yield Ratio to compare",
-                                                 0.5,
-                                                 key = 'Yield Curve level'))
-    
-    if show_yield_option == '30-year':
-        yieldratio = Generate_Yield()
-        yieldratio.generate_yield_ratio(start_date=input_start_date, end_date=input_end_date, interval=input_interval, numerator='^IRX', denominator=yield_dict[show_yield_option]) #TODO pull from FRED data instead.
-        
-        if yieldcurve_comparator_selection == "Diff greater than": # Current Yield Curve greater than Selected Difference Value
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldratio.metric_vs_selection(comparison_type='ratio vs selection', comparator='Greater than', selected_value=selected_yieldratio,sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-
-            col5.metric(label=f'Yield Diff > {selected_yieldratio}', value = f'{yieldratio.boolean_comp} @ {yieldratio.curr_yieldratio}')
-        
-        else: # Current Yield Curve less than Selected Difference Value
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldratio.metric_vs_selection(comparison_type='ratio vs selection', comparator='Less than', selected_value=selected_yieldratio,sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-
-            col5.metric(label=f'Yield Diff < {selected_yieldratio}', value = f'{yieldratio.boolean_comp} @ {yieldratio.curr_yieldratio}')
-
-    col5.line_chart(yieldratio.yield_ratio['Yield Ratio'],
-                    use_container_width = True,
-                    height = 100)
-
-st.sidebar.divider()    
 
 
 # --- MAIN PAGE OF WTDOLLE - CHARTS AND PARAMETERS
