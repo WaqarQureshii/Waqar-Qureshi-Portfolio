@@ -18,6 +18,7 @@ st.write_stream(streamhowitbegan)
 # \\\\\\\\\\ THE JOURNEY //////////
 st.header(":blue[Project/s (adding these in every day)]")
 st.subheader("WTDOLLE - What Transpired During Our Last Encounter")
+st.page_link("pages/1 - WTDOLLE.py", label=":blue[link to project]")
 st.markdown('''
 This tool is used to figure out when in the S&P500, Nasdaq or Russell 2000 did X go up X% and Y was below price 40 (example). It utilizes the following:''')
 st.markdown(':snake: Programming in Python: libraries such as Pandas (migrating to Polars) for large data extraction, transformation and loading (ETL), Streamlit (what this app is built on), matplotlib for graphing.')
