@@ -442,7 +442,6 @@ debt_filters_applied_sentence = "Debt filters applied:"
 debt_market = inpcol2.popover("Debt Market - IN PROGRESS")
 yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
 
-
 # DEBT MARKET -> YIELD SPREAD
 if yieldspread_check:
     with inpcol2.expander("Yield Spread"):
@@ -459,11 +458,15 @@ if yieldspread_check:
         yieldspread.generate_yield_spread(input_start_date, input_end_date, selection_interval, lt_maturity_selection, st_maturity_selection)
         spread_linechart = yieldspread.yielddiff_lf.select("Date", f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread').collect().to_pandas()
         st.line_chart(spread_linechart, height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
+#TODO build integration with calculations and index filtering
 
 
 
 equity_market = inpcol3.popover("Economic Figures")
-
+#TODO Research ECSU Economic Surprise Index
+#TODO Unemployment Rate
+#TODO Interest rates
+#TODO SAHM Rule = 3m moving average of national unemployment rate (U3), rises by 0.5 percentage points or more relative to the minimum of the 3m averages from the previous 12 months.
 
 
 
