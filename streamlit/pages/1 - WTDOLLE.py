@@ -74,6 +74,7 @@ if volatility_index_check:
         vix_line_chart = vix.db[['% Change', 'Close']]
         vix_line_chart['% Change'] = vix_line_chart['% Change'] * 100
         st.line_chart(vix_line_chart, height=200, use_container_width=True)
+        #TODO add a st.dataframe below line chart for user researchability
         vixcol1, vixcol2 = st.columns(2)
     # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
         vix_level_on = vixcol1.toggle("Price Level", key="vix p toggle")
@@ -81,7 +82,7 @@ if volatility_index_check:
     # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
         if vix_level_on:
             vix_level_comparator = vixcol1.selectbox("VIX Comparator",('Greater than', 'Less than'))
-            vix_level_selection = vixcol1.number_input("Select value", min_value=0.0, step=0.5)
+            vix_level_selection = vixcol1.number_input("Crosses selected value", min_value=0.0, step=0.5)
             sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='current price', comparator=vix_level_comparator, selected_value=[vix_level_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
             equity_filters_applied_sentence+=f" VIX level {vix_level_comparator} {vix_level_selection}"
@@ -92,11 +93,8 @@ if volatility_index_check:
             vix_pct_higher = vixcol2.number_input("Between higher value", step=0.6, key="vix between higher value")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[vix_pct_lower, vix_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
-            if sidebar_counter==0:
-                equity_filters_applied_sentence+=f" VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
-            else:
-                equity_filters_applied_sentence+=f", VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
             sidebar_counter+=1
+            equity_filters_applied_sentence+=f", VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
 
 # EQUITY MARKET -> RSP
 if equalweighted_sp500_check:
@@ -116,15 +114,13 @@ if equalweighted_sp500_check:
 
         # EQUITY MARKET -> RSP -> RSI
         if rsp_rsi_on:
+            sidebar_counter+=1
             rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
             rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
             sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
-            if sidebar_counter==0:
-                equity_filters_applied_sentence+=f" RSP {rsp_rsi_length}-day RSI {rsp_rsi_comparator} {rsp_rsi_selection}"
-            else:
-                equity_filters_applied_sentence+=f", RSP {rsp_rsi_length}-day RSI {rsp_rsi_comparator} {rsp_rsi_selection}"
-            sidebar_counter+=1
+            equity_filters_applied_sentence+=f", RSP {rsp_rsi_length}-day RSI {rsp_rsi_comparator} {rsp_rsi_selection}"
+
         # EQUITY MARKET -> RSP -> RSP Moving Average
         if rsp_ma_on:
             rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Less than'))
@@ -438,7 +434,7 @@ if equityratio_check:
 inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
 # DEBT MARKET
-debt_filters_applied_sentence = "Debt filters applied:"
+debt_filters_applied_sentence = "Debt filters applied\: "
 debt_market = inpcol2.popover("Debt Market - IN PROGRESS")
 yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
 
@@ -456,9 +452,42 @@ if yieldspread_check:
 
         # DEBT MARKET -> YIELD SPREAD
         yieldspread.generate_yield_spread(input_start_date, input_end_date, selection_interval, lt_maturity_selection, st_maturity_selection)
-        spread_linechart = yieldspread.yielddiff_lf.select("Date", f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread').collect().to_pandas()
-        st.line_chart(spread_linechart, height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
-#TODO build integration with calculations and index filtering
+        
+        yieldspread_lf = yieldspread.yielddiff_lf.select("Date", f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread')
+        st.line_chart(yieldspread_lf.collect().to_pandas().set_index("Date"), height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
+
+        spread_pctchg_lf = yieldspread.yielddiff_lf.select("Date", "% Change")
+        print(st.dataframe(yieldspread.yielddiff_lf.collect().to_pandas().set_index('Date'), height=250))
+        
+        spread_toggle1, spread_toggle2 = st.columns(2)
+        spread_level_on = spread_toggle1.toggle("Spread Amount", key="yield spread level toggle")
+        spread_pct_on = spread_toggle2.toggle("% Change on Spread", key="yield spread % change toggle")
+
+        # DEBT MARKET -> YIELD SPREAD -> YIELD SPREAD LEVEL
+        if spread_level_on:
+            spread_level_comparator=spread_toggle1.selectbox("Spread Comparator",('Greater than', 'Less than'))
+            
+            spread_level_selection=spread_toggle1.number_input("Crosses selected value", step=0.5, key="selected spread value")
+
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldspread.metric_vs_selection_cross(comparison_type="current price", selected_value=[spread_level_selection], comparator=spread_level_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            sidebar_counter+=1
+            debt_filters_applied_sentence+=f"Whenever yield spread becomes {spread_level_comparator} {spread_level_selection}"
+        
+        # DEBT MARKET -> YIELD SPREAD -> YIELD % CHANGE
+        if spread_pct_on:
+            spread_pct_comparator = spread_toggle2.selectbox("% Change Comparator",('Greater than', 'Less than'))
+
+            spread_pct_selection = spread_toggle2.number_input("Crosses selected value", step=0.5, key="selected spread %chg value")
+
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldspread.metric_vs_selection_cross(comparison_type="% change", selected_value=[spread_pct_selection], comparator=spread_pct_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            sidebar_counter+=1
+            debt_filters_applied_sentence+=f", When yield spread % Change is {spread_pct_comparator} {spread_pct_selection}"
+
+
+# DEBT MARKET -> SUMMARY
+inpcol2.write("*"+debt_filters_applied_sentence+"*")
 
 
 
@@ -467,6 +496,8 @@ equity_market = inpcol3.popover("Economic Figures")
 #TODO Unemployment Rate
 #TODO Interest rates
 #TODO SAHM Rule = 3m moving average of national unemployment rate (U3), rises by 0.5 percentage points or more relative to the minimum of the 3m averages from the previous 12 months.
+#TODO GDP
+#TODO Economic Policy Uncertainty Index for US (USEPUINDXD)
 
 
 
