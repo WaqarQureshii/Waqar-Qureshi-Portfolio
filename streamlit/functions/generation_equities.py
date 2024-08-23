@@ -1,6 +1,8 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
+import polars as pl
+import polars_talib as plta
 
 import math
 from functools import reduce
@@ -34,32 +36,21 @@ class Generate_DB:
             High Yield Corp Bond = HYG\n
         """
         self.db = yf.download([ticker], start=start_date, end=end_date, interval=interval)
+        self.l_db = pl.LazyFrame(self.db.reset_index())
         
-        # Database Massage
+        # # # Database Massage
+        self.l_db = self.l_db.with_columns(pl.col('Close').pct_change().alias('% Change')).drop("Adj Close").rename({'Close': 'close'})
         self.db['% Change'] = self.db['Close'].pct_change()
 
-        # (-) Columns
+        # # (-) Columns
         self.db = self.db.drop(['Adj Close'], axis=1)
 
+        self.l_db = self.l_db.with_columns(
+            plta.rsi(timeperiod=rsi_value).alias('rsi'),
+            plta.sma(timeperiod=ma_length).alias('ma')
+        )
         self.db['rsi'] = ta.rsi(close = self.db.Close, length=rsi_value)
         self.db['ma'] = ta.sma(close = self.db.Close, length=ma_length)
-        
-        # (+) % Change
-        self.pctchg_int = self.db["% Change"].iloc[-1] # % Change COLUMN
-        self.pctchg_str = "{:.2%}".format(self.db["% Change"].iloc[-1]) # %Change current value
-        # ---% Change FLOOR & CEILING
-        self.pctchg_floor_int = math.floor(self.pctchg_int*100)/100
-        self.pctchg_ceil_int = math.ceil(self.pctchg_int*100)/100
-        
-        # (+) RSI
-        self.curr_rsi = self.db['rsi'].iloc[-1]
-        # self.curr_rsi = int(self.db['rsi'].iloc[-1])
-
-        # (+) Moving Average
-        self.curr_ma = (self.db['ma'].iloc[-1])
-
-        # get Current Price
-        self.curr_p = int(self.db["Close"].iloc[-1])
 
     def generate_ratio(self, numerator, denominator, start_date, end_date, interval, rsi_length:int=22, ma_length:int=50):
         '''
@@ -78,12 +69,15 @@ class Generate_DB:
         numerator_cls.get_database(ticker=numerator_ticker, start_date=start_date, end_date=end_date, interval=interval)
         numerator_cls.db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'ma', 'rsi'], axis = 1, inplace=True)
         numerator_cls.db.rename(columns={'Close': f'{numerator} Close'}, inplace=True)
+        numerator_cls.l_db = numerator_cls.l_db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'ma', 'rsi']).rename({'Close': f'{numerator} Close'})
 
         denominator_cls = Generate_DB()
         denominator_ticker=ticker_dict.get(denominator)
         denominator_cls.get_database(ticker=denominator_ticker, start_date=start_date, end_date=end_date, interval=interval)
         denominator_cls.db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'ma', 'rsi'], axis = 1, inplace=True)
         denominator_cls.db.rename(columns={'Close': f'{denominator} Close'},inplace=True)
+        denominator_cls.l_db = denominator_cls.l_db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'ma', 'rsi']).rename({'Close': f'{denominator} Close'})
+        
 
         #Create Ratio Columns
         self.db = pd.concat([numerator_cls.db, denominator_cls.db], axis=1)
@@ -310,6 +304,18 @@ class Generate_DB:
         return sp500, ndx, rus2k
     
     def generate_common_dates(self, intersection_dbs:list, selected_returninterval:int):
+        '''
+        Used with Indices that are charted. Purpose is to take in all of the databases with their triggered dates based on the metrics selected. This function will create a list of dates where a date repeats.
+
+        Args:
+        intersection_dbs - [DataFrame]
+
+        Output: -> used below Indices chart. #TODO to include dataframe chart.
+        self.avg_return
+        self.no_of_occurrences
+        self.no_of_positives
+        self.positive_percentage
+        '''
         appended_dates = [df.index for df in intersection_dbs]
         if appended_dates:
             unique_dates = reduce(lambda left,right: left.intersection(right), appended_dates).to_list()

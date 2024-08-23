@@ -457,7 +457,7 @@ if yieldspread_check:
         st.line_chart(yieldspread_lf.collect().to_pandas().set_index("Date"), height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
 
         spread_pctchg_lf = yieldspread.yielddiff_lf.select("Date", "% Change")
-        print(st.dataframe(yieldspread.yielddiff_lf.collect().to_pandas().set_index('Date'), height=250))
+        st.dataframe(yieldspread.yielddiff_lf.collect().to_pandas().set_index('Date'), height=250)
         
         spread_toggle1, spread_toggle2 = st.columns(2)
         spread_level_on = spread_toggle1.toggle("Spread Amount", key="yield spread level toggle")
@@ -488,7 +488,6 @@ if yieldspread_check:
 
 # DEBT MARKET -> SUMMARY
 inpcol2.write("*"+debt_filters_applied_sentence+"*")
-
 
 
 equity_market = inpcol3.popover("Economic Figures")

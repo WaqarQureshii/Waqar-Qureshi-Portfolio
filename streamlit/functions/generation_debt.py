@@ -125,9 +125,8 @@ class Generate_Yield():
         }
 
         if comparator == 'Greater than':
-            print(selection_dict[comparison_type]["db values"])
             filtered_database = self.yielddiff_lf.filter(
-                (pl.col(selection_dict[comparison_type]["db values"]) > comparison_value_lower) &
+                (pl.col(selection_dict[comparison_type]["db values"]) >= comparison_value_lower) &
                 (pl.col(selection_dict[comparison_type]["db values"]).shift(1) < comparison_value_lower)
             )
         elif comparator == 'Lower Than':
