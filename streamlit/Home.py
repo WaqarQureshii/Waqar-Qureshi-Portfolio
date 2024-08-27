@@ -25,11 +25,3 @@ st.markdown(':snake: Programming in Python: libraries such as Pandas (migrating 
 st.markdown(':bar_chart: Skillsets working with large data from working with Power BI and other visualization tools')
 st.markdown(':heavy_dollar_sign: Statistical and financial background knowledge from my working knowledge in the industry')
 st.markdown(":computer: Utilizing and following API documentation such as Yahoo Finance, Streamlit and Federal Reserve Economic Data (FRED).")
-      
-# Statistical and financial background knowledge from my working knowledge in the industry
-        
-#         Specific Python libraries and APIs: Pandas, numpy, Polars (moving towards Polars instead of Pandas), streamlit (what this app is hosted on), Yahoo 
-#         Finance's API, FRED (Federal Reserve Economic Data)'s API.
-        
-# I call it What Transpired During Our Last Encounter [WTDOLLE](WTDOLLE).
-
