@@ -9,7 +9,7 @@ from functools import reduce
 
 sys.path.append(".")
 from functions.generation_equities import Generate_DB
-from functions.generation_debt import Generate_Yield
+from functions.generation_debt import Generate_Yield, Generate_Yield_panda
 
 st.set_page_config(layout="wide")
 
@@ -443,14 +443,14 @@ inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
 # DEBT MARKET
 debt_filters_applied_sentence = "Debt filters applied:"
-debt_market = inpcol2.popover("Debt Market - IN PROGRESS")
+debt_market = inpcol2.popover("Debt Market")
 yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
 
 
 # DEBT MARKET -> YIELD SPREAD
 if yieldspread_check:
     with inpcol2.expander("Yield Spread"):
-        yieldspread = Generate_Yield()
+        yieldspread = Generate_Yield_panda()
         spreadcol1, spreadcol2 = st.columns(2)
 
         # DEBT MARKET -> YIELD SPREAD -> Long Term
@@ -461,10 +461,45 @@ if yieldspread_check:
 
         # DEBT MARKET -> YIELD SPREAD
         yieldspread.generate_yield_spread(input_start_date, input_end_date, selection_interval, lt_maturity_selection, st_maturity_selection)
-        spread_linechart = yieldspread.yielddiff_lf.select("Date", f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread').collect().to_pandas()
-        st.line_chart(spread_linechart, height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
+        spread_linechart = yieldspread.yielddiff_df[[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread', '% Change']]
+        spreadcol1.line_chart(spread_linechart, height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
+        spreadcol2.dataframe(spread_linechart, height=207, column_order=['Rate Spread', '% Change'],column_config={
+            "": st.column_config.DatetimeColumn(
+                "Date",
+                format="YYYY-MM-DD"
+            ),
+            '% Change': st.column_config.NumberColumn(
+                "% Change",
+                format="%.2f%%"
+            )
+        })
 
+        spread_level_on=spreadcol1.toggle("Spread Level", key="spread level toggle")
+        spread_pct_on=spreadcol2.toggle("Spread % Change", key="spread %chg toggle")
+        
+        # DEBT MARKET -> YIELD SPREAD -> SPREAD LEVEL
+        if spread_level_on:
+            spread_level_comparator = spreadcol1.selectbox("Spread Comparator", ('Greater than', 'Less than'))
+            spread_level_selection=spreadcol1.number_input("Select value", min_value=-1.0, step=1.0)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldspread.metric_vs_selection_cross(comparison_type='current price', comparator=spread_level_comparator, selected_value=[spread_level_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            debt_filters_applied_sentence+=f" Spread Level {spread_level_comparator} {spread_level_selection}"
+            sidebar_counter+=1
+        
+        if spread_pct_on:
+            spread_pct_lower = spreadcol2.number_input("Between lower value", step=0.5, key="spread between lower value")
+            spread_pct_higher = spreadcol2.number_input("Between higher value", step=0.5, key="spread between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldspread.metric_vs_selection_cross(comparison_type='% change between', comparator="Between", selected_value=[spread_pct_lower, spread_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
+            if sidebar_counter==0:
+                debt_filters_applied_sentence+=f"Spread % change between {spread_pct_lower}% and {spread_pct_higher}%"
+            else:
+                debt_filters_applied_sentence+=f", Spread % change between {spread_pct_lower}% and {spread_pct_higher}%"
+            sidebar_counter+=1
+            
+
+# DEBT MARKET -> SUMMARY
+inpcol2.write("*"+debt_filters_applied_sentence+"*")
 
 inpcol3.subheader("Economic Figures - IN PROGRESS")
 
