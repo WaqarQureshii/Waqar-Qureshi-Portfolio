@@ -4,6 +4,6 @@
 */__pycache__/*
 stock_market_assessment.code-workspace
 streamlit/functions/scratch_paper.py
-.streamlit/secrets.toml
 streamlit/.env
 streamlit/functions/scratch_paper.py
+*.streamlit/secrets.toml
