@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
+import polars as pl
 
 import math
 from functools import reduce
@@ -256,7 +257,6 @@ class Generate_DB:
         prev_comparison = False
         # Initialize an empty list to store the filtered rows
         filtered_rows = []
-        # self.db.to_csv('test.csv')
         for index, row in self.db.iterrows():
             # Check if the current row meets the existing condition
             if isinstance(ref_dict[comparison_type]['1st col'], str):
