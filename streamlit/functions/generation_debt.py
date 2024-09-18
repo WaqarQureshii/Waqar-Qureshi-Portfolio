@@ -11,7 +11,7 @@ sys.path.append(".")
 class Generate_Yield():
     def __init__(self):
         self.db = None
-        self.yielddiff_lf = None
+        self.yielddiff_df = None
         self.maturity_options = {
             "1m": "DGS1MO",
             "3m": "DGS3MO",
@@ -151,30 +151,26 @@ class Generate_Yield_panda():
             "10y": "DGS10",
             "20y": "DGS20",
             "30y": "DGS30",
+            "US FED FUNDS": "EFFR"
         }
-        self.yield_ratio = None
-        self.curr_yieldratio = None
-        self.curr_ltyield = None
-        self.curr_styield = None
-
-        self.curr_yielddiff = None
-        self.curr_yieldratio = None
 
     def get_database(self, selection: str, start_date, end_date, frequency):
         '''
         Provide bond yield maturity length, start and end dates, and frequency 
         
         Args:
-        selection: str -> 1m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y
+        selection: str -> 1m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y, "US FED FUNDS"
         frequency: str -> Daily, Weekly, Monthly
         start_date: str -> 2023-01-01
         end_date: str -> 2023-12-31
 
         Output:'''
         frequency_options = {"Daily": "d", "Weekly": "w", "Monthly": "m"}
-        fred_api = st.secrets.fred_api
-        fred = Fred(api_key=fred_api)
-        return fred.get_series(self.maturity_options.get(selection), start_date, end_date, frequency=frequency_options.get(frequency))
+        fred = Fred(api_key=st.secrets.fred_api)
+        series = fred.get_series(self.maturity_options.get(selection), start_date, end_date, frequency=frequency_options.get(frequency))
+        self.df = pd.DataFrame(series, columns=[f'{selection} Rate'])
+        self.df['Change'] = self.df[f'{selection} Rate'].diff(1)
+        return self.df
     
     def generate_yield_spread(self, start_date, end_date, frequency, long_term_yield:str, short_term_yield:str) -> None:
         '''
@@ -190,12 +186,8 @@ class Generate_Yield_panda():
         '''
 
         self.ltyield = self.get_database(long_term_yield, start_date, end_date, frequency)
-        self.ltyield=pd.DataFrame(self.ltyield, columns=[f'{long_term_yield} Rate'])
-        self.ltyield.index = pd.to_datetime(self.ltyield.index, format='%Y/%m/%d')
 
         self.styield = self.get_database(short_term_yield, start_date, end_date, frequency)
-        self.styield = pd.DataFrame(self.styield, columns=[f'{short_term_yield} Rate'])
-        self.styield.index = pd.to_datetime(self.styield.index, format='%Y/%m/%d')
 
         self.yielddiff_df = pd.concat([self.ltyield, self.styield], axis=1)
         
@@ -204,14 +196,15 @@ class Generate_Yield_panda():
         self.yielddiff_df['% Change'] = self.yielddiff_df['Rate Spread'].pct_change()*100
 
 
-    def metric_vs_selection_cross(self, comparison_type: str, selected_value: list, sp500: pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    def metric_vs_selection(self, movement: str, comparison_type: str, selected_value: list, sp500: pd.DataFrame, ndx:pd.DataFrame, rus2k:pd.DataFrame, comparator:str) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         '''
         Provide comparison metrics and return back dates in the sp500, ndx, and rus2k DataFrames where these comparison logics were applied.
 
         Args:\n
-        comparison_type: str -> current price, % change between\n
+        movement: str -> cross, value
+        comparison_type: str -> current price, % change between, change between\n
         selected_value: list -> range between two numbers, where the first number is the lower value\n
-        comparator: str -> Greater than, Lower than, Between\n
+        comparator: str -> Greater than, Lower than, Between, Increase >=, Decrease >=\n
 
         Output:
         self, sp500_intersection, ndx_intersection, rus2k_intersection
@@ -230,41 +223,45 @@ class Generate_Yield_panda():
             comparison_value_higher=None
 
         selection_dict = {
-            "current price": {
-                "current db value": self.yielddiff_df['Rate Spread'][-1],
-                "db values": "Rate Spread",
-                "db values x": 1,
-                "comparison value lower": comparison_value_lower,
-                "comparison value higher": 0
-            },
-            "% change between": {
-                "current db value": self.yielddiff_df['% Change'][-1],
-                "db values": "% Change",
-                "db values x": 100,
-                "comparison value lower": comparison_value_lower,
-                "comparison value higher": comparison_value_higher
-            }
+            "cross":
+                {"current price": {"db values": "Rate Spread",
+                                   "db values x": 1,
+                                   "comparison value lower": comparison_value_lower,
+                                   "comparison value higher": 0},
+                "% change between": {"db values": "% Change",
+                                     "db values x": 100,
+                                     "comparison value lower": comparison_value_lower,
+                                     "comparison value higher": comparison_value_higher},
+                "change between": {"db values": "Change",
+                                   "db values x": 1,
+                                   "comparison value lower": comparison_value_lower,
+                                   "comparison value higher": comparison_value_higher}
+                }
         }
-        print(f'Selected value: {selected_value[0]}')
-        print(f'')
         if comparator == 'Greater than':
             filtered_database = self.yielddiff_df[
-                (self.yielddiff_df[selection_dict[comparison_type]["db values"]] > comparison_value_lower) &
-                (self.yielddiff_df[selection_dict[comparison_type]["db values"]].shift(1) <= comparison_value_lower)
+                (self.yielddiff_df[selection_dict[movement][comparison_type]["db values"]] > comparison_value_lower) &
+                (self.yielddiff_df[selection_dict[movement][comparison_type]["db values"]].shift(1) <= comparison_value_lower)
             ]
         elif comparator == 'Lower Than':
             filtered_database = self.yielddiff_df[
-                (self.yielddiff_df[selection_dict[comparison_type]["db values"]] < comparison_value_lower) &
-                (self.yielddiff_df[selection_dict[comparison_type]["db values"]].shift(1) >= comparison_value_lower)
+                (self.yielddiff_df[selection_dict[movement][comparison_type]["db values"]] < comparison_value_lower) &
+                (self.yielddiff_df[selection_dict[movement][comparison_type]["db values"]].shift(1) >= comparison_value_lower)
             ]
         elif comparator == 'Between':
             filtered_database = self.yielddiff_df[
-                (self.yielddiff_df[selection_dict[comparison_type]["db values"]].between(comparison_value_lower, comparison_value_higher)) &
-                ~ (self.yielddiff_df[selection_dict[comparison_type]["db values"]].shift(1).between(comparison_value_lower, comparison_value_higher))
+                (self.yielddiff_df[selection_dict[movement][comparison_type]["db values"]].between(comparison_value_lower, comparison_value_higher)) &
+                ~ (self.yielddiff_df[selection_dict[movement][comparison_type]["db values"]].shift(1).between(comparison_value_lower, comparison_value_higher))
             ]
-        sp500.append(filtered_database)
-        ndx.append(filtered_database)
-        rus2k.append(filtered_database)
-        print(filtered_database)
+        elif comparator == 'change between':
+            filtered_database = self.df[
+                (self.df[selection_dict[movement][comparison_type]["db values"]].between(comparison_value_lower, comparison_value_higher))
+            ]
+        try:
+            sp500.append(filtered_database)
+            ndx.append(filtered_database)
+            rus2k.append(filtered_database)
+        except UnboundLocalError:
+            st.write("There are no scenarios that exist like this.")
         
         return sp500, ndx, rus2k
