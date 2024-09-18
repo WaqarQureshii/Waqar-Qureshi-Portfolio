@@ -9,7 +9,7 @@ from functools import reduce
 
 sys.path.append(".")
 from functions.generation_equities import Generate_DB
-from functions.generation_debt import Generate_Yield
+from functions.generation_debt import Generate_Yield_panda
 
 st.set_page_config(layout="wide")
 
@@ -439,13 +439,15 @@ inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
 # DEBT MARKET
 debt_filters_applied_sentence = "Debt filters applied:"
-debt_market = inpcol2.popover("Debt Market - IN PROGRESS")
+debt_market = inpcol2.popover("Debt Market")
 yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
+usfedfundrate_check = debt_market.checkbox("US Federal Funds Rate", False)
+
 
 # DEBT MARKET -> YIELD SPREAD
 if yieldspread_check:
     with inpcol2.expander("Yield Spread"):
-        yieldspread = Generate_Yield()
+        yieldspread = Generate_Yield_panda()
         spreadcol1, spreadcol2 = st.columns(2)
 
         # DEBT MARKET -> YIELD SPREAD -> Long Term
@@ -456,17 +458,70 @@ if yieldspread_check:
 
         # DEBT MARKET -> YIELD SPREAD
         yieldspread.generate_yield_spread(input_start_date, input_end_date, selection_interval, lt_maturity_selection, st_maturity_selection)
-        spread_linechart = yieldspread.yielddiff_lf.select("Date", f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread').collect().to_pandas()
-        st.line_chart(spread_linechart, height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
-#TODO build integration with calculations and index filtering
+        spread_linechart = yieldspread.yielddiff_df[[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread', '% Change']]
+        spreadcol1.line_chart(spread_linechart, height=200, use_container_width=True, y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
+        spreadcol2.dataframe(spread_linechart, height=207, column_order=['Rate Spread', '% Change'],column_config={
+            "": st.column_config.DatetimeColumn(
+                "Date",
+                format="YYYY-MM-DD"
+            ),
+            '% Change': st.column_config.NumberColumn(
+                "% Change",
+                format="%.2f%%"
+            )
+        })
 
+        spread_level_on=spreadcol1.toggle("Spread Level", key="spread level toggle")
+        spread_pct_on=spreadcol2.toggle("Spread % Change", key="spread %chg toggle")
+        
+        # DEBT MARKET -> YIELD SPREAD -> SPREAD LEVEL
+        if spread_level_on:
+            spread_level_comparator = spreadcol1.selectbox("Spread Comparator", ('Greater than', 'Less than'))
+            spread_level_selection=spreadcol1.number_input("Select value", step=1.0, value=0.0)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldspread.metric_vs_selection(movement='cross',comparison_type='current price', comparator=spread_level_comparator, selected_value=[spread_level_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            debt_filters_applied_sentence+=f" Spread Level {spread_level_comparator} {spread_level_selection}"
+            sidebar_counter+=1
+        
+        if spread_pct_on:
+            spread_pct_lower = spreadcol2.number_input("Between lower value", step=0.5, key="spread between lower value")
+            spread_pct_higher = spreadcol2.number_input("Between higher value", step=0.5, key="spread between higher value")
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = yieldspread.metric_vs_selection(movement='cross', comparison_type='% change between', comparator="Between", selected_value=[spread_pct_lower, spread_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
 
+            if sidebar_counter==0:
+                debt_filters_applied_sentence+=f" Spread % change between {spread_pct_lower}% and {spread_pct_higher}%"
+            else:
+                debt_filters_applied_sentence+=f", Spread % change between {spread_pct_lower}% and {spread_pct_higher}%"
+            sidebar_counter+=1
 
-equity_market = inpcol3.popover("Economic Figures")
-#TODO Research ECSU Economic Surprise Index
-#TODO Unemployment Rate
-#TODO Interest rates
-#TODO SAHM Rule = 3m moving average of national unemployment rate (U3), rises by 0.5 percentage points or more relative to the minimum of the 3m averages from the previous 12 months.
+if usfedfundrate_check:    
+    with inpcol2.expander("US Federal Funds Rate"):
+        usfedfund = Generate_Yield_panda()
+        usfedfund.get_database("US FED FUNDS", input_start_date, input_end_date, selection_interval)
+        
+        usfedr_col1, usdfedr_col2 = st.columns(2)
+
+        # DEBT MARKET -> US FED FUND RATE -> Change
+        usfedr_col1.line_chart(usfedfund.df, y=['US FED FUNDS Rate'], height=200)
+        
+        usfedrate_level_on = usdfedr_col2.toggle("US Fed Funds Rate Change", key="US Fed Funds Rate Change")
+
+        if usfedrate_level_on:
+            usfedrate_level_selection_lower = usdfedr_col2.number_input("Increase/Decrease Between (lower value)", step=0.25, value=-0.30)
+            usfedrate_level_selection_higher = usdfedr_col2.number_input("Increase/Decrease Between (higher value)", step=0.25, value=-0.20)
+            sp500_intersection, nasdaq_intersection, rus2k_intersection = usfedfund.metric_vs_selection(movement='cross', comparison_type='change between', comparator="change between", selected_value=[usfedrate_level_selection_lower, usfedrate_level_selection_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            if sidebar_counter==0:
+                debt_filters_applied_sentence+=f" US Fed Funds Rate change between {usfedrate_level_selection_lower}% and {usfedrate_level_selection_higher}%"
+            else:
+                debt_filters_applied_sentence+=f", US Fed Funds Rate change between {usfedrate_level_selection_lower}% and {usfedrate_level_selection_higher}%"
+            sidebar_counter+=1
+
+# DEBT MARKET -> SUMMARY
+inpcol2.write("*"+debt_filters_applied_sentence+"*")
+
+inpcol3.subheader("Economic Figures - IN PROGRESS")
+
 
 
 
@@ -512,11 +567,14 @@ if sidebar_counter > 0:
     fig, ax = plt.subplots()
     ax.set_title('S&P500')
     ax.plot(sp500.db.index, sp500.db['Close'], linewidth = 0.5, color='black')
-    ax.scatter(sp500.common_dates.index, sp500.common_dates['Close'], marker='.', color='red', s = 10)
-    graph1.pyplot(fig)
-    #-------S&P500 GENERATE STATEMENTS--------
-    graph1.write(f'This occurred {sp500.no_of_occurrences} of time(s) and is {sp500.positive_percentage} positive in {input_returninterval} days.' )
-    graph1.write('{:.2%}'.format(sp500.avg_return))
+    try:
+        ax.scatter(sp500.common_dates.index, sp500.common_dates['Close'], marker='.', color='red', s = 10)
+        graph1.pyplot(fig)
+        #-------S&P500 GENERATE STATEMENTS--------
+        graph1.write(f'This occurred {sp500.no_of_occurrences} of time(s) and is {sp500.positive_percentage} positive in {input_returninterval} days.' )
+        graph1.write('{:.2%}'.format(sp500.avg_return))
+    except AttributeError:
+        graph1.write("There are no scenarios that exist like this.")
 
     #---NASDAQ DATABASE GENERATION---
     if 'ndx' not in globals():
@@ -526,13 +584,16 @@ if sidebar_counter > 0:
     #-------NASDAQ GRAPH------
     fig, ax = plt.subplots()
     ax.set_title('Nasdaq 100')
-    ax.plot(ndx.db.index, ndx.db['Close'], linewidth = 0.5, color='black')
-    ax.scatter(ndx.common_dates.index, ndx.common_dates['Close'], marker='.', color='red', s = 10)
-    graph2.pyplot(fig)
-    #-------NASDAQ GENERATE STATEMENTS-------
-    graph2.write(f'This occurred {ndx.no_of_occurrences} time(s) and is {ndx.positive_percentage} positive in {input_returninterval} days.' )
-    graph2.write('{:.2%}'.format(ndx.avg_return))
-
+    try:
+        ax.plot(ndx.db.index, ndx.db['Close'], linewidth = 0.5, color='black')
+        ax.scatter(ndx.common_dates.index, ndx.common_dates['Close'], marker='.', color='red', s = 10)
+        graph2.pyplot(fig)
+        #-------NASDAQ GENERATE STATEMENTS-------
+        graph2.write(f'This occurred {ndx.no_of_occurrences} time(s) and is {ndx.positive_percentage} positive in {input_returninterval} days.' )
+        graph2.write('{:.2%}'.format(ndx.avg_return))
+    except AttributeError:
+        graph2.write("There are no scenarios that exist like this.")
+    
     #--RUSSEL 2000 DATABASE GENERATION
     if 'rus2k' not in globals():
         rus2k = Generate_DB()
@@ -541,12 +602,15 @@ if sidebar_counter > 0:
     #-----RUSSELL 2000 GRAPH-----
     fig, ax = plt.subplots()
     ax.set_title('Russel 2000')
-    ax.plot(rus2k.db.index, rus2k.db['Close'], linewidth = 0.5, color='black')
-    ax.scatter(rus2k.common_dates.index, rus2k.common_dates['Close'], marker='.', color='red', s = 10)
-    graph3.pyplot(fig)
-    #-------NASDAQ GENERATE STATEMENTS-------
-    graph3.write(f'This occurred {rus2k.no_of_occurrences} of time(s) and is {rus2k.positive_percentage} positive in {input_returninterval} days.' )
-    graph3.write('{:.2%}'.format(rus2k.avg_return))
+    try:
+        ax.plot(rus2k.db.index, rus2k.db['Close'], linewidth = 0.5, color='black')
+        ax.scatter(rus2k.common_dates.index, rus2k.common_dates['Close'], marker='.', color='red', s = 10)
+        graph3.pyplot(fig)
+        #-------NASDAQ GENERATE STATEMENTS-------
+        graph3.write(f'This occurred {rus2k.no_of_occurrences} of time(s) and is {rus2k.positive_percentage} positive in {input_returninterval} days.' )
+        graph3.write('{:.2%}'.format(rus2k.avg_return))
+    except AttributeError:
+        graph3.write("There are no scenarios that exist like this.")
 
 else:
     pass
