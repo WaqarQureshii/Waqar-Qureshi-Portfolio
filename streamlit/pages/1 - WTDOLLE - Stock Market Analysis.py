@@ -523,8 +523,6 @@ inpcol2.write("*"+debt_filters_applied_sentence+"*")
 inpcol3.subheader("Economic Figures - IN PROGRESS")
 
 
-
-
 # --- SELECTED VARIABLES COLUMNS ---
 col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
 
