@@ -51,12 +51,8 @@ with st.expander(label="WTDOLLE - What Transpired During Our Last Encounter", ic
 with st.expander(label="COMING SOON: REACT (Resume Enhancement and Customization Tool -GPT)", icon="🤖"):
         st.write('''This app takes user inputs to ultimately output an action-oriented and job description-focused resume, but still keeping the original essence of the user's original resume submitted.''')
         python_tab2, gpt_tab = st.tabs(["Python (Programming Language)", "LangChain: Chat GPT Models"])
-        def stream_pythongpt():
-                python_info = '''
-- Streamlit: a way to build and share apps - transform my Python scripts into an interactive web app that takes user input related to the job in question as well as the user's information such as their resume.                       
-'''
-                for word in python_info.split(" "):
-                        yield word + " "                
-                        time.sleep(0.01)
+
         with python_tab2:
-                st.write_stream(stream_pythongpt)
+                st.write('''
+- Streamlit: a way to build and share apps - transform my Python scripts into an interactive web app that takes user input related to the job in question as well as the user's information such as their resume.                       
+''')
