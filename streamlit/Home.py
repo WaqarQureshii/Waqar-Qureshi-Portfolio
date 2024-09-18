@@ -63,22 +63,4 @@ with largedata_tab:
 with stats_tab:
         st.write_stream(stream_stats)
 
-# def streamdatatoinsights():
-#         fromdatatoinsights ='''This tool is used to figure out when in the S&P500, Nasdaq or Russell 2000 did X go up X% and Y was below price 40 (example).
-
-#         It utilizes the following:
-#         🐍 Python programming
-        
-#         📉 Skillsets working with large data from working with Power BI and other visualization tools,
-        
-#         🎲 Statistical and financial background knowledge from my working knowledge in the industry
-        
-#         Specific Python libraries and APIs: Pandas, numpy, Polars (moving towards Polars instead of Pandas), streamlit (what this app is hosted on), Yahoo 
-#         Finance's API, FRED (Federal Reserve Economic Data)'s API.
-        
-# I call it What Transpired During Our Last Encounter [WTDOLLE: Stock Market Analysis - see sidebar].'''
-#         for word in fromdatatoinsights.split(" "):
-#                 yield word + " "
-#                 time.sleep(0.01)
-# st.write_stream(streamdatatoinsights)
 

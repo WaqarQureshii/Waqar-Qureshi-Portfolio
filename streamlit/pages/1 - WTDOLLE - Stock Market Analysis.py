@@ -14,14 +14,6 @@ from functions.generation_debt import Generate_Yield_panda
 st.set_page_config(layout="wide")
 
 st.title('What Transpired During Our Last Encounter (WTDOLLE)?')
-st.subheader("User Guide:")
-st.write('''
-Currently the Equity Market options are available for use.
-''')
-st.write("1) Select the time period you want to assess the equity market over (start date and end date)")
-st.write("2) Select the interval you'd like to assess the market: Daily, Weekly, Monthly. all the figures and metrics will be over the selected interval.")
-st.write("3) Determine whether it is positive over X number of Days/Weeks/Months")
-st.write("4) Click on the Equity Market drop down and choose the metrics you'd like to filter the market by. I.e. You can choose when the S&P last went up by 2% and the VIX was below 15.")
 
 # -------- DATE SELECTION SECTION --------
     # --- DATE SELECTION ---
@@ -29,10 +21,12 @@ today_date = datetime.today()
 start_date = '2001-01-01 00:00:00'
 start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
 header_col1, header_col2, header_col3 = st.columns(3)
+header_col1.info(icon="ℹ️", body='Select the time period you want to assess the equity market over (start date and end date)')
 input_start_date = header_col1.date_input(label = "Choose start date", value = start_date)
 input_end_date = header_col1.date_input(label = 'Choose end date', value = today_date)
 
     # --- INDEX PARAMETERS
+header_col2.info(icon="ℹ️", body='Select the interval you\'d like to assess the market. All the figures and metrics will be assessed on the selected interval.')
 selection_interval = header_col2.radio("Select Interval",
                                        options =['Daily', 'Weekly', 'Monthly'],
                                        index = 0,
@@ -48,6 +42,7 @@ elif selection_interval == 'Monthly':
     input_interval = '1mo'
     grammatical_selection = 'months'
 
+header_col3.info(icon="ℹ️", body='This number will assess whether there was a positive return in X (selection) number of periods.')
 input_returninterval = header_col3.number_input(f"Calculate return over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection")
 
 # --- Dataframes Set Up ---
@@ -59,6 +54,7 @@ rus2k_intersection = []
 sidebar_counter = 0
 
 st.subheader("")
+st.info(icon="ℹ️", body='SELECT METRICS HERE TO GENERATE EQUITY MARKET GRAPHS AND EVENTS. Note: Equity market metrics are available in production currently. Debt Market and Economic Figures are currently in progress.')
 inpcol1, inpcol2, inpcol3 = st.columns(3)
 # EQUITY MARKET
 equity_filters_applied_sentence = "Equity filters applied:"
