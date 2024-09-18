@@ -8,6 +8,7 @@ st.title("I'm a _Corporate Finance Leader_, that took a :blue[(very deep)] dive 
 #\\\\\\\\\\ HOW IT ALL BEGAN //////////////
 def streamhowitbegan():
         howitbegan = "This website started as a passion project, born out of my fascination with both technology and finance. I wanted a place to house all my diverse projects and organize them for myself, ranging from Power BI development to Python programming. It currently showcases my python and statistical skillsets."
+        howitbegan = "This website started as a passion project, born out of my fascination with both technology and finance. I wanted a place to house all my diverse projects and organize them for myself, ranging from Power BI development to Python programming. It currently showcases my python and statistical skillsets."
         
         for word in howitbegan.split(" "):
                 yield word + " "
