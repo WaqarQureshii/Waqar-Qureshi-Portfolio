@@ -310,10 +310,6 @@ class Generate_DB:
         return sp500, ndx, rus2k
     
     def generate_common_dates(self, intersection_dbs:list, selected_returninterval:int):
-        for db in intersection_dbs:
-            db = pl.LazyFrame(db)
-            print(f"THIS IS THE DATABASE: {type(db)}")
-            print(db.collect())
         appended_dates = [df.index for df in intersection_dbs]
         if appended_dates:
             unique_dates = reduce(lambda left,right: left.intersection(right), appended_dates).to_list()
