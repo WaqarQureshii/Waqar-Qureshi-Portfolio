@@ -19,33 +19,33 @@ st.write_stream(streamhowitbegan)
 # \\\\\\\\\\ THE JOURNEY //////////
 st.header(":blue[Project/s (adding these in every day)]")
 with st.expander(label="WTDOLLE - What Transpired During Our Last Encounter 💹"):
-        st.write('''This tool is used to answer questions such as: what's the historical record of when the S&P 500 went up 2% and the Yield Rate Difference between the US 10 year and 2 year was below 0''')
+        st.write('''This tool helps answer questions like: *What’s the historical record when the S&P 500 rose 2% and the yield curve between the US 10-year and 2-year bonds was inverted (below 0)?*''')
         python_tab, largedata_tab, stats_tab = st.tabs(["Python (Programming Language)", "Extracting & Transforming Large Data", "Statistical and Financial Knowledge"])
 
         with python_tab:
                 st.subheader("🐍 Python Programming 🐍")
                 st.write('''
-        I used Python to:
-        - Access 💲 Yahoo Finance's API 💲 to access historical data on the equity markets and volatility index
-        - 🏛️ Access Federal Reserve Economic Data (FRED)'s 🏛️API to access US Federal Funds Rate as well as statistics such as Unemployment Rate and GDP.
-        - Streamlit - used to interface the tool and gather input from the user to filter the multiple datasets based on the dates and parameters selected.
-        - 🐼 Pandas 🐼 - an open source library for data analyhsis and manipulation: gathered user's input in order to manipulate the data, determine if paramters are met for an occurence, find the dates for the common occurences to feed into graphs and statistical data output.
-        - 🐻‍❄️Polars🐻‍❄️ - multi-threaded query engine written in Rust - I am slowly moving my Pandas implementation to Polars to streamline data querying.
+        I used Python for:
+        - Yahoo Finance API 💲: Accessed historical data on equity markets and the volatility index (VIX
+        - Federal Reserve Economic Data (FRED) API 🏛️: Retrieved US Federal Funds Rate data, along with other economic statistics such as the Unemployment Rate and GDP.
+        - Streamlit: Developed a user-friendly interface allowing users to filter multiple datasets based on dates and selected parameters.
+        - Pandas 🐼: Leveraged this open-source library for data analysis and manipulation. It processes user inputs, manipulates data to check whether conditions are met, identifies relevant dates, and generates corresponding charts and statistical outputs.
+        - Polars 🐻‍❄️: Currently transitioning from Pandas to Polars—a fast, multi-threaded query engine written in Rust—to optimize data querying.
         ''')
 
         with largedata_tab:
                 st.subheader("🏋️‍♂️ Large Data Transformation 🏋️‍♂️")
                 st.write('''
-        - 📈1 table = ~19,500 rows & ~95,000 points of data: Yahoo Finance's API can get daily data from 1950 for the S&P500 
-        - ✖️ Multiply ✖️ this by, for example, 2, 8 or 16 tables for the various tables that can be queried: VIX (Volatility index), S&P 500, Nasdaq, Russell 2000, High-Yield Corporate Bonds (HYG), Equal-Weighted S&P 500 (RSP), US Market Debt (1m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y) and US Federal Funds Rate
-        - From the data extracted and metrics selected, I had to perform large data transformation to gather the relevant information for reporting. This requires working with the various data types (percent increases, dollar values and timevalues) in order to create 3 full charts that showcase where the user's inputs intersect on a graph.
+        - Dataset Size: Each table consists of around 19,500 rows and 95,000 data points. Yahoo Finance’s API provides daily data on the S&P 500 from the year 1950.
+        - Scaling Up: Multiply that by 2, 8, or 16 tables depending on the query, which may include various datasets like the VIX, S&P 500, Nasdaq, Russell 2000, High-Yield Corporate Bonds (HYG), Equal-Weighted S&P 500 (RSP), US Treasury Debt (1m, 3m, 6m, 1y, 2y, 3y, 5y, 7y, 10y, 20y, 30y), and the US Federal Funds Rate.
+        - Data Transformation: I handled complex data transformations to generate meaningful insights and reports. This involved working with various data types (percentage changes, dollar values, time series) to create three comprehensive charts that illustrate where the user’s selected parameters intersect.
                 ''')
 
         with stats_tab:
                 st.subheader("☕ Leveraging Working Experience ☕")
                 st.write('''
-        - 🎩 Transform the tables to include technical indicators requiring calculations such as Relative Strength Index (RSI), Moving Average (MA), % Changes.
-        - Using my moderate industry and market knowledge, I designed and created user inputs based on useful metrics as well as many options that are available to the user.
+        - 🎩 Technical Indicators: I implemented calculations for technical indicators such as the Relative Strength Index (RSI), Moving Averages (MA), and percentage changes within the datasets.
+        - User-Driven Design: Using my experience in the financial markets, I created input options based on relevant metrics, ensuring users have a wide array of useful parameters to choose from.
                 ''')
 
 with st.expander(label="COMING SOON: REACT (Resume Enhancement and Customization Tool -GPT) 🤖"):
