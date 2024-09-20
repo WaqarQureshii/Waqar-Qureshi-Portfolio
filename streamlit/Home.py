@@ -48,7 +48,7 @@ with st.expander(label="WTDOLLE - What Transpired During Our Last Encounter 💹
         - Using my moderate industry and market knowledge, I designed and created user inputs based on useful metrics as well as many options that are available to the user.
                 ''')
 
-with st.expander(label="COMING SOON: REACT (Resume Enhancement and Customization Tool -GPT)", icon="🤖"):
+with st.expander(label="COMING SOON: REACT (Resume Enhancement and Customization Tool -GPT) 🤖"):
         st.write('''This app takes user inputs to ultimately output an action-oriented and job description-focused resume, but still keeping the original essence of the user's original resume submitted.''')
         python_tab2, gpt_tab = st.tabs(["Python (Programming Language)", "LangChain: Chat GPT Models"])
 
