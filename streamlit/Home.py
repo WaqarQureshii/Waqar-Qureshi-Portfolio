@@ -18,7 +18,7 @@ st.write_stream(streamhowitbegan)
 
 # \\\\\\\\\\ THE JOURNEY //////////
 st.header(":blue[Project/s (adding these in every day)]")
-with st.expander(label="WTDOLLE - What Transpired During Our Last Encounter", icon="💹"):
+with st.expander(label="WTDOLLE - What Transpired During Our Last Encounter", icon=":chart:"):
         st.write('''This tool is used to answer questions such as: what's the historical record of when the S&P 500 went up 2% and the Yield Rate Difference between the US 10 year and 2 year was below 0''')
         python_tab, largedata_tab, stats_tab = st.tabs(["Python (Programming Language)", "Extracting & Transforming Large Data", "Statistical and Financial Knowledge"])
 
