@@ -1,8 +1,1 @@
 fredapi==0.5.2
-matplotlib==3.8.1
-pandas==2.1.2
-pandas-ta==0.3.14b0
-polars==1.3.0
-polars_talib==0.1.3
-streamlit==1.34.0
-yfinance==0.2.3
