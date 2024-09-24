@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
 import polars as pl
+import polars_talib as plta
 
 import math
 from functools import reduce
@@ -70,12 +71,12 @@ class Generate_DB:
         ticker_dict = {
             "Nasdaq": "^IXIC",
             "S&P 500": "^GSPC",
-            "Russel 2000": "^RUT",
+            "Russell 2000": "^RUT",
             "S&P 500 Equal Weight": "RSP"
         }
 
         numerator_cls = Generate_DB()
-        numerator_ticker=ticker_dict.get(numerator)
+        numerator_ticker=ticker_dict.get(numerator, numerator)
         numerator_cls.get_database(ticker=numerator_ticker, start_date=start_date, end_date=end_date, interval=interval)
         numerator_cls.db.drop(['Open', 'High', 'Low', 'Volume', '% Change', 'ma', 'rsi'], axis = 1, inplace=True)
         numerator_cls.db.rename(columns={'Close': f'{numerator} Close'}, inplace=True)
@@ -323,3 +324,197 @@ class Generate_DB:
             self.no_of_positives = (self.common_dates['% Change Sel Interval'] > 0).sum()
             positive_percentage = self.no_of_positives/self.no_of_occurrences
             self.positive_percentage = '{:.2%}'.format(positive_percentage)
+
+class Generate_DB_polars:
+    def __init__(self):
+        self.db=None
+    
+    def get_database(self, ticker: list[str], start_date: str, end_date: str, interval: str="1d", rsi_value: int=22, ma_length: int=50):
+        """
+        Generates database with all of its metrics by providing it parameters.
+
+        Arguments
+        ----------
+        ticker list[str]: Provide a ticker symbol.
+            SP500 = ^GSPC\n
+            S&P Energy = XLE\n
+            S&P Utility = XLU\n
+            S&P Consumer = XLY\n
+            RSP = RSP\n
+            Nasdaq = ^IXIC\n
+            Russel 2000 = ^RUT\n
+            VIX = ^VIX\n
+            High Yield Corp Bond = HYG\n
+
+        interval (str): Provide a timeframe to run database on.
+            1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo\n
+        
+        rsi_value (int): Provide a timeframe to calculate the Relative Strength Index (RSI)
+            \n
+        ma_length (int): Provide a timeframe to calculate the Moving Average (MA)
+            \n
+        """
+
+        df = yf.download(ticker, start=start_date, end=end_date, interval=interval)
+        df['Date'] = df.index
+        self.lf = pl.LazyFrame(df).select(
+            pl.col("*").exclude("Adj Close")
+            ).cast(
+                {"Date": pl.Date}
+                ).select(['Date', 'Open', 'High', 'Low', 'Close', 'Volume']).with_columns(
+                    (pl.col("Close").pct_change()*100).alias("% Change"),
+                    (plta.rsi(pl.col("Close"), timeperiod=rsi_value)).alias("rsi"),
+                    (plta.ma(pl.col("Close"), timeperiod=ma_length)).alias("ma")
+                )
+    
+    def generate_ratio(self, numerator:str, denominator:str, start_date:str, end_date:str, interval:str, rsi_length:int=22, ma_length:int=50):
+        """
+        Generates a ratio column in the self.lf
+
+        Arguments:
+        ----------
+        numerator (str): Nasdaq, S&P 500, Russell 2000, S&P 500 Equal Weight\n
+
+        denominator (str): Nasdaq, S&P 500, Russell 2000, S&P 500 Equal Weight\n
+
+        interval (str): 1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo\n
+        """
+
+        ticker_dict = {
+            "Nasdaq": "^IXIC",
+            "S&P 500": "^GSPC",
+            "Russell 2000": "^RUT",
+            "S&P 500 Equal Weight": "RSP"
+        }
+        
+        # --- Numerator generation ---
+        numerator_cls = Generate_DB_polars()
+        numerator_cls.get_database(ticker=ticker_dict.get(numerator, numerator),
+                                   start_date=start_date,
+                                   end_date=end_date,
+                                   interval=interval)
+        numerator_cls.lf=numerator_cls.lf.select(
+            ["Date", "Close"]).rename(
+                {"Close": f"{numerator} Close"}
+            )
+        
+        # --- Denominator generation ---
+        denominator_cls = Generate_DB_polars()
+        denominator_cls.get_database(ticker=ticker_dict.get(denominator, denominator),
+                                   start_date=start_date,
+                                   end_date=end_date,
+                                   interval=interval)
+        denominator_cls.lf=denominator_cls.lf.select(
+            ["Date", "Close"]).rename(
+                {"Close": f"{denominator} Close"}
+            )
+        
+        # --- Create Ratio Columns
+        self.lf = numerator_cls.lf.join(denominator_cls.lf, on="Date").with_columns(
+            (( pl.col(f"{numerator} Close") / pl.col(f"{denominator} Close")).alias("Close"))
+        )
+        self.lf = self.lf.with_columns(
+            ((pl.col("Close").pct_change()*100).round(2)).alias("% Change")
+        )
+
+    def metric_vs_selection_cross(self, comparison_type: str, selected_value: list, comparator: str) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
+        """
+        Provide inputs related to different comparison types that filter out the indices filtered by the comparison types fed into it.
+
+        Arguments
+        ----------
+        comparison_type (str): Provide the various types of comparison types.
+            current_price\n
+            %_change\n
+            % change between\n
+            price vs ma\n
+            rsi vs selection\n
+            ratio%_changevsselection\n
+            
+        comparator (str): Provide the comparator to compare against the selection.
+            Greater than\n
+            Less than\n
+            Between
+        """
+        
+        type_dict = {
+            "current_price": {
+                "db_column": "Close",
+                "multiplier": 1
+            },
+            "%_change": {
+                "db_column": "% Change",
+                "multiplier": 100
+            },
+            "price vs ma": {
+                "db_column": "Close",
+                "multiplier": 1
+            },
+            "rsi vs selection":{
+                "db_column": "rsi",
+                "multiplier":1
+            },
+            "ratio vs selection":{
+                "db_column": "Close",
+                "multiplier": 1
+            },
+            "ratio%_changevsselection":{
+                "db_column":"% Change",
+                "multiplier": 1
+            }
+        }
+        selected_value.sort()
+
+        if comparator=='Greater than':
+            filtered_db = self.lf.filter(
+                (pl.col(type_dict[comparison_type]["db_column"]) > selected_value[0]) &
+                (pl.col(type_dict[comparison_type]["db_column"]).shift(1) <= selected_value[0])
+            )
+        elif comparator=='Lower than':
+            filtered_db = self.lf.filter(
+                (pl.col(type_dict[comparison_type]["db_column"]) < selected_value[0]) &
+                (pl.col(type_dict[comparison_type]["db_column"]).shift(1) >= selected_value[0])
+            )
+        elif comparator=='Between':
+            filtered_db=self.lf.filter(
+                (pl.col(type_dict[comparison_type]["db_column"]).is_between(selected_value[0], selected_value[1])) &
+                ~(pl.col(type_dict[comparison_type]["db_column"]).shift(1).is_between(selected_value[0], selected_value[1]))
+            )
+        self.filtered_dates = filtered_db.select("Date")
+    
+def filter_indices(db_list: list[pl.LazyFrame], sp500: pl.LazyFrame, ndx: pl.LazyFrame, rus2k: pl.LazyFrame):
+    """
+    Returns a LazyFrame 
+
+    Arguments
+    ----------
+    db_list (list[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]): Provide all the LazyFrame databases.\n
+
+    selected_returnintervral (int): how many periods to calculate the return in the future.
+    """
+    def get_common_dates_list():
+        if len(db_list)>1:
+            common_dates = db_list[0]
+            for db in db_list[1:]:
+                common_dates_df = common_dates.join(db, on="Date",how="inner")
+            return common_dates_df
+        elif len(db_list==1):
+            return db_list[0]
+        else:
+            pass
+    
+    def filter_indices(common_dates_list):
+        return_indices = []
+        if sp500:
+            sp500.filter(pl.col("Date").is_in(common_dates_list))
+            return_indices.append(sp500)
+        if ndx:
+            ndx.filter(pl.col("Date").is_in(common_dates_list))
+            return_indices.append(ndx)
+        if rus2k:
+            rus2k.filter(pl.col("Date").is_in(common_dates_list))
+            return_indices.append(rus2k)
+        return return_indices
+        
+
+    return filter_indices(common_dates_list=get_common_dates_list())

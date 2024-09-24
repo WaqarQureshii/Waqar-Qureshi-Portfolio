@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas_ta as ta
 import pandas as pd
+import polars as pl
 import streamlit as st
 from fredapi import Fred
 

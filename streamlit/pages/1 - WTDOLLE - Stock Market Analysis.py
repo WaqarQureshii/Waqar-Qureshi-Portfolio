@@ -11,7 +11,9 @@ sys.path.append(".")
 from functions.generation_equities import Generate_DB
 from functions.generation_debt import Generate_Yield_panda
 
-st.set_page_config(layout="wide")
+st.set_page_config(layout="wide",
+                   page_title="What Transpired During Our Last Encounter (WTDOLLE)?",
+                   initial_sidebar_state="collapsed")
 
 st.title('What Transpired During Our Last Encounter (WTDOLLE)?')
 
