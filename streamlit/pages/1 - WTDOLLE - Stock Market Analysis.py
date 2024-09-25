@@ -8,7 +8,7 @@ import sys
 from functools import reduce
 
 sys.path.append(".")
-from functions.generation_equities import Generate_DB
+from functions.generation_equities import Generate_DB, Generate_DB_polars, filter_indices
 from functions.generation_debt import Generate_Yield_panda
 
 st.set_page_config(layout="wide",
@@ -52,9 +52,9 @@ input_returninterval = header_col3.number_input(f"Calculate return over # of {gr
 sp500_intersection = []
 nasdaq_intersection = []
 rus2k_intersection = []
+filtered_db_list=[] #to pass to filter_indices function
 
 sidebar_counter = 0
-
 st.subheader("")
 st.info(icon="ℹ️", body='SELECT METRICS HERE TO GENERATE EQUITY MARKET GRAPHS AND EVENTS. Note: Equity market metrics are available in production currently. Debt Market and Economic Figures are currently in progress.')
 inpcol1, inpcol2, inpcol3 = st.columns(3)
@@ -71,11 +71,10 @@ equityratio_check = equity_market.checkbox("Ratio of 2 Equities", False)
 # EQUITY MARKET -> VOLATILITY INDEX
 if volatility_index_check:
     with inpcol1.expander("Volatility Index"):
-        vix = Generate_DB()
-        vix.get_database('^VIX', input_start_date, input_end_date, input_interval)
-        vix_line_chart = vix.db[['% Change', 'Close']]
-        vix_line_chart['% Change'] = vix_line_chart['% Change'] * 100
-        st.line_chart(vix_line_chart, height=200, use_container_width=True)
+        vix=Generate_DB_polars()
+        vix.get_database(["^VIX"], input_start_date, input_end_date, input_interval)
+        st.line_chart(vix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
+
         vixcol1, vixcol2 = st.columns(2)
     # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
         vix_level_on = vixcol1.toggle("Price Level", key="vix p toggle")
@@ -84,7 +83,9 @@ if volatility_index_check:
         if vix_level_on:
             vix_level_comparator = vixcol1.selectbox("VIX Comparator",('Greater than', 'Less than'))
             vix_level_selection = vixcol1.number_input("Select value", min_value=0.0, step=0.5)
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='current price', comparator=vix_level_comparator, selected_value=[vix_level_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            vix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[vix_level_selection],comparator=vix_level_comparator)
+            filtered_db_list.append(vix.filtered_dates)
             
             equity_filters_applied_sentence+=f" VIX level {vix_level_comparator} {vix_level_selection}"
             sidebar_counter+=1
@@ -92,7 +93,9 @@ if volatility_index_check:
         if vix_pct_on:
             vix_pct_lower = vixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
             vix_pct_higher = vixcol2.number_input("Between higher value", step=0.6, key="vix between higher value")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = vix.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[vix_pct_lower, vix_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            vix.metric_vs_selection_cross(comparison_type="% change between",selected_value=[vix_pct_lower, vix_pct_higher], comparator="Between")
+            filtered_db_list.append(vix.filtered_dates)
             
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
@@ -107,21 +110,22 @@ if equalweighted_sp500_check:
         rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="rsp rsi length selection")
         rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="rsp ma length selection")
 
-        rsp = Generate_DB()
+        rsp = Generate_DB_polars()
         rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
-        rsp_linechart = rsp.db[['Close', 'ma', 'rsi']]
-        st.line_chart(rsp_linechart, height=200, use_container_width=True)
+
+        st.line_chart(rsp.lf.select(["Date", "Close", "ma", "rsi"]).collect(), x="Date",y=["Close", "ma", "rsi"], height=200, use_container_width=True)
+
         rsp_col1, rsp_col2=st.columns(2)
     # EQUITY MARKET -> RSP -> RSP RSI / Moving Average / % Change
         rsp_rsi_on = rsp_col1.toggle("RSI", key="rsp rsi toggle")
         rsp_ma_on = rsp_col2.toggle("Moving Average", key="rsp ma toggle")
-
         # EQUITY MARKET -> RSP -> RSI
         if rsp_rsi_on:
             rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
             rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=rsp_rsi_comparator, selected_value=[rsp_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-            
+
+            rsp.metric_vs_selection_cross('current_price', [rsp_rsi_selection],rsp_rsi_comparator)
+            filtered_db_list.append(rsp.filtered_dates)            
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" RSP {rsp_rsi_length}-day RSI {rsp_rsi_comparator} {rsp_rsi_selection}"
             else:
