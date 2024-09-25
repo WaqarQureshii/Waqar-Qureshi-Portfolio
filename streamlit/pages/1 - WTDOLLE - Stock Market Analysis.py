@@ -94,7 +94,7 @@ if volatility_index_check:
             vix_pct_lower = vixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
             vix_pct_higher = vixcol2.number_input("Between higher value", step=0.6, key="vix between higher value")
 
-            vix.metric_vs_selection_cross(comparison_type="% change between",selected_value=[vix_pct_lower, vix_pct_higher], comparator="Between")
+            vix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[vix_pct_lower, vix_pct_higher], comparator="Between")
             filtered_db_list.append(vix.filtered_dates)
             
             if sidebar_counter==0:
@@ -124,8 +124,9 @@ if equalweighted_sp500_check:
             rsp_rsi_comparator = rsp_col1.selectbox("RSP comparator",('Greater than', 'Less than'))
             rsp_rsi_selection = rsp_col1.number_input("Select value", min_value=0.0, step=1.0, key="rsp rsi selection")
 
-            rsp.metric_vs_selection_cross('current_price', [rsp_rsi_selection],rsp_rsi_comparator)
-            filtered_db_list.append(rsp.filtered_dates)            
+            rsp.metric_vs_selection_cross('rsi_vs_selection', [rsp_rsi_selection], rsp_rsi_comparator)
+            filtered_db_list.append(rsp.filtered_dates)
+            
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" RSP {rsp_rsi_length}-day RSI {rsp_rsi_comparator} {rsp_rsi_selection}"
             else:
@@ -133,8 +134,10 @@ if equalweighted_sp500_check:
             sidebar_counter+=1
         # EQUITY MARKET -> RSP -> RSP Moving Average
         if rsp_ma_on:
-            rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Less than'))
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=rsp_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Lower than'))
+            
+            rsp.metric_vs_selection_cross('price_vs_ma', rsp_ma_comparator)
+            filtered_db_list.append(rsp.filtered_dates)
 
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" RSP Price {rsp_ma_comparator} RSP {rsp_ma_length} day Moving Average"
@@ -149,7 +152,9 @@ if equalweighted_sp500_check:
         if rsp_pct_on:
             rsp_pct_lower = rsp_col1.number_input("Between lower value", step=0.5, key="rsp between lower value")
             rsp_pct_higher = rsp_col1.number_input("Between higher value", step=0.6, key="rsp between higher value")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = rsp.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[rsp_pct_lower, rsp_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+            rsp.metric_vs_selection_cross("%_change","Between", [rsp_pct_lower, rsp_pct_higher])
+            filtered_db_list.append(rsp.filtered_dates)
             
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" RSP % change between {rsp_pct_lower}% and {rsp_pct_higher}%"

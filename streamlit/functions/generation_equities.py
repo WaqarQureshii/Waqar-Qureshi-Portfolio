@@ -417,7 +417,7 @@ class Generate_DB_polars:
             ((pl.col("Close").pct_change()*100).round(2)).alias("% Change")
         )
 
-    def metric_vs_selection_cross(self, comparison_type: str, selected_value: list, comparator: str) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
+    def metric_vs_selection_cross(self, comparison_type: str, comparator: str, selected_value: list = None) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
         """
         Provide inputs related to different comparison types that filter out the indices filtered by the comparison types fed into it.
 
@@ -426,9 +426,8 @@ class Generate_DB_polars:
         comparison_type (str): Provide the various types of comparison types.
             current_price\n
             %_change\n
-            % change between\n
-            price vs ma\n
-            rsi vs selection\n
+            price_vs_ma\n
+            rsi_vs_selection\n
             ratio%_changevsselection\n
             
         comparator (str): Provide the comparator to compare against the selection.
@@ -437,48 +436,50 @@ class Generate_DB_polars:
             Between
         """
         
+
         type_dict = {
             "current_price": {
                 "db_column": "Close",
-                "multiplier": 1
+                "multiplier": 1,
+                "comparison": selected_value
             },
             "%_change": {
                 "db_column": "% Change",
-                "multiplier": 100
+                "multiplier": 100,
+                "comparison": selected_value
             },
-            "price vs ma": {
+            "price_vs_ma": {
                 "db_column": "Close",
-                "multiplier": 1
+                "multiplier": 1,
+                "comparison_column": "ma"
             },
-            "rsi vs selection":{
+            "rsi_vs_selection":{
                 "db_column": "rsi",
-                "multiplier":1
-            },
-            "ratio vs selection":{
-                "db_column": "Close",
-                "multiplier": 1
-            },
-            "ratio%_changevsselection":{
-                "db_column":"% Change",
-                "multiplier": 1
+                "multiplier":1,
+                "comparison": selected_value
             }
         }
-        selected_value.sort()
+
+        if selected_value is None: # no selected values - this occurs when it's a value vs another value (Moving Average, for example)
+            current_comparison, prior_comparison = [pl.col(type_dict[comparison_type]['comparison_column'])], [pl.col(type_dict[comparison_type]['comparison_column']).shift(1)]
+        else:
+            selected_value.sort()
+            current_comparison, prior_comparison = selected_value, selected_value
 
         if comparator=='Greater than':
             filtered_db = self.lf.filter(
-                (pl.col(type_dict[comparison_type]["db_column"]) > selected_value[0]) &
-                (pl.col(type_dict[comparison_type]["db_column"]).shift(1) <= selected_value[0])
+                (pl.col(type_dict[comparison_type]["db_column"]) > current_comparison[0]) &
+                (pl.col(type_dict[comparison_type]["db_column"]).shift(1) <= prior_comparison[0])
             )
         elif comparator=='Lower than':
             filtered_db = self.lf.filter(
-                (pl.col(type_dict[comparison_type]["db_column"]) < selected_value[0]) &
-                (pl.col(type_dict[comparison_type]["db_column"]).shift(1) >= selected_value[0])
+                (pl.col(type_dict[comparison_type]["db_column"]) < current_comparison[0]) &
+                (pl.col(type_dict[comparison_type]["db_column"]).shift(1) >= prior_comparison[0])
             )
         elif comparator=='Between':
             filtered_db=self.lf.filter(
-                (pl.col(type_dict[comparison_type]["db_column"]).is_between(selected_value[0], selected_value[1])) &
-                ~(pl.col(type_dict[comparison_type]["db_column"]).shift(1).is_between(selected_value[0], selected_value[1]))
+                (pl.col(type_dict[comparison_type]["db_column"]).is_between(current_comparison[0], current_comparison[1])) &
+                ~(pl.col(type_dict[comparison_type]["db_column"]).shift(1).is_between(prior_comparison[0], prior_comparison[1]))
             )
         self.filtered_dates = filtered_db.select("Date")
     
