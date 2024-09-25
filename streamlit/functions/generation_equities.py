@@ -471,7 +471,7 @@ class Generate_DB_polars:
                 (pl.col(type_dict[comparison_type]["db_column"]) > current_comparison[0]) &
                 (pl.col(type_dict[comparison_type]["db_column"]).shift(1) <= prior_comparison[0])
             )
-        elif comparator=='Lower than':
+        elif comparator=='Less than':
             filtered_db = self.lf.filter(
                 (pl.col(type_dict[comparison_type]["db_column"]) < current_comparison[0]) &
                 (pl.col(type_dict[comparison_type]["db_column"]).shift(1) >= prior_comparison[0])

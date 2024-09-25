@@ -134,7 +134,7 @@ if equalweighted_sp500_check:
             sidebar_counter+=1
         # EQUITY MARKET -> RSP -> RSP Moving Average
         if rsp_ma_on:
-            rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Lower than'))
+            rsp_ma_comparator = rsp_col2.selectbox(f"RSP Price > or < {rsp_ma_length} day Moving Average", ('Greater than', 'Less than'))
             
             rsp.metric_vs_selection_cross('price_vs_ma', rsp_ma_comparator)
             filtered_db_list.append(rsp.filtered_dates)
@@ -169,10 +169,10 @@ if hyg_check:
         hyg_rsi_length=hyg_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="hyg rsi length selection")
         hyg_ma_length=hyg_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="hyg ma length selection")
 
-        hyg = Generate_DB()
-        hyg.get_database('HYG', input_start_date, input_end_date, input_interval, rsi_value=hyg_rsi_length, ma_length=hyg_ma_length)
-        hyg_linechart = hyg.db[['Close', 'ma', 'rsi']]
-        st.line_chart(hyg_linechart, height=200, use_container_width=True)
+        hyg = Generate_DB_polars()
+        hyg.get_database(['HYG'], input_start_date, input_end_date, input_interval, rsi_value=hyg_rsi_length, ma_length=hyg_ma_length)
+        st.line_chart(hyg.lf.select(["Date", "Close", "ma", "rsi"]).collect(),x="Date",y=["Close", "ma", "rsi"], height=200, use_container_width=True)
+
         hyg_col1, hyg_col2=st.columns(2)
     # EQUITY MARKET -> HYG -> HYG RSI / Moving Average / % Change
         hyg_rsi_on = hyg_col1.toggle("RSI", key="hyg rsi toggle")
@@ -182,8 +182,10 @@ if hyg_check:
         if hyg_rsi_on:
             hyg_rsi_comparator = hyg_col1.selectbox("HYG comparator",('Greater than', 'Less than'))
             hyg_rsi_selection = hyg_col1.number_input("Select value", min_value=0.0, step=1.0, key="hyg rsi selection")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=hyg_rsi_comparator, selected_value=[hyg_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-            
+
+            hyg.metric_vs_selection_cross("rsi_vs_selection", hyg_rsi_comparator, [hyg_rsi_selection])
+            filtered_db_list.append(hyg.filtered_dates)
+
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" HYG {hyg_rsi_length}-day RSI {hyg_rsi_comparator} {hyg_rsi_selection}"
             else:
@@ -192,7 +194,9 @@ if hyg_check:
         # EQUITY MARKET -> HYG -> HYG Moving Average
         if hyg_ma_on:
             hyg_ma_comparator = hyg_col2.selectbox(f"HYG Price > or < {hyg_ma_length} day Moving Average", ('Greater than', 'Less than'))
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=hyg_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            hyg.metric_vs_selection_cross("price_vs_ma", hyg_ma_comparator)
+            filtered_db_list.append(hyg.filtered_dates)
 
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" HYG Price {hyg_ma_comparator} HYG {hyg_ma_length} day Moving Average"
@@ -207,7 +211,9 @@ if hyg_check:
         if hyg_pct_on:
             hyg_pct_lower = hyg_col1.number_input("Between lower value", step=0.5, key="hyg between lower value")
             hyg_pct_higher = hyg_col1.number_input("Between higher value", step=0.6, key="hyg between higher value")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = hyg.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[hyg_pct_lower, hyg_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            hyg.metric_vs_selection_cross("%_change", "Between", [hyg_pct_lower, hyg_pct_higher])
+            filtered_db_list.append(hyg.filtered_dates)
             
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" HYG % change between {hyg_pct_lower}% and {hyg_pct_higher}%"
@@ -220,13 +226,16 @@ if sp500_check:
     with inpcol1.expander("S&P 500"):
         sp500_chartcol1, sp500_chartcol2 = st.columns(2)
         #EQUITY MARKET -> S&P500 -> RSI and MA selection & CHART
+        
+            #TODO flip input columns to align with charts below
         sp500_rsi_length=sp500_chartcol1.number_input("Select  RSI days", min_value=0, step=1, value=22, key="S&P500 rsi length selection")
         sp500_ma_length=sp500_chartcol2.number_input("Select MA days", min_value=0, step=1, value=50, key="S&P500 ma length selection")
-        sp500 = Generate_DB()
-        sp500.get_database("^GSPC", start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=sp500_rsi_length, ma_length=sp500_ma_length)
-        sp500_chart_p_ma, sp500_chart_rsi=sp500.db[['Close', 'ma']], sp500.db[['rsi']]
-        sp500_chartcol1.line_chart(sp500_chart_rsi, height=200, use_container_width=True)
-        sp500_chartcol2.line_chart(sp500_chart_p_ma, height=200, use_container_width=True)
+        
+        sp500 = Generate_DB_polars()
+        sp500.get_database(["^GSPC"], start_date=input_start_date, end_date=input_end_date, interval=input_interval, rsi_value=sp500_rsi_length, ma_length=sp500_ma_length)
+        
+        sp500_chartcol1.line_chart(sp500.lf.select(["Date", "Close", "ma"]).collect(), x="Date", y=["Close", "ma"], height=200, use_container_width=True)
+        sp500_chartcol2.line_chart(sp500.lf.select(["rsi"]).collect(), height=200, use_container_width=True)
 
         # EQUITY MARKET -> S&P 500 -> % CHANGE / Price vs MA / RSI
         sp500_col1,sp500_col2=st.columns(2)
@@ -237,18 +246,23 @@ if sp500_check:
         if sp500_rsi_on:
             sp500_rsi_comparator = sp500_col1.selectbox("S&P comparator",('Greater than', 'Less than'))
             sp500_rsi_selection = sp500_col1.number_input("Select value", min_value=0.0, step=1.0, key="S&P rsi selection")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='rsi vs selection', comparator=sp500_rsi_comparator, selected_value=[sp500_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
+            sp500.metric_vs_selection_cross("rsi_vs_selection",sp500_rsi_comparator, [sp500_rsi_selection])
+            filtered_db_list.append(sp500.filtered_dates)
+
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" S&P500 Price {sp500_rsi_comparator} {sp500_rsi_selection}"
             else:
                 equity_filters_applied_sentence+=f", S&P500 Price {sp500_rsi_comparator} {sp500_rsi_selection}"
             sidebar_counter+=1
+
         # EQUITY MARKET -> S&P 500 -> Moving Average
         if sp500_ma_on:
             sp500_ma_comparator = sp500_col2.selectbox(f"sp500 Price > or < {sp500_ma_length} day Moving Average", ('Greater than', 'Less than'))
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=sp500_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
             
+            sp500.metric_vs_selection_cross('price_vs_ma', sp500_ma_comparator)
+            filtered_db_list.append(sp500.filtered_dates)
+
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" S&P500 Price {sp500_ma_comparator} S&P500 {sp500_ma_length} day Moving Average"
             else:
@@ -260,9 +274,12 @@ if sp500_check:
 
         # EQUITY MARKET -> S&P 500 -> % CHANGE
         if sp500_pct_on:
+            sp500_col2.line_chart(sp500.lf.select(["Date", "% Change"]).collect(), x="Date", y="% Change", height=200, use_container_width=True)
+
             sp500_pct_lower = sp500_col1.number_input("Between lower value", step=0.5, key="sp500 between lower value")
             sp500_pct_higher = sp500_col1.number_input("Between higher value", step=0.6, key="sp500 between higher value")
-            sp500_intersection, nasdaq_intersection, rus2k_intersection = sp500.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[sp500_pct_lower, sp500_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+            
+            sp500.metric_vs_selection_cross("%_change", "Between", [sp500_pct_lower, sp500_pct_higher])
             
             if sidebar_counter==0:
                 equity_filters_applied_sentence+=f" S&P500 % change between {sp500_pct_lower}% and {sp500_pct_higher}%"
@@ -270,8 +287,6 @@ if sp500_check:
                 equity_filters_applied_sentence+=f", S&P500 % change between {sp500_pct_lower}% and {sp500_pct_higher}%"
             sidebar_counter+=1
             
-            sp500.db['% Change PCT'] = sp500.db['% Change']*100
-            sp500_col2.line_chart(sp500.db[['% Change PCT']], height=200, use_container_width=True)
 
 # EQUITY MARKET -> Nasdaq
 if nasdaq_check:
