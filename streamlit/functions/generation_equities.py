@@ -482,39 +482,34 @@ class Generate_DB_polars:
             )
         self.filtered_dates = filtered_db.select("Date")
     
-def filter_indices(db_list: list[pl.LazyFrame], sp500: pl.LazyFrame, ndx: pl.LazyFrame, rus2k: pl.LazyFrame):
+def filter_indices(db_list: list[pl.LazyFrame], sp500: pl.LazyFrame, ndx: pl.LazyFrame, rus2k: pl.LazyFrame) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
     """
-    Returns a LazyFrame 
+    Returns a list of filtered LazyFrame objects based on common dates.
 
     Arguments
     ----------
-    db_list (list[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]): Provide all the LazyFrame databases.\n
-
-    selected_returnintervral (int): how many periods to calculate the return in the future.
+    db_list (list[pl.LazyFrame]): List of LazyFrame databases.
+    sp500 (pl.LazyFrame): LazyFrame for S&P 500.
+    ndx (pl.LazyFrame): LazyFrame for Nasdaq.
+    rus2k (pl.LazyFrame): LazyFrame for Russell 2000.
     """
     def get_common_dates_list():
-        if len(db_list)>1:
-            common_dates = db_list[0]
-            for db in db_list[1:]:
-                common_dates_df = common_dates.join(db, on="Date",how="inner")
-            return common_dates_df
-        elif len(db_list==1):
-            return db_list[0]
-        else:
-            pass
+        common_dates_df = reduce(lambda left, right: left.join(right, on="Date", how="inner"), db_list)
+        common_dates_list = common_dates_df.select("Date").collect().get_column("Date").to_list()
+        return common_dates_list
     
     def filter_indices(common_dates_list):
         return_indices = []
-        if sp500:
-            sp500.filter(pl.col("Date").is_in(common_dates_list))
-            return_indices.append(sp500)
-        if ndx:
-            ndx.filter(pl.col("Date").is_in(common_dates_list))
-            return_indices.append(ndx)
-        if rus2k:
-            rus2k.filter(pl.col("Date").is_in(common_dates_list))
-            return_indices.append(rus2k)
+        if sp500 is not None:
+            sp500_filtered = sp500.filter(pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
+            return_indices.append(sp500_filtered)
+        if ndx is not None:
+            ndx_filtered = ndx.filter(pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
+            return_indices.append(ndx_filtered)
+        if rus2k is not None:
+            rus2k_filtered = rus2k.filter(pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
+            return_indices.append(rus2k_filtered)
         return return_indices
-        
-
-    return filter_indices(common_dates_list=get_common_dates_list())
+    
+    indices = filter_indices(get_common_dates_list())
+    return indices
