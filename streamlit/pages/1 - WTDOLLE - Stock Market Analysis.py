@@ -423,11 +423,12 @@ if equityratio_check:
         if not eq_ratio_numerator_selection == "None" and not eq_ratio_denominator_selection == "None":
             eq_ratio_rsi_length = eq_ratio_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="equity ratio RSI length")
             eq_ratio_ma_length = eq_ratio_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="equity ratio MA length")
-            equity_ratio = Generate_DB()
+            
+            equity_ratio = Generate_DB_polars()
             equity_ratio.generate_ratio(eq_ratio_numerator_selection, eq_ratio_denominator_selection, input_start_date, input_end_date, input_interval, eq_ratio_rsi_length, eq_ratio_ma_length)
-            equity_chart_ratio, equity_chart_ma_rsi = equity_ratio.db[["Close", "ma", "% Change"]], equity_ratio.db[["rsi"]]
-            eq_ratio_col1.line_chart(equity_chart_ma_rsi, height=200, use_container_width=True)
-            eq_ratio_col2.line_chart(equity_chart_ratio, height=200, use_container_width=True)
+            
+            eq_ratio_col1.line_chart(equity_ratio.lf.select(["Date", "rsi"]).collect(), x="Date", y=["Date", "rsi"], height=200, use_container_width=True)
+            eq_ratio_col2.line_chart(equity_ratio.lf.select(["Date", "Close", "ma", "% Change"]).collect(), x="Date", y=["Close", "ma", "% Change"], height=200, use_container_width=True)
 
             # EQUITY MARKET -> EQUITY RATIO -> RSI / MA / % CHANGE
             eq_ratio_rsi_on = eq_ratio_col1.toggle("RSI", key="equity ratio RSI")
@@ -437,8 +438,10 @@ if equityratio_check:
             if eq_ratio_rsi_on:
                 eq_ratio_comparator = eq_ratio_col1.selectbox("Ratio comparator", ("Greater than", "Less than"), key="equity ratio comparator")
                 eq_ratio_rsi_selection = eq_ratio_col2.number_input("Select RSI value", min_value=0.0, step=1.0, key="equity ratio RSI selection")
-                sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type="rsi vs selection", comparator=eq_ratio_comparator, selected_value=[eq_ratio_rsi_selection], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
-                
+
+                equity_ratio.metric_vs_selection_cross("rsi_vs_selection", eq_ratio_comparator, [eq_ratio_rsi_selection])
+                filtered_db_list.append(equity_ratio.filtered_dates)
+
                 if sidebar_counter==0:
                     equity_filters_applied_sentence+=f" Equity Ratio Price {eq_ratio_comparator} {eq_ratio_rsi_selection}"
                 else:
@@ -448,7 +451,9 @@ if equityratio_check:
             # EQUITY MARKET -> EQUITY RATIO -> MA
             if eq_ratio_ma_on:
                 eq_ratio_ma_comparator = eq_ratio_col2.selectbox(f"Equity Ratio > or < {eq_ratio_ma_length} day Moving Average", ('Greater than','Less than'))
-                sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type='price vs ma', selected_value=(), comparator=eq_ratio_ma_comparator, sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+                equity_ratio.metric_vs_selection_cross("price_vs_ma", eq_ratio_ma_comparator)
+                filtered_db_list.append(equity_ratio.filtered_dates)                
                 
                 if sidebar_counter==0:
                     equity_filters_applied_sentence+=f" Equity Ratio Price {eq_ratio_ma_comparator} Equity Ratio {eq_ratio_ma_length} day Moving Average"
@@ -463,7 +468,9 @@ if equityratio_check:
             if eq_ratio_pct_on:
                 eqratio_pct_lower = eq_ratio_col1.number_input("Between lower value", step=0.5, key="equity ratio between lower value")
                 eqratio_pct_higher = eq_ratio_col1.number_input("Between higher value", step=0.6, key="equity ratio between higher value")
-                sp500_intersection, nasdaq_intersection, rus2k_intersection = equity_ratio.metric_vs_comparison_cross(comparison_type='% change between', comparator="Between", selected_value=[eqratio_pct_lower, eqratio_pct_higher], sp500=sp500_intersection, ndx=nasdaq_intersection, rus2k=rus2k_intersection)
+
+                equity_ratio.metric_vs_selection_cross("%_change", "Between", [eqratio_pct_lower, eqratio_pct_higher])
+                filtered_db_list.append(equity_ratio.filtered_dates)
 
                 if sidebar_counter==0:
                     equity_filters_applied_sentence+=f" Equity Ratio % change between {eqratio_pct_lower}% and {eqratio_pct_higher}%"
