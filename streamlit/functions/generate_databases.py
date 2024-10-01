@@ -6,21 +6,6 @@ from fredapi import Fred
 
 from functools import reduce
 
-    # def generate_common_dates(self, intersection_dbs:list, selected_returninterval:int):
-    #     appended_dates = [df.index for df in intersection_dbs]
-    #     if appended_dates:
-    #         unique_dates = reduce(lambda left,right: left.intersection(right), appended_dates).to_list()
-
-    #         self.db['% Change Sel Interval'] = self.db['Close'].pct_change(selected_returninterval).shift(-selected_returninterval)
-
-    #         self.common_dates = self.db[self.db.index.isin(unique_dates)]
-
-    #         self.avg_return = self.common_dates['% Change Sel Interval'].mean()
-    #         self.no_of_occurrences = len(self.common_dates['% Change Sel Interval'])
-    #         self.no_of_positives = (self.common_dates['% Change Sel Interval'] > 0).sum()
-    #         positive_percentage = self.no_of_positives/self.no_of_occurrences
-    #         self.positive_percentage = '{:.2%}'.format(positive_percentage)
-
 class Generate_Equity:
     def __init__(self):
         self.db=None
@@ -264,34 +249,81 @@ class Generate_Debt(Generate_Equity):
             (pl.col('Rate Spread').pct_change()*100).alias('% Change')
         ))
 
-def filter_indices(db_list: list[pl.LazyFrame], sp500: pl.LazyFrame, ndx: pl.LazyFrame, rus2k: pl.LazyFrame) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
+
+def filter_indices(filtered_db_list: list[pl.LazyFrame], db: pl.LazyFrame, selected_returninterval:int, return_days_list:list, grammatical_selection:str="days") -> tuple[pl.LazyFrame, pl.LazyFrame]:
     """
     Returns a list of filtered LazyFrame objects based on common dates.
 
     Arguments
     ----------
-    db_list (list[pl.LazyFrame]): List of LazyFrame databases.
-    sp500 (pl.LazyFrame): LazyFrame for S&P 500.
-    ndx (pl.LazyFrame): LazyFrame for Nasdaq.
-    rus2k (pl.LazyFrame): LazyFrame for Russell 2000.
+    filtered_db_list (list[pl.LazyFrame]): List of filtered LazyFrame databases.
+    db (pl.LazyFrame): LazyFrame for Indices used for final graphing output.
+    selected_returninterval (int): User provided input to assess return over.
     """
-    def get_common_dates_list():
-        common_dates_df = reduce(lambda left, right: left.join(right, on="Date", how="inner"), db_list)
-        common_dates_list = common_dates_df.select("Date").collect().get_column("Date").to_list()
+
+    def get_common_dates()->list:
+        """
+        Takes a list and finds the intersecting point(s) in each database.
+
+        Return (list): Intersecting dates between all of the databases filtered by the user.
+        """
+        common_dates_list = reduce(lambda left, right: left.join(right, on="Date", how="inner"), filtered_db_list).select("Date").collect().get_column("Date").to_list()
+
         return common_dates_list
     
-    def filter_indices(common_dates_list):
-        return_indices = []
-        if sp500 is not None:
-            sp500_filtered = sp500.filter(pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
-            return_indices.append(sp500_filtered)
-        if ndx is not None:
-            ndx_filtered = ndx.filter(pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
-            return_indices.append(ndx_filtered)
-        if rus2k is not None:
-            rus2k_filtered = rus2k.filter(pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
-            return_indices.append(rus2k_filtered)
-        return return_indices
+
+        return db_return_lf, return_attributes
     
-    indices = filter_indices(get_common_dates_list())
-    return indices
+    def filter_lf(db:pl.LazyFrame, common_dates_list:list) -> tuple[pl.LazyFrame,pl.LazyFrame]:
+        lf = db.with_columns(
+                ((((pl.col('Close').shift(-selected_returninterval) / pl.col('Close')) - 1)*100).alias(f"% Return {selected_returninterval} {grammatical_selection}"))
+        )
+
+        filtered_lf = lf.filter(
+            pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
+
+        return filtered_lf
+    
+    def return_statistics() -> pl.LazyFrame:
+        if selected_returninterval not in return_days_list:
+            return_days_list.append(selected_returninterval)
+            return_days_list.sort()
+        
+        returns_statistics_dict = {"Statistics":
+        ["Mean Return (%)", "Std. Deviation (%)", "Max Return (%)", "Min Return (%)", "# of Occurrences", "% Positive (%)"]
+            }
+        
+        for day in return_days_list:
+            # Create a return column
+            return_lf = db.with_columns(
+                ((((pl.col('Close').shift(-day) / pl.col('Close')) - 1)*100).alias(f"After {day} {grammatical_selection}"))
+            )
+
+            # Filter return table for intersected dates
+            all_occurrence_lf = return_lf.filter(pl.col("Date").is_in(common_dates_list)).with_columns()
+            print(all_occurrence_lf.collect())
+
+            # statistics table
+            description = all_occurrence_lf.describe()
+            mean = round(description.item(2, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
+            max = round(description.item(8, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None 
+            min = round(description.item(4, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
+            std_dev = round(description.item(3, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
+            total_count = all_occurrence_lf.select(pl.col("Date").len()).collect().item()
+            positive_count = all_occurrence_lf.select(pl.col(f"After {day} {grammatical_selection}") > 0).filter(pl.col(f"After {day} {grammatical_selection}") == True).count().collect().item(0,0)
+            pct_positive = round((positive_count/total_count)*100,2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
+
+            # Updating Dictionary to later be turned into a LazyFrame
+            updated_dict = {
+                f"After {day} {grammatical_selection}": [mean, std_dev, max, min, total_count, pct_positive]
+            }
+            returns_statistics_dict.update(updated_dict)
+        return_stats_lf = pl.LazyFrame(returns_statistics_dict, strict=False)
+        return return_stats_lf
+
+    common_dates_list = get_common_dates()
+    filtered_lf = filter_lf(db, common_dates_list)
+
+    return_stats_lf = return_statistics()
+
+    return filtered_lf, return_stats_lf

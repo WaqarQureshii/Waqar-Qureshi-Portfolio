@@ -7,6 +7,7 @@ import sys
 sys.path.append(".")
 
 from functions.generate_databases import Generate_Equity, Generate_Debt, filter_indices
+from functions.graphing_results import apply_filters
 
 st.set_page_config(layout="wide",
                    page_title="What Transpired During Our Last Encounter (WTDOLLE)?",
@@ -42,7 +43,7 @@ elif selection_interval == 'Monthly':
     grammatical_selection = 'months'
 
 header_col3.info(icon="ℹ️", body='This number will assess whether there was a positive return in X (selection) number of periods.')
-input_returninterval = header_col3.number_input(f"Calculate return over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection")
+input_returninterval = header_col3.number_input(f"Calculate return over # of {grammatical_selection}", min_value = 1, step=1, key="return interval selection", value=30)
 
 # --- Dataframes Set Up ---
 # ---------- DATAFRAMES FOR COMMON DATE INDICES --------------
@@ -74,8 +75,8 @@ if volatility_index_check:
 
         vixcol1, vixcol2 = st.columns(2)
     # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
-        vix_level_on = vixcol1.toggle("Price Level", key="vix p toggle")
-        vix_pct_on = vixcol2.toggle("% Change", key="vix pct toggle")
+        vix_level_on = vixcol1.toggle("Price Level", key="vix_p_toggle")
+        vix_pct_on = vixcol2.toggle("% Change", key="vix_%_toggle")
     # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
         if vix_level_on:
             vix_level_comparator = vixcol1.selectbox("VIX Comparator",('Greater than', 'Less than'))
@@ -568,101 +569,15 @@ if usfedfundrate_check:
                 debt_filters_applied_sentence+=f", US Fed Funds Rate change between {usfedrate_level_selection_lower}% and {usfedrate_level_selection_higher}%"
             debt_counter+=1
 
-# DEBT MARKET -> SUMMARY
+# DEBT MARKET -> SUMMARY    
 inpcol2.write("*"+debt_filters_applied_sentence+"*")
 
 inpcol3.subheader("Economic Figures - IN PROGRESS")
 
+def click_apply_filter():
+    apply_filters(input_start_date, input_end_date, input_interval, input_returninterval, equity_counter, debt_counter, filtered_db_list, grammatical_selection)
 
-st.button("APPLY FILTERS", use_container_width=True, type="primary")
+if st.button("APPLY FILTERS", use_container_width=True, type="primary", key="apply_filters"):
+    click_apply_filter()
 
-def apply_filters():
-    # --- MAIN PAGE OF WTDOLLE - CHARTS AND PARAMETERS
-        # -------------------- HEADER -------------------------
-    st.header(f'WTDOLLE on {input_end_date}')
-
-    # ---------MODIFYING THE METRIC FORMAT ------------------
-    st.markdown(
-        """
-    <style>
-    [data-testid="stMetricValue"] {
-        font-size: 20px;
-    }
-    </style>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    #--- PLOTTING GRAPH ---
-    col1, col2, col3 = st.columns(3)
-    graph1, graph2, graph3= st.columns(3)
-
-    #-------INDICES PARAMETER SELECTION-------
-    col1.subheader("S&P 500")
-
-    col2.subheader("Nasdaq")
-
-    col3.subheader("Russell 2000")
-
-    # --- Indices Generation ---
-    if equity_counter+debt_counter > 0:
-        #---S&P500 DATABASE GENERATION---
-        if 'sp500' not in globals():
-            sp500 = Generate_DB()
-            sp500.get_database("^GSPC", input_start_date, input_end_date, input_interval)
-        sp500.generate_common_dates(sp500_intersection,selected_returninterval=input_returninterval)
-        #-------S&P500 GRAPH------
-        fig, ax = plt.subplots()
-        ax.set_title('S&P500')
-        ax.plot(sp500.db.index, sp500.db['Close'], linewidth = 0.5, color='black')
-        try:
-            ax.scatter(sp500.common_dates.index, sp500.common_dates['Close'], marker='.', color='red', s = 10)
-            graph1.pyplot(fig)
-            #-------S&P500 GENERATE STATEMENTS--------
-            graph1.write(f'This occurred {sp500.no_of_occurrences} of time(s) and is {sp500.positive_percentage} positive in {input_returninterval} days.' )
-            graph1.write('{:.2%}'.format(sp500.avg_return))
-        except AttributeError:
-            graph1.write("There are no scenarios that exist like this.")
-
-
-
-        #---NASDAQ DATABASE GENERATION---
-        if 'ndx' not in globals():
-            ndx = Generate_DB()
-            ndx.get_database("^IXIC", input_start_date, input_end_date, input_interval)
-        ndx.generate_common_dates(nasdaq_intersection, selected_returninterval=input_returninterval)
-        #-------NASDAQ GRAPH------
-        fig, ax = plt.subplots()
-        ax.set_title('Nasdaq 100')
-        try:
-            ax.plot(ndx.db.index, ndx.db['Close'], linewidth = 0.5, color='black')
-            ax.scatter(ndx.common_dates.index, ndx.common_dates['Close'], marker='.', color='red', s = 10)
-            graph2.pyplot(fig)
-            #-------NASDAQ GENERATE STATEMENTS-------
-            graph2.write(f'This occurred {ndx.no_of_occurrences} time(s) and is {ndx.positive_percentage} positive in {input_returninterval} days.' )
-            graph2.write('{:.2%}'.format(ndx.avg_return))
-        except AttributeError:
-            graph2.write("There are no scenarios that exist like this.")
         
-
-
-        #--RUSSEL 2000 DATABASE GENERATION
-        if 'rus2k' not in globals():
-            rus2k = Generate_DB()
-            rus2k.get_database("^RUT", input_start_date, input_end_date, input_interval)
-        rus2k.generate_common_dates(rus2k_intersection, selected_returninterval=input_returninterval)
-        #-----RUSSELL 2000 GRAPH-----
-        fig, ax = plt.subplots()
-        ax.set_title('Russel 2000')
-        try:
-            ax.plot(rus2k.db.index, rus2k.db['Close'], linewidth = 0.5, color='black')
-            ax.scatter(rus2k.common_dates.index, rus2k.common_dates['Close'], marker='.', color='red', s = 10)
-            graph3.pyplot(fig)
-            #-------NASDAQ GENERATE STATEMENTS-------
-            graph3.write(f'This occurred {rus2k.no_of_occurrences} of time(s) and is {rus2k.positive_percentage} positive in {input_returninterval} days.' )
-            graph3.write('{:.2%}'.format(rus2k.avg_return))
-        except AttributeError:
-            graph3.write("There are no scenarios that exist like this.")
-
-    else:
-        pass
