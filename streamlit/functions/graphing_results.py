@@ -59,10 +59,10 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
                       "Date",
                       "Close")
         fig = go.Figure(data=linefig.data+scatterfig.data)
-        fig.update_traces(line=dict(width=1),
-                          marker=dict(size=5,
+        fig.update_traces(line=dict(width=1.0),
+                          marker=dict(size=7,
                                     color="red",
-                                    opacity=0.75))
+                                    opacity=1))
 
         graph1.plotly_chart(fig, use_container_width=True)
 
@@ -79,9 +79,9 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
                       "Close")
         fig = go.Figure(data=linefig.data+scatterfig.data)
         fig.update_traces(line=dict(width=1),
-                          marker=dict(size=5,
+                          marker=dict(size=7,
                                     color="red",
-                                    opacity=0.75))
+                                    opacity=1))
 
         graph2.plotly_chart(fig, use_container_width=True)
 
@@ -98,9 +98,9 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
                       "Close")
         fig = go.Figure(data=linefig.data+scatterfig.data)
         fig.update_traces(line=dict(width=1),
-                          marker=dict(size=5,
+                          marker=dict(size=7,
                                     color="red",
-                                    opacity=0.75))
+                                    opacity=1))
 
         graph3.plotly_chart(fig, use_container_width=True)
 

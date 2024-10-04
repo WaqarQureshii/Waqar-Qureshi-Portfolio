@@ -111,6 +111,8 @@ class Generate_Equity:
             rsi_vs_selection\n
             ratio%_changevsselection\n
             yield_spread\n
+            sahm_rule_value\n
+            sahm_rule_rsi\n
             
         comparator (str): Provide the comparator to compare against the selection.
             Greater than\n
@@ -148,6 +150,16 @@ class Generate_Equity:
             "US FED FUNDS":{
                 "db_column": "US FED FUNDS Rate",
                 "multiplier": 1,
+                "comparison":selected_value
+            },
+            "sahm_rule_value":{
+                "db_column": "Sahm Rule",
+                "multiplier": 1,
+                "comparison":selected_value
+            },
+            "sahm_rule_rsi":{
+                "db_column":"rsi",
+                "multiplier":1,
                 "comparison":selected_value
             }
         }
@@ -192,13 +204,13 @@ class Generate_Debt(Generate_Equity):
             "US FED FUNDS": "EFFR"
         }
 
-    def get_database(self, debt_instruments: str, start_date: str, end_date: str, frequency: str="Daily"):
+    def get_database(self, debt_instruments: str, start_date: str, end_date: str, frequency: str="Daily") -> None:
         """
         Provide bond yield maturity length, start and end dates, and frequency 
         
         Arguments:
         ----------
-        debt_instruments (str): Provide a length to maturity.
+        debt_instruments (str): Provide a length to maturity
             1m\n
             3m\n
             6m\n
@@ -249,6 +261,29 @@ class Generate_Debt(Generate_Equity):
             (pl.col('Rate Spread').pct_change()*100).alias('% Change')
         ))
 
+
+class Generate_Indicator(Generate_Equity):
+    def __init__(self):
+        self.indicators = {
+            "Sahm Rule": "SAHMREALTIME"
+        }
+
+    def get_database(self, indicator:str, start_date:str, end_date:str, rsilength:int=22)->pl.LazyFrame:
+        """
+        Generate a LazyFrame for the defined indicator
+
+        Arguments:
+        ---------
+        indicator (str): Sahm Rule Recession Indicator
+        """
+    
+        fred_api=st.secrets.fred_api
+        fred=Fred(api_key=fred_api)
+        pd_df = fred.get_series(self.indicators.get(indicator), start_date, end_date).reset_index()
+        print(pd_df)
+        self.lf = pl.LazyFrame(pd_df).with_columns().cast({'index': pl.Date}).rename({"0": f"{indicator}", "index": "Date"}).with_columns((plta.rsi(pl.col(f"{indicator}"),timeperiod=rsilength)).alias("rsi"))
+
+    
 
 def filter_indices(filtered_db_list: list[pl.LazyFrame], db: pl.LazyFrame, selected_returninterval:int, return_days_list:list, grammatical_selection:str="days") -> tuple[pl.LazyFrame, pl.LazyFrame]:
     """
