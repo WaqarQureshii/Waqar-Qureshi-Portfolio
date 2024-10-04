@@ -301,7 +301,6 @@ def filter_indices(filtered_db_list: list[pl.LazyFrame], db: pl.LazyFrame, selec
 
             # Filter return table for intersected dates
             all_occurrence_lf = return_lf.filter(pl.col("Date").is_in(common_dates_list)).with_columns()
-            print(all_occurrence_lf.collect())
 
             # statistics table
             description = all_occurrence_lf.describe()

@@ -2,6 +2,7 @@ import streamlit as st
 
 import time
 
+st.set_page_config(layout="wide")
 # \\\\\\\\\\ TITLE /////////////
 st.title("I'm a _Corporate Finance Leader_, that took a :blue[(very deep)] dive into _Software Engineering_")
 
