@@ -54,7 +54,7 @@ filtered_db_list=[] #to pass to filter_indices function
 
 equity_counter = 0
 st.subheader("")
-st.info(icon="ℹ️", body='SELECT METRICS HERE TO GENERATE EQUITY MARKET GRAPHS AND EVENTS. Note: Equity market metrics are available in production currently. Debt Market and Economic Figures are currently in progress.')
+st.info(icon="ℹ️", body='SELECT METRICS HERE TO GENERATE EQUITY MARKET GRAPHS AND EVENTS. Note: Equity market metrics and Debt Market metrics are available in production currently. Economic Figures are currently in progress.')
 inpcol1, inpcol2, inpcol3 = st.columns(3)
 # EQUITY MARKET
 equity_filters_applied_sentence = "Equity filters applied:"
