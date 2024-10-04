@@ -1,5 +1,7 @@
 import streamlit as st
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.express as px
 
 from functions.generate_databases import Generate_Equity, filter_indices
 
@@ -29,7 +31,7 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
     col2.subheader("Nasdaq")
     col3.subheader("Russell 2000")
     
-    return_days_list = [7,14,30,60,90,120,360]
+    return_days_list = [5,10,22,50,200]
 
     # --- Indices Generation ---
     if equity_counter+debt_counter > 0:
@@ -48,50 +50,58 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
         
 
         #-------S&P500 GRAPH------
-
-        fig,ax = plt.subplots()
-        ax.set_title('S&P 500')
-        ax.plot(sp500.lf.select("Date").collect(), sp500.lf.select("Close").collect(), linewidth=0.5, color="black")
-
         sp500_filtered_lf, sp500_return_stats = filter_indices(filtered_db_lists, sp500.lf, input_returninterval, return_days_list, grammatical_selection)
 
-        try:
-            ax.scatter(sp500_filtered_lf.select("Date").collect(), sp500_filtered_lf.select("Close").collect(), marker='.', color='red', s =10)
-        except AttributeError:
-            graph1.write("There are no scenarios that exist like this.")
+        linefig = px.line(data_frame=sp500.lf.select(["Date", "Close"]).collect(),
+                      x="Date",
+                      y="Close")
+        scatterfig = px.scatter(sp500_filtered_lf.select(["Date", "Close"]).collect(),
+                      "Date",
+                      "Close")
+        fig = go.Figure(data=linefig.data+scatterfig.data)
+        fig.update_traces(line=dict(width=1),
+                          marker=dict(size=5,
+                                    color="red",
+                                    opacity=0.75))
 
-        graph1.pyplot(fig)
+        graph1.plotly_chart(fig, use_container_width=True)
 
         graph1.dataframe(sp500_return_stats.collect(), hide_index=True)
 
     #     #---NASDAQ DATABASE GENERATION---
-        fig,ax = plt.subplots()
-        ax.set_title('Nasdaq')
-        ax.plot(ndx.lf.select("Date").collect(), ndx.lf.select("Close").collect(), linewidth=0.5, color="black")
-
         ndx_filtered_lf, ndx_return_stats = filter_indices(filtered_db_lists, ndx.lf, input_returninterval, return_days_list, grammatical_selection)
 
-        try:
-            ax.scatter(ndx_filtered_lf.select("Date").collect(), ndx_filtered_lf.select("Close").collect(), marker='.', color='red', s =10)
-        except AttributeError:
-            graph2.write("There are no scenarios that exist like this.")
+        linefig = px.line(data_frame=ndx.lf.select(["Date", "Close"]).collect(),
+                      x="Date",
+                      y="Close")
+        scatterfig = px.scatter(ndx_filtered_lf.select(["Date", "Close"]).collect(),
+                      "Date",
+                      "Close")
+        fig = go.Figure(data=linefig.data+scatterfig.data)
+        fig.update_traces(line=dict(width=1),
+                          marker=dict(size=5,
+                                    color="red",
+                                    opacity=0.75))
 
-        graph2.pyplot(fig)
+        graph2.plotly_chart(fig, use_container_width=True)
 
         graph2.dataframe(ndx_return_stats.collect(), hide_index=True)
             
 #     #---Russell 2000 DATABASE GENERATION---
-        fig,ax = plt.subplots()
-        ax.set_title('Russell 2000')
-        ax.plot(rus2k.lf.select("Date").collect(), rus2k.lf.select("Close").collect(), linewidth=0.5, color="black")
-
         rus2k_filtered_lf, rus2k_return_stats = filter_indices(filtered_db_lists, rus2k.lf, input_returninterval, return_days_list, grammatical_selection)
 
-        try:
-            ax.scatter(rus2k_filtered_lf.select("Date").collect(), rus2k_filtered_lf.select("Close").collect(), marker='.', color='red', s =10)
-        except AttributeError:
-            graph3.write("There are no scenarios that exist like this.")
+        linefig = px.line(data_frame=rus2k.lf.select(["Date", "Close"]).collect(),
+                      x="Date",
+                      y="Close")
+        scatterfig = px.scatter(rus2k_filtered_lf.select(["Date", "Close"]).collect(),
+                      "Date",
+                      "Close")
+        fig = go.Figure(data=linefig.data+scatterfig.data)
+        fig.update_traces(line=dict(width=1),
+                          marker=dict(size=5,
+                                    color="red",
+                                    opacity=0.75))
 
-        graph3.pyplot(fig)
+        graph3.plotly_chart(fig, use_container_width=True)
 
         graph3.dataframe(rus2k_return_stats.collect(), hide_index=True)
