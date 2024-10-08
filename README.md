@@ -1,6 +1,6 @@
 # Welcome To Waqar Qureshi's Portfolio
 This GitHub repository's purpose is provide an easy place to access my portfolio that utilizes my working finance and python programming knowledge.
-My portfolio could be found here: https://wqureshii.streamlit.app/
+My portfolio could be found here: https://wqureshi.streamlit.app/
 
 ## 1 - What Transpired During Our Last Encounter (WTDOLLE) - visit website: https://wqureshi.streamlit.app/WTDOLLE
  This is a project to assess what happened to the stock market in an X number of days given when certain indicators or market conditions existed. Examples of such indicators are:

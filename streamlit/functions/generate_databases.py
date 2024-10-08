@@ -98,7 +98,7 @@ class Generate_Equity:
             ((pl.col("Close").pct_change()*100).round(2)).alias("% Change")
         )
 
-    def metric_vs_selection_cross(self, comparison_type: str, comparator: str, selected_value: list = None) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
+    def metric_vs_selection_cross(self, comparison_type: str, comparator: str, selected_value: list = None) -> pl.LazyFrame:
         """
         Provide inputs related to different comparison types that filter out the indices filtered by the comparison types fed into it.
 
@@ -112,12 +112,13 @@ class Generate_Equity:
             ratio%_changevsselection\n
             yield_spread\n
             sahm_rule_value\n
-            sahm_rule_rsi\n
             
         comparator (str): Provide the comparator to compare against the selection.
             Greater than\n
             Less than\n
-            Between
+            Between\n
+
+        selected_value (list): a list containing a minimum of 1 or max of 2 floats.
         """
         
 
@@ -155,11 +156,6 @@ class Generate_Equity:
             "sahm_rule_value":{
                 "db_column": "Sahm Rule",
                 "multiplier": 1,
-                "comparison":selected_value
-            },
-            "sahm_rule_rsi":{
-                "db_column":"rsi",
-                "multiplier":1,
                 "comparison":selected_value
             }
         }
@@ -265,7 +261,8 @@ class Generate_Debt(Generate_Equity):
 class Generate_Indicator(Generate_Equity):
     def __init__(self):
         self.indicators = {
-            "Sahm Rule": "SAHMREALTIME"
+            "Sahm Rule": "SAHMREALTIME",
+            "US Economic Policy Uncertainty": "USEPUINDXD"
         }
 
     def get_database(self, indicator:str, start_date:str, end_date:str, rsilength:int=22)->pl.LazyFrame:
@@ -274,16 +271,17 @@ class Generate_Indicator(Generate_Equity):
 
         Arguments:
         ---------
-        indicator (str): Sahm Rule Recession Indicator
+        indicator (str): Sahm Rule, US Economic Policy Uncertainty
         """
     
         fred_api=st.secrets.fred_api
         fred=Fred(api_key=fred_api)
         pd_df = fred.get_series(self.indicators.get(indicator), start_date, end_date).reset_index()
-        print(pd_df)
-        self.lf = pl.LazyFrame(pd_df).with_columns().cast({'index': pl.Date}).rename({"0": f"{indicator}", "index": "Date"}).with_columns((plta.rsi(pl.col(f"{indicator}"),timeperiod=rsilength)).alias("rsi"))
+        self.lf = pl.LazyFrame(pd_df).with_columns().cast({'index': pl.Date}).rename({"0": f"{indicator}", "index": "Date"}).with_columns((plta.rsi(pl.col(f"{indicator}"),timeperiod=rsilength)).alias("rsi")).set_sorted("Date")
 
-    
+        if indicator == "Sahm Rule":
+            self.lf = self.lf.collect().upsample(
+                time_column="Date", every="1d", maintain_order=True).select(pl.all().forward_fill()).lazy()
 
 def filter_indices(filtered_db_list: list[pl.LazyFrame], db: pl.LazyFrame, selected_returninterval:int, return_days_list:list, grammatical_selection:str="days") -> tuple[pl.LazyFrame, pl.LazyFrame]:
     """
@@ -305,9 +303,6 @@ def filter_indices(filtered_db_list: list[pl.LazyFrame], db: pl.LazyFrame, selec
         common_dates_list = reduce(lambda left, right: left.join(right, on="Date", how="inner"), filtered_db_list).select("Date").collect().get_column("Date").to_list()
 
         return common_dates_list
-    
-
-        return db_return_lf, return_attributes
     
     def filter_lf(db:pl.LazyFrame, common_dates_list:list) -> tuple[pl.LazyFrame,pl.LazyFrame]:
         lf = db.with_columns(
@@ -340,10 +335,12 @@ def filter_indices(filtered_db_list: list[pl.LazyFrame], db: pl.LazyFrame, selec
             # statistics table
             description = all_occurrence_lf.describe()
             mean = round(description.item(2, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
-            max = round(description.item(8, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None 
-            min = round(description.item(4, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
-            std_dev = round(description.item(3, f"After {day} {grammatical_selection}"),2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
+            max = round(description.item(8, f"After {day} {grammatical_selection}"),2) if description.item(8, f"After {day} {grammatical_selection}") is not None else None 
+            min = round(description.item(4, f"After {day} {grammatical_selection}"),2) if description.item(4, f"After {day} {grammatical_selection}") is not None else None
+            std_dev = round(description.item(3, f"After {day} {grammatical_selection}"),2) if description.item(3, f"After {day} {grammatical_selection}") is not None else None
+            
             total_count = all_occurrence_lf.select(pl.col("Date").len()).collect().item()
+            
             positive_count = all_occurrence_lf.select(pl.col(f"After {day} {grammatical_selection}") > 0).filter(pl.col(f"After {day} {grammatical_selection}") == True).count().collect().item(0,0)
             pct_positive = round((positive_count/total_count)*100,2) if description.item(2, f"After {day} {grammatical_selection}") is not None else None
 

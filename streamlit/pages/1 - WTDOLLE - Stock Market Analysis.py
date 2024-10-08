@@ -6,7 +6,7 @@ from functools import reduce
 import sys
 sys.path.append(".")
 
-from functions.generate_databases import Generate_Equity, Generate_Debt, filter_indices
+from functions.generate_databases import Generate_Equity, Generate_Debt, Generate_Indicator, filter_indices
 from functions.graphing_results import apply_filters
 
 st.set_page_config(layout="wide",
@@ -54,10 +54,10 @@ filtered_db_list=[] #to pass to filter_indices function
 
 equity_counter = 0
 st.subheader("")
-st.info(icon="ℹ️", body='SELECT METRICS HERE TO GENERATE EQUITY MARKET GRAPHS AND EVENTS. Note: Equity market metrics are available in production currently. Debt Market and Economic Figures are currently in progress.')
+st.info(icon="ℹ️", body='SELECT METRICS HERE TO GENERATE EQUITY MARKET GRAPHS AND EVENTS. Note: Equity market metrics and Debt Market metrics are available in production currently. Economic Figures are currently in progress.')
 inpcol1, inpcol2, inpcol3 = st.columns(3)
 # EQUITY MARKET
-equity_filters_applied_sentence = "Equity filters applied:"
+equity_filters_applied_sentence = "Equity filters to apply:"
 equity_market = inpcol1.popover("Equity Market")
 volatility_index_check = equity_market.checkbox("Volatility Index (VIX)", False)
 equalweighted_sp500_check = equity_market.checkbox("Equal-Weighted S&P 500 (RSP)", False)
@@ -105,8 +105,8 @@ if volatility_index_check:
 if equalweighted_sp500_check:
     with inpcol1.expander("Equal-Weighted S&P"):
         rsp_chart_col1, rsp_chart_col2 = st.columns(2)
-        rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="rsp rsi length selection")
-        rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=0, step=1, value=50, key="rsp ma length selection")
+        rsp_rsi_length=rsp_chart_col1.number_input("Select RSI days", min_value=1, step=1, value=22, key="rsp rsi length selection")
+        rsp_ma_length=rsp_chart_col2.number_input("Select MA days", min_value=1, step=1, value=50, key="rsp ma length selection")
 
         rsp = Generate_Equity()
         rsp.get_database('RSP', input_start_date, input_end_date, input_interval, rsi_value=rsp_rsi_length, ma_length=rsp_ma_length)
@@ -284,7 +284,6 @@ if sp500_check:
                 equity_filters_applied_sentence+=f", S&P500 % change between {sp500_pct_lower}% and {sp500_pct_higher}%"
             equity_counter+=1
             
-
 # EQUITY MARKET -> Nasdaq
 if nasdaq_check:
     with inpcol1.expander("Nasdaq"):
@@ -480,7 +479,7 @@ if equityratio_check:
 inpcol1.write("*"+equity_filters_applied_sentence+"*")
 
 # DEBT MARKET
-debt_filters_applied_sentence = "Debt filters applied:"
+debt_filters_applied_sentence = "Debt filters to apply:"
 debt_market = inpcol2.popover("Debt Market")
 yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
 usfedfundrate_check = debt_market.checkbox("US Federal Funds Rate", False)
@@ -572,10 +571,60 @@ if usfedfundrate_check:
 # DEBT MARKET -> SUMMARY    
 inpcol2.write("*"+debt_filters_applied_sentence+"*")
 
-inpcol3.subheader("Economic Figures - IN PROGRESS")
+# ECONONOMIC & STATISTICAL
+econ_stat_filters_applied_sentence = "Economical & Statistical filters applied:"
+econ_stat = inpcol3.popover("Economic & Statistical Figures")
+sahm_check = econ_stat.checkbox("Sahm Rule", False)
+economic_uncertainty_check = econ_stat.checkbox("US Economic Policy Uncertainty")
+econ_stat_counter=0
+
+# ECONONOMIC & STATISTICAL -> SAHM VALUES
+if sahm_check:
+    with inpcol3.expander("Sahm Rule"):
+        sahm_rule_db = Generate_Indicator()
+        sahm_rsi_length = st.number_input("Select RSI days", min_value=1,step=1, value=22, key="sahm_rsi_length")
+
+        sahm_rule_db.get_database("Sahm Rule", input_start_date, input_end_date, sahm_rsi_length)
+        
+        statcol1, statcol2 = st.columns(2)
+        statcol1.line_chart(sahm_rule_db.lf.select(["Date", "Sahm Rule"]).collect(), x="Date", y=["Sahm Rule"], height=200, use_container_width=True)
+        statcol2.line_chart(sahm_rule_db.lf.select(["Date", "rsi"]).collect(), x="Date", y=["rsi"], height=200, use_container_width=True)
+
+        sahm_value_on = statcol1.toggle("Sahm Rule Value", key="sahmrule_value_toggle")
+        sahm_rsi_on = statcol2.toggle("Sahm Rule RSI", key="sahmrule_rsi_toggle")
+
+        if sahm_value_on:
+            sahm_value_comparator = statcol1.selectbox("Sahm Rule Comparator", ("Greater than", "Less than"))
+            sahm_value_selection = statcol1.number_input("Select Value", min_value=0.0, step=1.0, key="sahm_value_selection")
+            sahm_rule_db.metric_vs_selection_cross('sahm_rule_value', sahm_value_comparator, [sahm_value_selection])
+            filtered_db_list.append(sahm_rule_db.filtered_dates)
+            
+            if econ_stat_filters_applied_sentence==0:
+                econ_stat_filters_applied_sentence+=f"Sahm is {sahm_value_comparator} {sahm_value_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", Sahm is {sahm_value_comparator} {sahm_value_selection}"
+            econ_stat_counter+=1
+        
+        if sahm_rsi_on:
+            sahm_rsi_comparator = statcol2.selectbox("Sahm Rule RSI Comparator", ("Greater than", "Less than"))
+            sahm_rsi_selection = statcol2.number_input("Select value", min_value=0.0, step=1.0, key="sahm_rule_rsi_selection")
+
+            sahm_rule_db.metric_vs_selection_cross('rsi_vs_selection', sahm_rsi_comparator, [sahm_rsi_selection])
+            filtered_db_list.append(sahm_rule_db.filtered_dates)
+
+            if econ_stat_filters_applied_sentence==0:
+                econ_stat_filters_applied_sentence+=f"Sahm RSI {sahm_rsi_comparator} {sahm_rsi_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", Sahm RSI {sahm_rsi_comparator} {sahm_rsi_selection}"
+            econ_stat_counter+=1
+
+
+if economic_uncertainty_check:
+    with inpcol3.expander("US Economic Policy Uncertainty"):
+        pass
 
 def click_apply_filter():
-    apply_filters(input_start_date, input_end_date, input_interval, input_returninterval, equity_counter, debt_counter, filtered_db_list, grammatical_selection)
+    apply_filters(input_start_date, input_end_date, input_interval, input_returninterval, equity_counter, debt_counter, econ_stat_counter, filtered_db_list, grammatical_selection)
 
 if st.button("APPLY FILTERS", use_container_width=True, type="primary", key="apply_filters"):
     click_apply_filter()

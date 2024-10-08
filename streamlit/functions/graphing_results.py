@@ -5,7 +5,7 @@ import plotly.express as px
 
 from functions.generate_databases import Generate_Equity, filter_indices
 
-def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, input_returninterval:int, equity_counter:int, debt_counter:int, filtered_db_lists:list, grammatical_selection:str="days"):
+def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, input_returninterval:int, equity_counter:int, debt_counter:int, econ_stat_counter:int, filtered_db_lists:list, grammatical_selection:str="days"):
     # --- MAIN PAGE OF WTDOLLE - CHARTS AND PARAMETERS
         # -------------------- HEADER -------------------------
     st.header(f'WTDOLLE on {input_end_date}')
@@ -34,7 +34,7 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
     return_days_list = [5,10,22,50,200]
 
     # --- Indices Generation ---
-    if equity_counter+debt_counter > 0:
+    if (equity_counter+debt_counter+econ_stat_counter) > 0:
         #---S&P500 DATABASE GENERATION---
         if 'sp500' not in globals():
             sp500 = Generate_Equity()
