@@ -95,7 +95,9 @@ class Generate_Equity:
             (( pl.col(f"{numerator} Close") / pl.col(f"{denominator} Close")).alias("Close"))
         )
         self.lf = self.lf.with_columns(
-            ((pl.col("Close").pct_change()*100).round(2)).alias("% Change")
+            (((pl.col("Close").pct_change()*100).round(2)).alias("% Change")),
+            (plta.rsi(pl.col("Close"),timeperiod=rsi_length).alias("rsi")),
+            (plta.ma(pl.col("Close"), timeperiod=ma_length)).alias("ma")
         )
 
     def metric_vs_selection_cross(self, comparison_type: str, comparator: str, selected_value: list = None) -> pl.LazyFrame:
@@ -157,7 +159,12 @@ class Generate_Equity:
                 "db_column": "Sahm Rule",
                 "multiplier": 1,
                 "comparison":selected_value
-            }
+            },
+            "usepu_value":{
+                "db_column": "US Economic Policy Uncertainty Index",
+                "multiplier": 1,
+                "comparison":selected_value
+            },
         }
 
         if selected_value is None: # no selected values - this occurs when it's a value vs another value (Moving Average, for example)
@@ -262,7 +269,7 @@ class Generate_Indicator(Generate_Equity):
     def __init__(self):
         self.indicators = {
             "Sahm Rule": "SAHMREALTIME",
-            "US Economic Policy Uncertainty": "USEPUINDXD"
+            "US Economic Policy Uncertainty Index": "USEPUINDXD"
         }
 
     def get_database(self, indicator:str, start_date:str, end_date:str, rsilength:int=22)->pl.LazyFrame:
@@ -271,7 +278,7 @@ class Generate_Indicator(Generate_Equity):
 
         Arguments:
         ---------
-        indicator (str): Sahm Rule, US Economic Policy Uncertainty
+        indicator (str): Sahm Rule, US Economic Policy Uncertainty Index #TODO include percent positive S&P, relative to current running average
         """
     
         fred_api=st.secrets.fred_api

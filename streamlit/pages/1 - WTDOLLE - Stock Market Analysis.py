@@ -414,8 +414,8 @@ if russell2000_check:
 if equityratio_check:
     with inpcol1.expander("Equity Ratio"):
         eq_ratio_col1, eq_ratio_col2 = st.columns(2)
-        eq_ratio_numerator_selection = eq_ratio_col1.selectbox("Numerator", ("None", "Nasdaq", "S&P 500", "S&P 500 Equally Weighted", "Russell 2000"), key="equity ratio numerator selector")
-        eq_ratio_denominator_selection = eq_ratio_col2.selectbox("Denominator", ("None", "Nasdaq", "S&P 500", "S&P 500 Equally Weighted", "Russell 2000"), key="equity ratio denominator selector")
+        eq_ratio_numerator_selection = eq_ratio_col1.selectbox("Numerator", ("None", "Nasdaq", "S&P 500", "S&P 500 Equal Weight", "Russell 2000"), key="equity ratio numerator selector")
+        eq_ratio_denominator_selection = eq_ratio_col2.selectbox("Denominator", ("None", "Nasdaq", "S&P 500", "S&P 500 Equal Weight", "Russell 2000"), key="equity ratio denominator selector")
         
         if not eq_ratio_numerator_selection == "None" and not eq_ratio_denominator_selection == "None":
             eq_ratio_rsi_length = eq_ratio_col1.number_input("Select RSI days", min_value=0, step=1, value=22, key="equity ratio RSI length")
@@ -424,8 +424,17 @@ if equityratio_check:
             equity_ratio = Generate_Equity()
             equity_ratio.generate_ratio(eq_ratio_numerator_selection, eq_ratio_denominator_selection, input_start_date, input_end_date, input_interval, eq_ratio_rsi_length, eq_ratio_ma_length)
             
-            eq_ratio_col1.line_chart(equity_ratio.lf.select(["Date", "rsi"]).collect(), x="Date", y=["Date", "rsi"], height=200, use_container_width=True)
-            eq_ratio_col2.line_chart(equity_ratio.lf.select(["Date", "Close", "ma", "% Change"]).collect(), x="Date", y=["Close", "ma", "% Change"], height=200, use_container_width=True)
+            equity_df = equity_ratio.lf.collect()
+            eq_ratio_col1.line_chart(equity_df.select(["Date", "rsi"]), x="Date", y="rsi", height=200, use_container_width=True)
+            eq_ratio_col2.dataframe(equity_df.select(["Date", "Close", "ma", "% Change"]), height=200, use_container_width=True, hide_index=True, column_config={
+            "Date": st.column_config.DateColumn(
+                "Date", format="YYYY-MM-DD"
+            ),
+            '% Change': st.column_config.NumberColumn(
+                "% Change",
+                format="%.2f%%"
+            )
+        })
 
             # EQUITY MARKET -> EQUITY RATIO -> RSI / MA / % CHANGE
             eq_ratio_rsi_on = eq_ratio_col1.toggle("RSI", key="equity ratio RSI")
@@ -460,6 +469,7 @@ if equityratio_check:
             
             # EQUITY MARKET -> EQUITY RATIO -> % CHANGE
             eq_ratio_pct_on=eq_ratio_col1.toggle("% Change", key="equity ratio % change")
+            eq_ratio_level_on = eq_ratio_col2.toggle("Ratio level", key="equity_ratio_level")
 
             # EQUITY MARKET -> EQUITY RATIO -> % CHANGE
             if eq_ratio_pct_on:
@@ -473,6 +483,19 @@ if equityratio_check:
                     equity_filters_applied_sentence+=f" Equity Ratio % change between {eqratio_pct_lower}% and {eqratio_pct_higher}%"
                 else:
                     equity_filters_applied_sentence+=f", Equity Ratio % change between {eqratio_pct_lower}% and {eqratio_pct_higher}%"
+                equity_counter+=1
+            
+            if eq_ratio_level_on:
+                eq_ratio_level_comparator = eq_ratio_col2.selectbox("Ratio comparator", ("Greater than", "Less than"))
+                eq_ratio_level_selection = eq_ratio_col2.number_input("Select value", min_value=0.0, step=0.1, key="ratio_level_selection")
+
+                equity_ratio.metric_vs_selection_cross("current_price", eq_ratio_level_comparator, [eq_ratio_level_selection])
+                filtered_db_list.append(equity_ratio.filtered_dates)
+
+                if equity_counter==0:
+                    equity_filters_applied_sentence+=f" Ratio {eq_ratio_level_comparator} {eq_ratio_level_selection}"
+                else:
+                    equity_filters_applied_sentence+=f"Ratio {eq_ratio_level_comparator} {eq_ratio_level_selection}"
                 equity_counter+=1
 
 # EQUITY MARKET -> SUMMARY
@@ -620,8 +643,44 @@ if sahm_check:
 
 
 if economic_uncertainty_check:
-    with inpcol3.expander("US Economic Policy Uncertainty"):
-        pass
+    with inpcol3.expander("US Economic Policy Uncertainty Index (US EPU)"):
+        us_epu_db = Generate_Indicator()
+        us_epu_rsilength = st.number_input("Select RSI days", min_value=1,step=1, value=22, key="us_epu_rsi_length")
+
+        us_epu_db.get_database("US Economic Policy Uncertainty Index", input_start_date, input_end_date, us_epu_rsilength)
+
+        statcol1, statcol2 = st.columns(2)
+
+        usepu_value_on = statcol1.toggle("USEPU Index Value", key="usepu_value_toggle")
+        usepu_rsi_on = statcol2.toggle("USEPU Index RSI", key="usepu_rsi_toggle")
+
+        if usepu_value_on:
+            usepu_value_comparator = statcol1.selectbox("USEPU Comparator", ("Greater than", "Less than"))
+            usepu_value_selection = statcol1.number_input("Select Value", min_value=0.0, step=1.0, key="usepu_value_selection")
+            us_epu_db.metric_vs_selection_cross("usepu_value", usepu_value_comparator, [usepu_value_selection])
+            filtered_db_list.append(us_epu_db.filtered_dates)
+
+            if econ_stat_filters_applied_sentence==0:
+                econ_stat_filters_applied_sentence+=f"US EPU is {usepu_value_comparator} {usepu_value_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", US EPU is {usepu_value_comparator} {usepu_value_selection}"
+            econ_stat_counter+=1
+
+        if usepu_rsi_on:
+            usepu_rsi_comparator = statcol2.selectbox("US EPU RSI Comparator", ("Greater than", "Less than"))
+            usepu_rsi_selection = statcol2.number_input("Select value", min_value=0.0, step=1.0, key="usepu_rsi_selection")
+            us_epu_db.metric_vs_selection_cross("usepu_value", usepu_rsi_comparator, [usepu_rsi_selection])
+            filtered_db_list.append(us_epu_db.filtered_dates)
+
+            if econ_stat_filters_applied_sentence==0:
+                econ_stat_filters_applied_sentence+=f"US EPU RSI {usepu_rsi_comparator} {usepu_rsi_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", US EPU RSI {usepu_rsi_comparator} {usepu_rsi_selection}"
+            econ_stat_counter+=1
+
+        statcol1.line_chart(us_epu_db.lf.select(["Date", "US Economic Policy Uncertainty Index"]).collect(), x="Date", y="US Economic Policy Uncertainty Index", height=200, use_container_width=True)
+        statcol2.line_chart(us_epu_db.lf.select(["Date", "rsi"]).collect(), x="Date", y="rsi", height=200, use_container_width=True) #TODO convert to different type of line chart to fix y-axis
+
 
 def click_apply_filter():
     apply_filters(input_start_date, input_end_date, input_interval, input_returninterval, equity_counter, debt_counter, econ_stat_counter, filtered_db_list, grammatical_selection)
