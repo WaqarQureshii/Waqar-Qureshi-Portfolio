@@ -687,5 +687,3 @@ def click_apply_filter():
 
 if st.button("APPLY FILTERS", use_container_width=True, type="primary", key="apply_filters"):
     click_apply_filter()
-
-        
