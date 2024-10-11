@@ -9,3 +9,4 @@ streamlit/functions/scratch_paper.py
 *.streamlit/secrets.toml
 streamlit/functions/.streamlit/secrets.toml
 streamlit/.streamlit/secrets.toml
+/.venv

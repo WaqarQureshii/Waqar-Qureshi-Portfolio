@@ -651,6 +651,9 @@ if economic_uncertainty_check:
 
         statcol1, statcol2 = st.columns(2)
 
+        statcol1.line_chart(us_epu_db.lf.select(["Date", "US Economic Policy Uncertainty Index"]).collect(), x="Date", y="US Economic Policy Uncertainty Index", height=200, use_container_width=True)
+        statcol2.line_chart(us_epu_db.lf.select(["Date", "rsi"]).collect(), x="Date", y="rsi", height=200, use_container_width=True) #TODO convert to different type of line chart to fix y-axis
+
         usepu_value_on = statcol1.toggle("USEPU Index Value", key="usepu_value_toggle")
         usepu_rsi_on = statcol2.toggle("USEPU Index RSI", key="usepu_rsi_toggle")
 
@@ -678,9 +681,8 @@ if economic_uncertainty_check:
                 econ_stat_filters_applied_sentence+=f", US EPU RSI {usepu_rsi_comparator} {usepu_rsi_selection}"
             econ_stat_counter+=1
 
-        statcol1.line_chart(us_epu_db.lf.select(["Date", "US Economic Policy Uncertainty Index"]).collect(), x="Date", y="US Economic Policy Uncertainty Index", height=200, use_container_width=True)
-        statcol2.line_chart(us_epu_db.lf.select(["Date", "rsi"]).collect(), x="Date", y="rsi", height=200, use_container_width=True) #TODO convert to different type of line chart to fix y-axis
-
+# Economic/Stat -> SUMMARY    
+inpcol3.write("*"+econ_stat_filters_applied_sentence+"*")
 
 def click_apply_filter():
     apply_filters(input_start_date, input_end_date, input_interval, input_returninterval, equity_counter, debt_counter, econ_stat_counter, filtered_db_list, grammatical_selection)
