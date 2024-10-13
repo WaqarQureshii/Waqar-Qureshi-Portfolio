@@ -95,7 +95,9 @@ class Generate_Equity:
             (( pl.col(f"{numerator} Close") / pl.col(f"{denominator} Close")).alias("Close"))
         )
         self.lf = self.lf.with_columns(
-            ((pl.col("Close").pct_change()*100).round(2)).alias("% Change")
+            ((pl.col("Close").pct_change()*100).round(2)).alias("% Change"),
+            (plta.rsi(pl.col("Close"), timeperiod=rsi_length)).alias("rsi"),
+            (plta.ma(pl.col("Close"), timeperiod=ma_length)).alias("ma")
         )
 
     def metric_vs_selection_cross(self, comparison_type: str, comparator: str, selected_value: list = None) -> tuple[pl.LazyFrame, pl.LazyFrame, pl.LazyFrame]:
