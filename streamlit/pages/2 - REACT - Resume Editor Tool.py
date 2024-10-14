@@ -121,7 +121,7 @@ else:
     If I have not provided a valid LaTeX Resume tempalte in the next prompt, then please simply output a resume utilizing all of the information I have now provided to you.
 
     If I provide you a valid LaTeX resume template then please do the following:
-    Could you please edit my current resume written in a latex template by utilizing all of the information I have now provided you? For example, replace all the work experiences currently in the template with the bullet points you have come up with, and replace the Professional Summary section with your summary of my professional experience.
+    Could you please edit my current resume written in a latex template by utilizing all of the information I have now provided you? For example, replace all the work experiences currently in the template with the bullet points you have come up with, and replace the Professional Summary section with your summary of my professional experience. Please replace any other sections as you see fit.
 
     I will now either provide you a valid LaTeX Resume template or won't in the next prompt:
 
