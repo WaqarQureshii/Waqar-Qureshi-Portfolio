@@ -65,3 +65,49 @@ with st.expander("WTDOLLE - What Transpired During Our Last Encounter"):
 
         with stats_tab:
                 st.write_stream(stream_stats)
+
+with st.expander("REACT: Resume Enhance and Customization Tool"):
+        st.write('''REACT is pre-trained to be an action-oriented resume editor that takes your resume & your selected job description as a prompt. What differentiates this from other resume editors? It is action-oriented, maintains the spirit of your original resume, and incorporates the key job description skillsets that a hiring manager would look for.''')
+        st.page_link("pages/2 - REACT - Resume Editor Tool.py", label="Project Link")
+        python_tab, llm_tab, prompt_engineering_tab = st.tabs(["Python (Programming Language)", "Large Language Models", "Prompt Engineering"])
+
+        def streampython():
+                python_information='''
+        I used Python to:
+        - Access Open AI's Large Language Model (LLM), chat-gpt's 4o model.
+        - Streamlit - used to interface the tool and gather input from the user to prompt Open AI's LLM.
+        '''
+                for word in python_information.split(" "):
+                        yield word + " "
+                        time.sleep(0.01)
+
+        def streamllm():
+                llm_info='''
+        - Currently using ChatGPT's Large Language Model (LLM) that is built off strenuous AI and machine learning techniques.
+        - Currently this method I have developed consumes a bit of Open AI tokens due to some prompt engineering required to get to a specific output (resume development).
+        - In the future, I aim to train my own bot and contribute to the Hugging Face community.
+                '''
+                for word in llm_info.split(" "):
+                        yield word + " "
+                        time.sleep(0.01)
+
+        def prompt_engineering():
+                prompt_eng_info='''
+        - 🎩 Because LLMs require an input or query to generate a response, there's a ton of engineering and guiding to the LLM in order to share the content of the output. The goal is to be as efficient as possible if you are using a third party paid LLM such as OpenAI.
+        - The prompt engineering I used is to focus on creating a professional resume editor that incorporates the job description and the user's resume, to effectively create resume content that can pass the typical ATS.
+                '''
+                for word in prompt_eng_info.split(" "):
+                        yield word + " "
+                        time.sleep(0.01)
+
+        with python_tab:
+                st.subheader("🐍 Python Programming")
+                st.write_stream(streampython)
+
+        with llm_tab:
+                st.subheader("📝 Using Large Language Models")
+                st.write_stream(streamllm)
+
+        with prompt_engineering_tab:
+                st.subheader("👷 Prompt Engineering")
+                st.write_stream(prompt_engineering)
