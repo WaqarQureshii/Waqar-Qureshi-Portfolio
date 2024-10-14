@@ -5,7 +5,7 @@ st.set_page_config(layout="wide",
                    page_title="REACT: Resume Enhancement and Customization Tool",
                    initial_sidebar_state="collapsed")
 
-st.title("REACT: Resume Enhancement and Customization Tool?")
+st.title("REACT: Resume Enhancement and Customization Tool")
 st.write("Resume Enhancement and Customization Tool (REACT) is pre-trained to be an action-oriented resume editor that takes your resume & your selected job description as a prompt. What differentiates this from other resume editors? It is action-oriented, maintains the spirit of your original resume, and incorporates the key job description skillsets that a hiring manager would look for.")
 
 api_key = st.text_input("Input your Open AI API key",placeholder="sk-proj-XXXXXXXXXXX")
