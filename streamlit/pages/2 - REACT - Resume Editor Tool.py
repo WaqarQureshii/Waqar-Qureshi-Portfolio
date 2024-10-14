@@ -2,7 +2,7 @@ import streamlit as st
 import openai
 
 st.set_page_config(layout="wide",
-                   page_title="REACT: Resume Enhancement and Customization Tool?",
+                   page_title="REACT: Resume Enhancement and Customization Tool",
                    initial_sidebar_state="collapsed")
 
 st.title("REACT: Resume Enhancement and Customization Tool?")
