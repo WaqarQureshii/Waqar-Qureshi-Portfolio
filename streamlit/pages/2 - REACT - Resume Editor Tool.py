@@ -81,14 +81,21 @@ else:
         submitted = st.form_submit_button(label="SUBMIT AND GENERATE")
 
     # PROMPTS TO FEED TO LLM
-    prompt_prime1 = "I am re-writing my resume and I need your help. You are going to act as a professional resume writer skilled in presenting information concisely and using niche-appropriate language, while avoiding redundancy and cliché terms. Your task is to position my experience as a solution to my target company's pain points, tailoring it specifically so that it's clear that I can manage the primary requirements of the job. I want you to memorize these instructions for the duration of our session. Is that understood? No need to respond."
 
-    prompt_prime2 = f'''First, I am going to provide you with the job description for the role I want to apply for. Can you read it carefully so that when I ask you questions about it later, you will reference the job description and provide me with accurate answers? No need to respond.
+    # SETTING THE ROLE
+    prompt_prime1 = "I am re-writing my resume and need your expertise. You specialize in crafting resumes that stand out in both human and ATS reviews. Your role is to present my work experience, skills, and relevant job descriptions concisely, with action-oriented language that avoids redundancy and clichés. The resume should be ATS-friendly while highlighting how my experience and skills solve the specific pain points of the target company. Tailor each section to show that I meet and exceed the primary job requirements. Please keep these instructions in mind throughout our session."
 
-    Job Description:
-    {jobdescription}'''
+    # KEY INFORMATION FROM THE JOB DESCRIPTION
+    prompt_prime2 = f'''First, I'll provide the job description for the role I want to apply for. Please review it carefully to identify:
+        Key Technical Skills: The specific technical skills that would give me an advantage in this role.
+        Key Soft Skills: The soft skills that the job description emphasizes.
+        Key Language: Important phrases or terminology used that would give me an advantage if mirrored in my resume.
+        Key Problems: The main challenges or pain points the company is trying to solve by hiring for this role.
+        Job Description:
+        {jobdescription}'''
 
-    prompt_prime3 = f"""Now I am going to provide you with more information on the hiring company, so you can tailor my work experience more effectively to the hiring company's needs. I want you to memorize this information so that you consider it when helping me rewrite components of my resume later. Is that understood? No need to respond.
+    # KEY ORGANIZATIONAL INFORMATION
+    prompt_prime3 = f"""Now I am going to provide you with more information on the hiring company, so you can tailor my work experience more effectively to the hiring company's needs. I want you to memorize this information as "Key Organizational Information"?
 
     Company name: {company_name}
 
@@ -99,40 +106,43 @@ else:
     {additional_information}
     """
 
+    # WORK EXPERIENCES
     prompt_prime4 = f'''
-    I am about to provide you my work experiences which contains detailed information about my past work experiences. I want you to rewrite my work experiences into action-oriented resume bullet points, with no "fluff", and please tailor each bullet point specifically for the job title {job_title} and its job description I sent you previously. By "tailor", I mean try to implement the following 6 actions for each bullet point:
-    1) Start each bullet point with an action verb, followed by the task, and conclude with the result. Please do your best to quantify each statement using numbers, percentages or dollar amounts.
-    2) Ensure the bullet points include results-driven achievement statements.
-    3) Use similar language to what's written in the job description.
-    4) Use or leverage my existing work experiences such as the results, if there are no results, please create fictitious results that would work well with the job title provided earlier.
-    5) Try to keep the bullet points per work experience between 3 to 5 bullet points.
-    6) Try to order the bullet points in the order of highest priority that will address the primary requirements of the job.
+    I will now provide my work experiences, which contain detailed information about my roles, responsibilities, and accomplishments. Please review them carefully and retain this information as 'Work Experiences.' I will ask you to leverage these details later to tailor my resume.
 
-    Please keep these work experience bullet points in memory to later input into my resume.
-    Is this understood?
-
-    I am now going to provide you my work experiences:
-
+    Work Experiences:
     {workexperience}
     '''
 
-    prompt_prime5 = f"Based on the {job_title} job description I sent to you earlier, what are the most important technical skills required for the job? Which technical skills would give me an advantage in this role? Keep the response in memory when you have to edit a particular section of my resume such as the summary of skills section or technical skills. No need to respond."
+    # COMMON AREAS OF EXPERTISE
+    prompt_prime5 = f"What are the most common areas of expertise for a {job_title} role? Keep it in memory as the 'Common Areas of Expertise' "
 
-    prompt_prime6 = f"What are the most common areas of expertise for a {job_title}? Keep it in memory, no need to respond."
+    # RE-WRITE WORK EXPERIENCES
+    prompt_prime6 = f'''
+    Re-write my Work Experiences following these rules:
 
-    prompt_prime7 = f"Using what you created for me with my work experience, write 3-6 sentences to summarize my professional experience, including only what's relevant to the {job_title} job description I sent you earlier. Highlight my {highlight_years} number of years of experience in the {industry} field. Showcase how my experience and expertise can address {company_name}'s pain points. Write it using resume language (passive third person and action-oriented). Keep this in memory and no need to respond."
-
-    prompt_prime8 = f'''
-    If I have not provided a valid LaTeX Resume tempalte in the next prompt, then please simply output a resume utilizing all of the information I have now provided to you. Feel free to use the existing information from the LaTeX resume if provided, otherwise feel free to draft a new one from scratch.
-
-    If I provide you a valid LaTeX resume template then please do the following:
-    Could you please edit my current resume written in a latex template without messing around with the formatting - just switch the content with what I described earlier or add/remove content by utilizing all of the information I have now provided you. For example, replace all the work experiences currently in the template with the work experience bullet points you have come up with for each work experience, and replace the Professional Summary section with your summary of my professional experience, or replace any other sections as you see fit such as the Summary of Skills with the technical skills.
-
-    I will now either provide you a valid LaTeX Resume template or won't in the next prompt in which you should draft one from scratch:
-
+    1) Highlight the most relevant Key Technical Skills, Key Soft Skills, and Key Language that address the Key Problems (all of which should be retained in your memory).
+    2) Focus on accomplishments, ordered by the importance of the skills, from most to least relevant to the job description.
+    3) Avoid vague, non-specific words like 'several' or 'a variety of.' Use specific data and details. If my Work Experiences don’t provide specific figures, create realistic, context-appropriate fictitious data points.
+    4) Quantify my achievements by incorporating numbers to emphasize the impact I've made.
+    5) Begin each bullet point with a strong action or power verb, and vary the verbs throughout to avoid repetition.
+    6) Keep bullet points succinct and to the point.
+    7) Do not use personal pronouns.
+    8) Use the formula: Power Verb + Result + Task OR Power Verb + Task + Result.
     '''
 
-    prompt_prime9 = f'''
+    prompt_prime7 = f'''
+    Build a summary of skills section of no more than 5 that align with the Key Technical Skills, Key Soft Skills and the Key Problems. Feel free to use my existing skillsets that I may provide in the next prompt in LaTeX format.
+    '''
+
+    prompt_prime8 = f"Using what you created for me with my work experience, write 3-6 sentences to summarize my professional experience, including only what's relevant to the {job_title} job description I sent you earlier. Highlight my {highlight_years} number of years of experience in the {industry} field. Showcase how my experience and expertise can address {company_name}'s Key Problems (mentioned before). Write it using the same Work Experiences rules provided earlier. Try to organize it from most to least important when considering getting the attention of my reader in relation to the job description and Key Problems."
+
+    prompt_prime9 = f'''I want you to put everything together and all of the sections in generating a resume. If I don't provide you a resume in LaTeX format of my existing resume, then please output a new one that you wrote up based on all of the work you've completed so far. If I have provided you my resume in LaTeX format, then please replace all of the sections with the work you've done so far but keep my Name, phone number webpages, LinkedIn, job titles, job locations, job companies and time all the same.
+    
+    The next prompt with either include or not include a LaTeX template of my resume as discussed.
+    '''
+
+    prompt_prime10 = f'''
     My LaTeX Resume template:
     {latex_resume}
     '''
@@ -152,6 +162,7 @@ else:
                 {"role": "user", "content": prompt_prime7},
                 {"role": "user", "content": prompt_prime8},
                 {"role": "user", "content": prompt_prime9},
+                {"role": "user", "content": prompt_prime10},
             ]
         )
 
