@@ -1,5 +1,6 @@
 import streamlit as st
 import openai
+import time
 
 st.set_page_config(layout="wide",
                    page_title="REACT: Resume Enhancement and Customization Tool",
@@ -10,7 +11,8 @@ st.write("Resume Enhancement and Customization Tool (REACT) is pre-trained to be
 
 api_key = st.text_input("Input your Open AI API key",placeholder="sk-proj-XXXXXXXXXXX")
 if 'valid_api_key' not in st.session_state:
-     st.session_state['valid_api_key'] = False
+    st.warning("Input your Open AI API Key to get on your way to editing your resume.")
+    st.session_state['valid_api_key'] = False
 
 def validate_api_key(api_key=api_key):
     client=openai.OpenAI(api_key=api_key)
@@ -86,7 +88,7 @@ else:
     Job Description:
     {jobdescription}'''
 
-    prompt_prime3 = f"""Now I am going to provide you with more information on the hiring company, so you can tailor my work experience more effectively to the hiring company's needs. I want you to memorize this information so that you consider it when helping me rewrite my work experience later. Is that understood? No need to respond.
+    prompt_prime3 = f"""Now I am going to provide you with more information on the hiring company, so you can tailor my work experience more effectively to the hiring company's needs. I want you to memorize this information so that you consider it when helping me rewrite components of my resume later. Is that understood? No need to respond.
 
     Company name: {company_name}
 
@@ -98,32 +100,35 @@ else:
     """
 
     prompt_prime4 = f'''
-    I am about to give you my resume which contains detailed information about my past work experiences. I want you to rewrite each work experience with resume bullet points, and please tailor each bullet point specifically for the {job_title} I sent you previously. By "tailor", I mean try to implement the following 6 actions for each bullet point
+    I am about to provide you my work experiences which contains detailed information about my past work experiences. I want you to rewrite my work experiences into action-oriented resume bullet points, with no "fluff", and please tailor each bullet point specifically for the job title {job_title} and its job description I sent you previously. By "tailor", I mean try to implement the following 6 actions for each bullet point:
     1) Start each bullet point with an action verb, followed by the task, and conclude with the result. Please do your best to quantify each statement using numbers, percentages or dollar amounts.
-    2) Ensure the bullet points include results-driven achievement statements
-    3) Use similar language to what's written in the job description
-    4) Use or leverage my existing work experiences such as the results, if there are no results, please create fictitious results that would work well with the job title provided earlier. 
+    2) Ensure the bullet points include results-driven achievement statements.
+    3) Use similar language to what's written in the job description.
+    4) Use or leverage my existing work experiences such as the results, if there are no results, please create fictitious results that would work well with the job title provided earlier.
     5) Try to keep the bullet points per work experience between 3 to 5 bullet points.
     6) Try to order the bullet points in the order of highest priority that will address the primary requirements of the job.
 
-    I am now going to provide you my work experience:
+    Please keep these work experience bullet points in memory to later input into my resume.
+    Is this understood?
+
+    I am now going to provide you my work experiences:
 
     {workexperience}
     '''
 
-    prompt_prime5 = f"Based on the {job_title} job description I sent to you earlier, what are the most important technical skills required for the job? Which technical skills would give me an advantage in this role? Keep the response in memory and no need to respond."
+    prompt_prime5 = f"Based on the {job_title} job description I sent to you earlier, what are the most important technical skills required for the job? Which technical skills would give me an advantage in this role? Keep the response in memory when you have to edit a particular section of my resume such as the summary of skills section or technical skills. No need to respond."
 
     prompt_prime6 = f"What are the most common areas of expertise for a {job_title}? Keep it in memory, no need to respond."
 
-    prompt_prime7 = f"Using what you created for me with my work experience, write 3-6 sentences to summarize my professional experience, including only what's relevant to the {job_title} job description I sent you earlier. Highlight my {highlight_years} number of years of experience in the {industry} field. Showcase how my experience and expertise can address {company_name}'s pain points. Write it using resume language (passive third person). Keep this in memory and no need to respond."
+    prompt_prime7 = f"Using what you created for me with my work experience, write 3-6 sentences to summarize my professional experience, including only what's relevant to the {job_title} job description I sent you earlier. Highlight my {highlight_years} number of years of experience in the {industry} field. Showcase how my experience and expertise can address {company_name}'s pain points. Write it using resume language (passive third person and action-oriented). Keep this in memory and no need to respond."
 
     prompt_prime8 = f'''
-    If I have not provided a valid LaTeX Resume tempalte in the next prompt, then please simply output a resume utilizing all of the information I have now provided to you.
+    If I have not provided a valid LaTeX Resume tempalte in the next prompt, then please simply output a resume utilizing all of the information I have now provided to you. Feel free to use the existing information from the LaTeX resume if provided, otherwise feel free to draft a new one from scratch.
 
     If I provide you a valid LaTeX resume template then please do the following:
-    Could you please edit my current resume written in a latex template by utilizing all of the information I have now provided you? For example, replace all the work experiences currently in the template with the bullet points you have come up with, and replace the Professional Summary section with your summary of my professional experience. Please replace any other sections as you see fit such as the Summary of Skills.
+    Could you please edit my current resume written in a latex template without messing around with the formatting - just switch the content with what I described earlier or add/remove content by utilizing all of the information I have now provided you. For example, replace all the work experiences currently in the template with the work experience bullet points you have come up with for each work experience, and replace the Professional Summary section with your summary of my professional experience, or replace any other sections as you see fit such as the Summary of Skills with the technical skills.
 
-    I will now either provide you a valid LaTeX Resume template or won't in the next prompt:
+    I will now either provide you a valid LaTeX Resume template or won't in the next prompt in which you should draft one from scratch:
 
     '''
 
@@ -151,4 +156,6 @@ else:
         )
 
         st.write(response.choices[0].message.content)
+        for pct_complete in range(100):
+            time.sleep(0.5)
         print(response.usage)
