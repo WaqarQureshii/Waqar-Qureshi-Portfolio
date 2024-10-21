@@ -129,6 +129,7 @@ else:
     6) Keep bullet points succinct and to the point.
     7) Do not use personal pronouns.
     8) Use the formula: Power Verb + Result + Task OR Power Verb + Task + Result.
+    9) Please focus on the "HOW" with details on how I accomplishments these results. For example "by building leveraging Power BI to merge 4 datasets into one user-friendly dashboard". 
     '''
 
     prompt_prime7 = f'''
