@@ -472,8 +472,8 @@ debt_filters_applied_sentence = "Debt filters to apply:"
 debt_market = inpcol2.popover("Debt Market")
 yieldspread_check = debt_market.checkbox("Market Yield Spread (Yield Curve)", False)
 usfedfundrate_check = debt_market.checkbox("US Federal Funds Rate", False)
+us_treasury_sec_check = debt_market.checkbox("US Treasury Securities", False)
 debt_counter=0
-
 
 # DEBT MARKET -> YIELD SPREAD
 if yieldspread_check:
@@ -492,11 +492,11 @@ if yieldspread_check:
 
         spreadcol1.line_chart(yieldspread.lf.select(["Date", f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread']).collect(), height=200, use_container_width=True,x="Date", y=[f'{lt_maturity_selection} Rate', f'{st_maturity_selection} Rate', 'Rate Spread'], color=['#c9c9e6', '#cce6c9', '#be2a25'])
 
-        spreadcol2.dataframe(yieldspread.lf.select(["Date", 'Rate Spread', "% Change"]).collect(), height=207, hide_index=True,column_order=["Date",'Rate Spread', '% Change'],column_config={
+        spreadcol2.dataframe(yieldspread.lf.select(["Date", 'Rate Spread', "Spread % Change"]).collect(), height=207, hide_index=True,column_order=["Date",'Rate Spread', 'Spread % Change'],column_config={
             "Date": st.column_config.DateColumn(
                 "Date", format="YYYY-MM-DD"
             ),
-            '% Change': st.column_config.NumberColumn(
+            'Spread % Change': st.column_config.NumberColumn(
                 "% Change",
                 format="%.2f%%"
             )
@@ -523,7 +523,7 @@ if yieldspread_check:
             spread_pct_lower = spreadcol2.number_input("Between lower value", step=0.5, key="spread between lower value")
             spread_pct_higher = spreadcol2.number_input("Between higher value", step=0.5, key="spread between higher value")
 
-            yieldspread.metric_vs_selection_cross("%_change", "Between", [spread_pct_lower, spread_pct_higher])
+            yieldspread.metric_vs_selection_cross("spread_%_change", "Between", [spread_pct_lower, spread_pct_higher])
             filtered_db_list.append(yieldspread.filtered_dates)
 
             if debt_counter==0:
@@ -555,6 +555,55 @@ if usfedfundrate_check:
                 debt_filters_applied_sentence+=f" US Fed Funds Rate change between {usfedrate_level_selection_lower}% and {usfedrate_level_selection_higher}%"
             else:
                 debt_filters_applied_sentence+=f", US Fed Funds Rate change between {usfedrate_level_selection_lower}% and {usfedrate_level_selection_higher}%"
+            debt_counter+=1
+
+if us_treasury_sec_check:
+    with inpcol2.expander("US Treasury Securities"):
+        us_treasury_db=Generate_Debt()
+
+        us_treasury_selection = st.selectbox("Treasury Maturity", ("1m", "3m", "6m", "1y", "2y", "3y", "5y", "7y", "10y", "20y", "30y"))
+
+        us_treasury_db.get_database(us_treasury_selection, input_start_date, input_end_date, selection_interval)
+        
+        us_treasury1, us_treasury2 = st.columns(2)
+
+        us_treasury1.line_chart(us_treasury_db.lf.select(["Date", f"{us_treasury_selection} Rate"]).collect(), height=200, use_container_width=True, x="Date", y=[f"{us_treasury_selection} Rate"])
+
+        us_treasury2.dataframe(us_treasury_db.lf.select(["Date", f"{us_treasury_selection} Rate", "% Change"]).collect(), height=200, hide_index=True, column_order=["Date", f"{us_treasury_selection} Rate", "% Change"], column_config={
+            "Date": st.column_config.DateColumn(
+                "Date", format="YYYY-MM-DD"
+            ),
+            "% Change": st.column_config.NumberColumn(
+                "% Change", format="%.2f%%"
+            )
+        })
+        
+        treasury_level_on=us_treasury1.toggle("Treasury Level", key="US_Treasury_level_toggle")
+        treasury_pct_on=us_treasury2.toggle("Treasury % Change", key="US_Treasury_pctchange_toggle")
+
+        if treasury_level_on:
+            us_treasury_level_comparator = us_treasury1.selectbox("Level Comparator", ("Greater than", "Less than"))
+            us_treasury_level_selection = us_treasury1.number_input("Select value", step=1.0, value=1.0)
+            us_treasury_db.metric_vs_selection_cross("current_price", us_treasury_level_comparator, [us_treasury_level_selection])
+            filtered_db_list.append(us_treasury_db.filtered_dates)
+
+            if debt_counter == 0:            
+                debt_filters_applied_sentence+=f"{us_treasury_selection} {us_treasury_level_comparator} {us_treasury_level_selection}"
+            else:
+                debt_filters_applied_sentence+=f", {us_treasury_selection} {us_treasury_level_comparator} {us_treasury_level_selection}"
+            debt_counter+=1
+
+        if treasury_pct_on:
+            us_treasury_pct_lower = us_treasury2.number_input("Between lower value", step=0.5, key="treasury_between_lower_value")
+            us_treasury_pct_higher = us_treasury2.number_input("Between higher value", step=0.5, key="treasury_between_higher_value")
+
+            us_treasury_db.metric_vs_selection_cross("%_change", "Between", [us_treasury_pct_lower, us_treasury_pct_higher])
+            filtered_db_list.append(us_treasury_db.filtered_dates)
+
+            if debt_counter == 0:            
+                debt_filters_applied_sentence+=f"{us_treasury_selection} % change between{us_treasury_pct_lower} and {us_treasury_pct_higher}"
+            else:
+                debt_filters_applied_sentence+=f", {us_treasury_selection} % change between{us_treasury_pct_lower} and {us_treasury_pct_higher}"
             debt_counter+=1
 
 # DEBT MARKET -> SUMMARY    

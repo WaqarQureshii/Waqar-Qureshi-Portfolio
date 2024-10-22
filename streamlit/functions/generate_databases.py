@@ -115,6 +115,7 @@ class Generate_Equity:
         comparison_type (str): Provide the various types of comparison types.
             current_price\n
             %_change\n
+            spread_%_change\n
             price_vs_ma\n
             rsi_vs_selection\n
             ratio%_changevsselection\n
@@ -138,6 +139,11 @@ class Generate_Equity:
             },
             "%_change": {
                 "db_column": "% Change",
+                "multiplier": 100,
+                "comparison": selected_value
+            },
+            "spread_%_change": {
+                "db_column": "Spread % Change",
                 "multiplier": 100,
                 "comparison": selected_value
             },
@@ -242,7 +248,9 @@ class Generate_Debt(Generate_Equity):
         fred_api = st.secrets.fred_api
         fred = Fred(api_key=fred_api)
         pd_df = fred.get_series(self.debt_instrument.get(debt_instruments), start_date, end_date, frequency=frequency_options.get(frequency)).reset_index()
-        self.lf = pl.LazyFrame(pd_df).with_columns().cast({'index': pl.Date}).rename({"0":f"{debt_instruments} Rate", "index": "Date"})
+        self.lf = pl.LazyFrame(pd_df).with_columns().cast({'index': pl.Date}).rename({"0":f"{debt_instruments} Rate", "index": "Date"}).with_columns(
+            (pl.col(f"{debt_instruments} Rate").pct_change()*100).alias("% Change")
+        )
 
     def generate_yield_spread(self, start_date: str, end_date:str, long_term_yield:str, short_term_yield:str, frequency:str ="Daily"):
         """
@@ -267,7 +275,7 @@ class Generate_Debt(Generate_Equity):
             (pl.col(f"{long_term_yield} Rate") - pl.col(f"{short_term_yield} Rate")).alias('Rate Spread')
         ).select(
             pl.col('*'),
-            ((pl.col('Rate Spread').pct_change()*100).round(2)).alias('% Change')
+            ((pl.col('Rate Spread').pct_change()*100).round(2)).alias('Spread % Change')
         ))
 
 class Generate_Indicator(Generate_Equity):

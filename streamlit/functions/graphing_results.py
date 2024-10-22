@@ -109,23 +109,23 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
 
         graph3.dataframe(rus2k_return_stats.collect(), hide_index=True)
 
-#     #---Han Seng Index DATABASE GENERATION---
-        col1.subheader("Han Seng Index (HSI)")
-        hsi_filtered_lf, hsi_return_stats = filter_indices(filtered_db_lists, hsi.lf, input_returninterval, return_days_list, grammatical_selection)
+#         rowcol1, rowcol2, rowcol3 = st.columns(3)
+# #     #---Han Seng Index DATABASE GENERATION---
+#         rowcol1.subheader("Han Seng Index (HSI)")
+#         hsi_filtered_lf, hsi_return_stats = filter_indices(filtered_db_lists, hsi.lf, input_returninterval, return_days_list, grammatical_selection)
 
-        st.write(hsi_filtered_lf.collect())
-        # linefig = px.line(data_frame=hsi.lf.select(["Date", "Close"]).collect(),
-        #               x="Date",
-        #               y="Close")
-        # scatterfig = px.scatter(hsi_filtered_lf.select(["Date", "Close"]).collect(),
-        #               "Date",
-        #               "Close")
-        # fig = go.Figure(data=linefig.data+scatterfig.data)
-        # fig.update_traces(line=dict(width=1),
-        #                   marker=dict(size=7,
-        #                             color="red",
-        #                             opacity=1))
+#         linefig = px.line(data_frame=hsi.lf.select(["Date", "Close"]).collect(),
+#                       x="Date",
+#                       y="Close")
+#         scatterfig = px.scatter(hsi_filtered_lf.select(["Date", "Close"]).collect(),
+#                       "Date",
+#                       "Close")
+#         fig = go.Figure(data=linefig.data+scatterfig.data)
+#         fig.update_traces(line=dict(width=1),
+#                           marker=dict(size=7,
+#                                     color="red",
+#                                     opacity=1))
 
-        # graph1.plotly_chart(fig, use_container_width=True)
+#         rowcol1.plotly_chart(fig, use_container_width=True)
 
-        # graph1.dataframe(hsi_return_stats.collect(), hide_index=True)    
+#         rowcol1.dataframe(hsi_return_stats.collect(), hide_index=True)
