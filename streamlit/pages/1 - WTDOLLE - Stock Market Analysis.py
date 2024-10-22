@@ -568,7 +568,6 @@ economic_uncertainty_check = econ_stat.checkbox("US Economic Policy Uncertainty"
 sp500_volatility_check = econ_stat.checkbox("S&P 500 Volatility Index (VIX)", False)
 ndx100_volatility_check = econ_stat.checkbox("Nasdaq 100 Volatility Index (VIX)", False)
 rus2k_volatility_check = econ_stat.checkbox("Russell 2000 Volatility Index (VIX)", False)
-chinaetf_volatility_check = econ_stat.checkbox("China ETF Volatility Index (VIX)", False)
 crudeoil_volatility_check = econ_stat.checkbox("Crude Oil Volatility Index (VIX)", False)
 
 econ_stat_counter=0
@@ -767,44 +766,6 @@ if ndx100_volatility_check:
                 econ_stat_filters_applied_sentence+=f", Nasdaq 100 VIX % change between {ndx100vix_pct_lower}% and {ndx100vix_pct_higher}%"
             econ_stat_counter+=1
 
-# ECONONOMIC & STATISTICAL -> China ETF VOLATILITY INDEX
-if chinaetf_volatility_check:
-    with inpcol3.expander("China ETF Volatility Index"):
-        chinaetfvix=Generate_Equity()
-        chinaetfvix.get_database(["^VXFXI"], input_start_date, input_end_date, input_interval)
-        st.line_chart(chinaetfvix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
-
-        chinaetfvixcol1, chinaetfvixcol2 = st.columns(2)
-    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
-        chinaetfvix_level_on = chinaetfvixcol1.toggle("Price Level", key="chinaetfvix_p_toggle")
-        chinaetfvix_pct_on = chinaetfvixcol2.toggle("% Change", key="chinaetfvix_%_toggle")
-    # EQUITY MARKET -> VOLATILITY INDEX -> sp500VIX LEVEL
-        if chinaetfvix_level_on:
-            chinaetfvix_level_comparator = chinaetfvixcol1.selectbox("chinaetfVIX Comparator",('Greater than', 'Less than'))
-            chinaetfvix_level_selection = chinaetfvixcol1.number_input("Select value", min_value=0.0, step=0.5)
-            
-            chinaetfvix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[chinaetfvix_level_selection],comparator=chinaetfvix_level_comparator)
-            filtered_db_list.append(chinaetfvix.filtered_dates)
-            
-            if econ_stat_counter==0:
-                econ_stat_filters_applied_sentence+=f"China ETF VIX level {chinaetfvix_level_comparator} {chinaetfvix_level_selection}"
-            else:
-                econ_stat_filters_applied_sentence+=f", China ETF VIX level {chinaetfvix_level_comparator} {chinaetfvix_level_selection}"
-            econ_stat_counter+=1
-    #  EQUITY MARKET -> VOLATILITY INDEX -> China ETF VIX % CHANGE
-        if chinaetfvix_pct_on:
-            chinaetfvix_pct_lower = chinaetfvixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
-            chinaetfvix_pct_higher = chinaetfvixcol2.number_input("Between higher value", step=0.6, key="chinaetfvix between higher value")
-
-            chinaetfvix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[chinaetfvix_pct_lower, chinaetfvix_pct_higher], comparator="Between")
-            filtered_db_list.append(chinaetfvix.filtered_dates)
-            
-            if econ_stat_counter==0:
-                econ_stat_filters_applied_sentence+=f"China ETF VIX % change between {chinaetfvix_pct_lower}% and {chinaetfvix_pct_higher}%"
-            else:
-                econ_stat_filters_applied_sentence+=f", China ETF VIX % change between {chinaetfvix_pct_lower}% and {chinaetfvix_pct_higher}%"
-            econ_stat_counter+=1
-
 # ECONONOMIC & STATISTICAL -> Crude Oil VOLATILITY INDEX
 if crudeoil_volatility_check:
     with inpcol3.expander("Crude Oil Volatility Index"):
@@ -816,7 +777,7 @@ if crudeoil_volatility_check:
     # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
         crudeoilvix_level_on = crudeoilvixcol1.toggle("Price Level", key="crudeoilvix_p_toggle")
         crudeoilvix_pct_on = crudeoilvixcol2.toggle("% Change", key="crudeoilvix_%_toggle")
-    # EQUITY MARKET -> VOLATILITY INDEX -> sp500VIX LEVEL
+    # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
         if crudeoilvix_level_on:
             crudeoilvix_level_comparator = crudeoilvixcol1.selectbox("crudeoilVIX Comparator",('Greater than', 'Less than'))
             crudeoilvix_level_selection = crudeoilvixcol1.number_input("Select value", min_value=0.0, step=0.5)
@@ -851,5 +812,3 @@ def click_apply_filter():
 
 if st.button("APPLY FILTERS", use_container_width=True, type="primary", key="apply_filters"):
     click_apply_filter()
-
-        
