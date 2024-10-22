@@ -59,47 +59,13 @@ inpcol1, inpcol2, inpcol3 = st.columns(3)
 # EQUITY MARKET
 equity_filters_applied_sentence = "Equity filters to apply:"
 equity_market = inpcol1.popover("Equity Market")
-volatility_index_check = equity_market.checkbox("Volatility Index (VIX)", False)
 equalweighted_sp500_check = equity_market.checkbox("Equal-Weighted S&P 500 (RSP)", False)
 hyg_check = equity_market.checkbox("High-Yield Corporate Bonds (HYG)", False)
 sp500_check = equity_market.checkbox("S&P 500 (GSPC)", False)
 nasdaq_check = equity_market.checkbox("Nasdaq (IXIC)", False)
 russell2000_check = equity_market.checkbox("Russell 2000 (RUT)", False)
 equityratio_check = equity_market.checkbox("Ratio of 2 Equities", False)
-# EQUITY MARKET -> VOLATILITY INDEX
-if volatility_index_check:
-    with inpcol1.expander("Volatility Index"):
-        vix=Generate_Equity()
-        vix.get_database(["^VIX"], input_start_date, input_end_date, input_interval)
-        st.line_chart(vix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
 
-        vixcol1, vixcol2 = st.columns(2)
-    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
-        vix_level_on = vixcol1.toggle("Price Level", key="vix_p_toggle")
-        vix_pct_on = vixcol2.toggle("% Change", key="vix_%_toggle")
-    # EQUITY MARKET -> VOLATILITY INDEX -> VIX LEVEL
-        if vix_level_on:
-            vix_level_comparator = vixcol1.selectbox("VIX Comparator",('Greater than', 'Less than'))
-            vix_level_selection = vixcol1.number_input("Select value", min_value=0.0, step=0.5)
-            
-            vix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[vix_level_selection],comparator=vix_level_comparator)
-            filtered_db_list.append(vix.filtered_dates)
-            
-            equity_filters_applied_sentence+=f" VIX level {vix_level_comparator} {vix_level_selection}"
-            equity_counter+=1
-    #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
-        if vix_pct_on:
-            vix_pct_lower = vixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
-            vix_pct_higher = vixcol2.number_input("Between higher value", step=0.6, key="vix between higher value")
-
-            vix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[vix_pct_lower, vix_pct_higher], comparator="Between")
-            filtered_db_list.append(vix.filtered_dates)
-            
-            if equity_counter==0:
-                equity_filters_applied_sentence+=f" VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
-            else:
-                equity_filters_applied_sentence+=f", VIX % change between {vix_pct_lower}% and {vix_pct_higher}%"
-            equity_counter+=1
 
 # EQUITY MARKET -> RSP
 if equalweighted_sp500_check:
@@ -599,6 +565,12 @@ econ_stat_filters_applied_sentence = "Economical & Statistical filters applied:"
 econ_stat = inpcol3.popover("Economic & Statistical Figures")
 sahm_check = econ_stat.checkbox("Sahm Rule", False)
 economic_uncertainty_check = econ_stat.checkbox("US Economic Policy Uncertainty")
+sp500_volatility_check = econ_stat.checkbox("S&P 500 Volatility Index (VIX)", False)
+ndx100_volatility_check = econ_stat.checkbox("Nasdaq 100 Volatility Index (VIX)", False)
+rus2k_volatility_check = econ_stat.checkbox("Russell 2000 Volatility Index (VIX)", False)
+chinaetf_volatility_check = econ_stat.checkbox("China ETF Volatility Index (VIX)", False)
+crudeoil_volatility_check = econ_stat.checkbox("Crude Oil Volatility Index (VIX)", False)
+
 econ_stat_counter=0
 
 # ECONONOMIC & STATISTICAL -> SAHM VALUES
@@ -641,7 +613,7 @@ if sahm_check:
                 econ_stat_filters_applied_sentence+=f", Sahm RSI {sahm_rsi_comparator} {sahm_rsi_selection}"
             econ_stat_counter+=1
 
-
+# ECONONOMIC & STATISTICAL -> Economic Policy Uncertainty
 if economic_uncertainty_check:
     with inpcol3.expander("US Economic Policy Uncertainty Index (US EPU)"):
         us_epu_db = Generate_Indicator()
@@ -679,6 +651,196 @@ if economic_uncertainty_check:
                 econ_stat_filters_applied_sentence+=f"US EPU RSI {usepu_rsi_comparator} {usepu_rsi_selection}"
             else:
                 econ_stat_filters_applied_sentence+=f", US EPU RSI {usepu_rsi_comparator} {usepu_rsi_selection}"
+            econ_stat_counter+=1
+
+# ECONONOMIC & STATISTICAL -> S&P 500 VOLATILITY INDEX
+if sp500_volatility_check:
+    with inpcol3.expander("S&P 500 Volatility Index"):
+        sp500vix=Generate_Equity()
+        sp500vix.get_database(["^VIX"], input_start_date, input_end_date, input_interval)
+        st.line_chart(sp500vix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
+
+        sp500vixcol1, sp500vixcol2 = st.columns(2)
+    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
+        sp500vix_level_on = sp500vixcol1.toggle("Price Level", key="sp500vix_p_toggle")
+        sp500vix_pct_on = sp500vixcol2.toggle("% Change", key="sp500vix_%_toggle")
+    # EQUITY MARKET -> VOLATILITY INDEX -> sp500VIX LEVEL
+        if sp500vix_level_on:
+            sp500vix_level_comparator = sp500vixcol1.selectbox("sp500 VIX Comparator",('Greater than', 'Less than'))
+            sp500vix_level_selection = sp500vixcol1.number_input("Select value", min_value=0.0, step=0.5)
+            
+            sp500vix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[sp500vix_level_selection],comparator=sp500vix_level_comparator)
+            filtered_db_list.append(sp500vix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"S&P 500 VIX level {sp500vix_level_comparator} {sp500vix_level_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", S&P 500 VIX level {sp500vix_level_comparator} {sp500vix_level_selection}"
+            econ_stat_counter+=1
+    #  EQUITY MARKET -> VOLATILITY INDEX -> VIX % CHANGE
+        if sp500vix_pct_on:
+            sp500vix_pct_lower = sp500vixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
+            sp500vix_pct_higher = sp500vixcol2.number_input("Between higher value", step=0.6, key="sp500vix between higher value")
+
+            sp500vix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[sp500vix_pct_lower, sp500vix_pct_higher], comparator="Between")
+            filtered_db_list.append(sp500vix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"S&P 500 VIX % change between {sp500vix_pct_lower}% and {sp500vix_pct_higher}%"
+            else:
+                econ_stat_filters_applied_sentence+=f", S&P 500 VIX % change between {sp500vix_pct_lower}% and {sp500vix_pct_higher}%"
+            econ_stat_counter+=1
+
+# ECONONOMIC & STATISTICAL -> Russell 2000 VOLATILITY INDEX
+if rus2k_volatility_check:
+    with inpcol3.expander("Russell 2000 Volatility Index"):
+        rus2kvix=Generate_Equity()
+        rus2kvix.get_database(["^RVX"], input_start_date, input_end_date, input_interval)
+        st.line_chart(rus2kvix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
+
+        rus2kvixcol1, rus2kvixcol2 = st.columns(2)
+    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
+        rus2kvix_level_on = rus2kvixcol1.toggle("Price Level", key="rus2kvix_p_toggle")
+        rus2kvix_pct_on = rus2kvixcol2.toggle("% Change", key="rus2kvix_%_toggle")
+    # EQUITY MARKET -> VOLATILITY INDEX -> sp500VIX LEVEL
+        if rus2kvix_level_on:
+            rus2kvix_level_comparator = rus2kvixcol1.selectbox("Russell 2000 VIX Comparator",('Greater than', 'Less than'))
+            rus2kvix_level_selection = rus2kvixcol1.number_input("Select value", min_value=0.0, step=0.5)
+            
+            rus2kvix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[rus2kvix_level_selection],comparator=rus2kvix_level_comparator)
+            filtered_db_list.append(rus2kvix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"Russell 2000 VIX level {rus2kvix_level_comparator} {rus2kvix_level_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", Russell 2000 VIX level {rus2kvix_level_comparator} {rus2kvix_level_selection}"
+            econ_stat_counter+=1
+    #  EQUITY MARKET -> VOLATILITY INDEX -> Russell 2000 VIX % CHANGE
+        if rus2kvix_pct_on:
+            rus2kvix_pct_lower = rus2kvixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
+            rus2kvix_pct_higher = rus2kvixcol2.number_input("Between higher value", step=0.6, key="rus2kvix between higher value")
+
+            rus2kvix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[rus2kvix_pct_lower, rus2kvix_pct_higher], comparator="Between")
+            filtered_db_list.append(rus2kvix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"Russell 2000 VIX % change between {rus2kvix_pct_lower}% and {rus2kvix_pct_higher}%"
+            else:
+                econ_stat_filters_applied_sentence+=f", Russell 2000 VIX % change between {rus2kvix_pct_lower}% and {rus2kvix_pct_higher}%"
+            econ_stat_counter+=1
+
+# ECONONOMIC & STATISTICAL -> Nasdaq 100 VOLATILITY INDEX
+if ndx100_volatility_check:
+    with inpcol3.expander("Nasdaq 100 Volatility Index"):
+        ndx100vix=Generate_Equity()
+        ndx100vix.get_database(["^VXN"], input_start_date, input_end_date, input_interval)
+        st.line_chart(ndx100vix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
+
+        ndx100vixcol1, ndx100vixcol2 = st.columns(2)
+    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
+        ndx100vix_level_on = ndx100vixcol1.toggle("Price Level", key="ndx100vix_p_toggle")
+        ndx100vix_pct_on = ndx100vixcol2.toggle("% Change", key="ndx100vix_%_toggle")
+    # EQUITY MARKET -> VOLATILITY INDEX -> sp500VIX LEVEL
+        if ndx100vix_level_on:
+            ndx100vix_level_comparator = ndx100vixcol1.selectbox("Nasdaq 100 VIX Comparator",('Greater than', 'Less than'))
+            ndx100vix_level_selection = ndx100vixcol1.number_input("Select value", min_value=0.0, step=0.5)
+            
+            ndx100vix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[ndx100vix_level_selection],comparator=ndx100vix_level_comparator)
+            filtered_db_list.append(ndx100vix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"Nasdaq 100 VIX level {ndx100vix_level_comparator} {ndx100vix_level_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", Nasdaq 100 VIX level {ndx100vix_level_comparator} {ndx100vix_level_selection}"
+            econ_stat_counter+=1
+    #  EQUITY MARKET -> VOLATILITY INDEX -> Nasdaq 100 VIX % CHANGE
+        if ndx100vix_pct_on:
+            ndx100vix_pct_lower = ndx100vixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
+            ndx100vix_pct_higher = ndx100vixcol2.number_input("Between higher value", step=0.6, key="ndx100vix between higher value")
+
+            ndx100vix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[ndx100vix_pct_lower, ndx100vix_pct_higher], comparator="Between")
+            filtered_db_list.append(ndx100vix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"Nasdaq 100 VIX % change between {ndx100vix_pct_lower}% and {ndx100vix_pct_higher}%"
+            else:
+                econ_stat_filters_applied_sentence+=f", Nasdaq 100 VIX % change between {ndx100vix_pct_lower}% and {ndx100vix_pct_higher}%"
+            econ_stat_counter+=1
+
+# ECONONOMIC & STATISTICAL -> China ETF VOLATILITY INDEX
+if chinaetf_volatility_check:
+    with inpcol3.expander("China ETF Volatility Index"):
+        chinaetfvix=Generate_Equity()
+        chinaetfvix.get_database(["^VXFXI"], input_start_date, input_end_date, input_interval)
+        st.line_chart(chinaetfvix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
+
+        chinaetfvixcol1, chinaetfvixcol2 = st.columns(2)
+    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
+        chinaetfvix_level_on = chinaetfvixcol1.toggle("Price Level", key="chinaetfvix_p_toggle")
+        chinaetfvix_pct_on = chinaetfvixcol2.toggle("% Change", key="chinaetfvix_%_toggle")
+    # EQUITY MARKET -> VOLATILITY INDEX -> sp500VIX LEVEL
+        if chinaetfvix_level_on:
+            chinaetfvix_level_comparator = chinaetfvixcol1.selectbox("chinaetfVIX Comparator",('Greater than', 'Less than'))
+            chinaetfvix_level_selection = chinaetfvixcol1.number_input("Select value", min_value=0.0, step=0.5)
+            
+            chinaetfvix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[chinaetfvix_level_selection],comparator=chinaetfvix_level_comparator)
+            filtered_db_list.append(chinaetfvix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"China ETF VIX level {chinaetfvix_level_comparator} {chinaetfvix_level_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", China ETF VIX level {chinaetfvix_level_comparator} {chinaetfvix_level_selection}"
+            econ_stat_counter+=1
+    #  EQUITY MARKET -> VOLATILITY INDEX -> China ETF VIX % CHANGE
+        if chinaetfvix_pct_on:
+            chinaetfvix_pct_lower = chinaetfvixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
+            chinaetfvix_pct_higher = chinaetfvixcol2.number_input("Between higher value", step=0.6, key="chinaetfvix between higher value")
+
+            chinaetfvix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[chinaetfvix_pct_lower, chinaetfvix_pct_higher], comparator="Between")
+            filtered_db_list.append(chinaetfvix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"China ETF VIX % change between {chinaetfvix_pct_lower}% and {chinaetfvix_pct_higher}%"
+            else:
+                econ_stat_filters_applied_sentence+=f", China ETF VIX % change between {chinaetfvix_pct_lower}% and {chinaetfvix_pct_higher}%"
+            econ_stat_counter+=1
+
+# ECONONOMIC & STATISTICAL -> Crude Oil VOLATILITY INDEX
+if crudeoil_volatility_check:
+    with inpcol3.expander("Crude Oil Volatility Index"):
+        crudeoilvix=Generate_Equity()
+        crudeoilvix.get_database(["^OVX"], input_start_date, input_end_date, input_interval)
+        st.line_chart(crudeoilvix.lf.select(["Date", "Close"]).collect(), x="Date", y="Close", height=200, use_container_width=True)
+
+        crudeoilvixcol1, crudeoilvixcol2 = st.columns(2)
+    # EQUITY MARKET -> VOLATIALITY INDEX -> VIX LEVEL / VIX %
+        crudeoilvix_level_on = crudeoilvixcol1.toggle("Price Level", key="crudeoilvix_p_toggle")
+        crudeoilvix_pct_on = crudeoilvixcol2.toggle("% Change", key="crudeoilvix_%_toggle")
+    # EQUITY MARKET -> VOLATILITY INDEX -> sp500VIX LEVEL
+        if crudeoilvix_level_on:
+            crudeoilvix_level_comparator = crudeoilvixcol1.selectbox("crudeoilVIX Comparator",('Greater than', 'Less than'))
+            crudeoilvix_level_selection = crudeoilvixcol1.number_input("Select value", min_value=0.0, step=0.5)
+            
+            crudeoilvix.metric_vs_selection_cross(comparison_type='current_price',selected_value=[crudeoilvix_level_selection],comparator=crudeoilvix_level_comparator)
+            filtered_db_list.append(crudeoilvix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"Crude Oil VIX level {crudeoilvix_level_comparator} {crudeoilvix_level_selection}"
+            else:
+                econ_stat_filters_applied_sentence+=f", Crude Oil VIX level {crudeoilvix_level_comparator} {crudeoilvix_level_selection}"
+            econ_stat_counter+=1
+    #  EQUITY MARKET -> VOLATILITY INDEX -> Crude Oil VIX % CHANGE
+        if crudeoilvix_pct_on:
+            crudeoilvix_pct_lower = crudeoilvixcol2.number_input("Between lower value", step=0.5, key="vix between lower value")
+            crudeoilvix_pct_higher = crudeoilvixcol2.number_input("Between higher value", step=0.6, key="crudeoilvix between higher value")
+
+            crudeoilvix.metric_vs_selection_cross(comparison_type="%_change",selected_value=[crudeoilvix_pct_lower, crudeoilvix_pct_higher], comparator="Between")
+            filtered_db_list.append(crudeoilvix.filtered_dates)
+            
+            if econ_stat_counter==0:
+                econ_stat_filters_applied_sentence+=f"Crude Oil VIX % change between {crudeoilvix_pct_lower}% and {crudeoilvix_pct_higher}%"
+            else:
+                econ_stat_filters_applied_sentence+=f", Crude Oil VIX % change between {crudeoilvix_pct_lower}% and {crudeoilvix_pct_higher}%"
             econ_stat_counter+=1
 
 # Economic/Stat -> SUMMARY    
