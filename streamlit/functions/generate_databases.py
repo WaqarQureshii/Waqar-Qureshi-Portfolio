@@ -24,8 +24,14 @@ class Generate_Equity:
             RSP = RSP\n
             Nasdaq = ^IXIC\n
             Russel 2000 = ^RUT\n
-            VIX = ^VIX\n
+            Hang Seng Index = ^HSI\n
             High Yield Corp Bond = HYG\n
+            China ETF VIX = ^VXFXI\n
+            Russell 2000 VIX = ^RVX\n
+            Nasdaq 100 = ^VXN\n
+            S&P 500 VIX = ^VIX\n
+            Crude Oil VIX = ^OVX\n
+
 
         interval (str): Provide a timeframe to run database on.
             1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo\n
@@ -264,12 +270,11 @@ class Generate_Debt(Generate_Equity):
             ((pl.col('Rate Spread').pct_change()*100).round(2)).alias('% Change')
         ))
 
-
 class Generate_Indicator(Generate_Equity):
     def __init__(self):
         self.indicators = {
             "Sahm Rule": "SAHMREALTIME",
-            "US Economic Policy Uncertainty Index": "USEPUINDXD"
+            "US Economic Policy Uncertainty Index": "USEPUINDXD",
         }
 
     def get_database(self, indicator:str, start_date:str, end_date:str, rsilength:int=22)->pl.LazyFrame:

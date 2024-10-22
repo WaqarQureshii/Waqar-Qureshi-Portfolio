@@ -47,6 +47,10 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
             rus2k = Generate_Equity()
             rus2k.get_database(["^RUT"], input_start_date, input_end_date, input_interval)
         
+        if 'hsi' not in globals():
+            hsi = Generate_Equity()
+            hsi.get_database(["HSI"], input_start_date, input_end_date, input_interval)
+        
 
         #-------S&P500 GRAPH------
         sp500_filtered_lf, sp500_return_stats = filter_indices(filtered_db_lists, sp500.lf, input_returninterval, return_days_list, grammatical_selection)
@@ -104,3 +108,24 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
         graph3.plotly_chart(fig, use_container_width=True)
 
         graph3.dataframe(rus2k_return_stats.collect(), hide_index=True)
+
+#     #---Han Seng Index DATABASE GENERATION---
+        col1.subheader("Han Seng Index (HSI)")
+        hsi_filtered_lf, hsi_return_stats = filter_indices(filtered_db_lists, hsi.lf, input_returninterval, return_days_list, grammatical_selection)
+
+        st.write(hsi_filtered_lf.collect())
+        # linefig = px.line(data_frame=hsi.lf.select(["Date", "Close"]).collect(),
+        #               x="Date",
+        #               y="Close")
+        # scatterfig = px.scatter(hsi_filtered_lf.select(["Date", "Close"]).collect(),
+        #               "Date",
+        #               "Close")
+        # fig = go.Figure(data=linefig.data+scatterfig.data)
+        # fig.update_traces(line=dict(width=1),
+        #                   marker=dict(size=7,
+        #                             color="red",
+        #                             opacity=1))
+
+        # graph1.plotly_chart(fig, use_container_width=True)
+
+        # graph1.dataframe(hsi_return_stats.collect(), hide_index=True)    
