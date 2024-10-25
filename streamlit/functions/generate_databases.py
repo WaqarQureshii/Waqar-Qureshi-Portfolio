@@ -326,11 +326,11 @@ def filter_indices(filtered_db_list: list[pl.LazyFrame], db: pl.LazyFrame, selec
     
     def filter_lf(db:pl.LazyFrame, common_dates_list:list) -> tuple[pl.LazyFrame,pl.LazyFrame]:
         lf = db.with_columns(
-                ((((pl.col('Close').shift(-selected_returninterval) / pl.col('Close')) - 1)*100).alias(f"% Return {selected_returninterval} {grammatical_selection}"))
+                ((((pl.col('Close').shift(-selected_returninterval) / pl.col('Close')) - 1)*100).alias("Return Stats"))
         )
 
         filtered_lf = lf.filter(
-            pl.col("Date").is_in(common_dates_list)).select(["Date", "Close"])
+            pl.col("Date").is_in(common_dates_list)).select(["Date", "Close", "Return Stats"])
 
         return filtered_lf
     

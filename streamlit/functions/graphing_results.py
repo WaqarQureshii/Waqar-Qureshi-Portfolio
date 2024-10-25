@@ -1,6 +1,9 @@
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+import plotly.figure_factory as ff
+import polars as pl
+import numpy as np
 
 from functions.generate_databases import Generate_Equity, filter_indices
 
@@ -71,6 +74,8 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
 
         graph1.dataframe(sp500_return_stats.collect(), hide_index=True)
 
+
+
     #     #---NASDAQ DATABASE GENERATION---
         ndx_filtered_lf, ndx_return_stats = filter_indices(filtered_db_lists, ndx.lf, input_returninterval, return_days_list, grammatical_selection)
 
@@ -109,7 +114,20 @@ def apply_filters(input_start_date:str, input_end_date:str, input_interval:int, 
 
         graph3.dataframe(rus2k_return_stats.collect(), hide_index=True)
 
-#         rowcol1, rowcol2, rowcol3 = st.columns(3)
+
+
+        #------HISTOGRAMS
+        sp500_array = sp500_filtered_lf.select("Return Stats").drop_nulls().collect().to_series().to_list()
+        ndx_array = ndx_filtered_lf.select("Return Stats").drop_nulls().collect().to_series().to_list()
+        rus2k_array = rus2k_filtered_lf.select("Return Stats").drop_nulls().collect().to_series().to_list()
+
+        histogram_data = [sp500_array, ndx_array, rus2k_array]
+        group_labels=["SP500", 'Nasdaq', 'Russell 2000']
+
+        hist_fig = ff.create_distplot(histogram_data, group_labels, curve_type="normal")
+
+        st.plotly_chart(hist_fig)
+        
 # #     #---Han Seng Index DATABASE GENERATION---
 #         rowcol1.subheader("Han Seng Index (HSI)")
 #         hsi_filtered_lf, hsi_return_stats = filter_indices(filtered_db_lists, hsi.lf, input_returninterval, return_days_list, grammatical_selection)
