@@ -1,12 +1,9 @@
-/venv_macos/
-/venv*
 .DS_Store
 */__pycache__/*
-stock_market_assessment.code-workspace
 streamlit/functions/scratch_paper.py
-streamlit/.env
 streamlit/functions/scratch_paper.py
-*.streamlit/secrets.toml
 streamlit/functions/.streamlit/secrets.toml
 streamlit/.streamlit/secrets.toml
 /.venv
+.qodo
+*.streamlit
