@@ -1,224 +1,520 @@
 """
-Canadian Economic Data Platform - Home Page
-
-Main entry point for the Streamlit application.
+Portfolio Webapp - Homepage
+Author: Waqar Qureshi
 """
-
 import streamlit as st
-from config import get_all_categories, DATASETS
-from functions import get_data_manager, test_firebase_connection
+import polars as pl
 
-# =============================================================================
-# PAGE CONFIGURATION
-# =============================================================================
+# Auth imports
+from src.auth.google_auth import initialize_auth_state
+from src.auth.permissions import is_admin
+from src.components.auth_ui import render_auth_sidebar, render_user_list_table
 
+# Page configuration
 st.set_page_config(
-    page_title="Canadian Economic Data Platform",
-    page_icon="🍁",
+    page_title="Portfolio | Home",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# =============================================================================
-# SIDEBAR
-# =============================================================================
+# Initialize authentication state
+initialize_auth_state()
 
-with st.sidebar:
-    st.image("https://www.canada.ca/etc/designs/canada/wet-boew/assets/sig-blk-en.svg", width=200)
-    st.title("🍁 Canadian Data Platform")
-    
-    st.markdown("---")
-    
-    st.subheader("📊 Available Categories")
-    categories = get_all_categories()
-    for category in categories:
-        datasets_in_category = [d for d in DATASETS.values() if d.category == category]
-        st.markdown(f"**{category}** ({len(datasets_in_category)} datasets)")
-    
-    st.markdown("---")
-    
-    # Cache status in sidebar
-    try:
-        manager = get_data_manager()
-        cache_status = manager.get_cache_status()
-        
-        st.subheader("💾 Cache Status")
-        st.metric("Tables Cached", cache_status["total_tables"])
-        st.metric("Total Rows", f"{cache_status['total_rows']:,}")
-        st.metric("Storage Size", f"{cache_status['total_size_mb']} MB")
-        
-        if cache_status["updates_available"] > 0:
-            st.warning(f"⚠️ {cache_status['updates_available']} updates available")
-        else:
-            st.success("✅ All data current")
-            
-    except Exception as e:
-        st.error(f"Could not load cache status: {str(e)}")
-    
-    st.markdown("---")
-    st.caption("Data source: Statistics Canada")
-    st.caption("Built with Streamlit + Polars + Firebase")
-
-# =============================================================================
-# MAIN CONTENT
-# =============================================================================
-
-st.title("🍁 Canadian Economic Data Platform")
-st.markdown("### Interactive Exploration of Canadian Economic Indicators")
+# Main content
+st.title("Welcome to My Portfolio!")
 
 st.markdown("""
-Welcome to the Canadian Economic Data Platform! This application provides 
-interactive visualizations and analysis of key Canadian economic indicators 
-from Statistics Canada.
+## 👋 About This Project
 
-**Features:**
-- 📈 Real-time data from Statistics Canada's API
-- 💾 Intelligent caching system for fast performance
-- 🔄 Automatic update detection
-- 🗺️ Geographic breakdowns (provinces, territories)
-- 📊 Interactive charts and data exploration
-- 📥 Data export capabilities
+This is a **placeholder homepage** for you to customize with:
+- Information about yourself
+- Your background and experience
+- What this portfolio project is intended to demonstrate
+- Navigation guide for visitors
+
+---
+
+## 📑 Available Pages
+
+Navigate using the sidebar to explore:
+
+1. **Quantitative & Qualitative Analysis**
+   - Economic data from FRED (US Federal Reserve)
+   - Canadian statistics from Stats Canada
+   - Equity data from yfinance
+   - Interactive charts and visualizations
+
+2. **Equity Value Playroom**
+   - Strategy Backtester (coming soon)
+   - Equity Simulator (coming soon)
+   - Returns Explorer (coming soon)
+   - Technical Sandbox (coming soon)
+
+---
+
+## 🚧 Development Status
+
+**Phase 0: Project Setup** ✅ Complete
+- Clean project structure established
+- Firebase and API credentials configured
+- Ready for feature development
+
+**Phase 1: Firebase Caching Foundation** 🔨 In Progress
+- Configuration module created
+- Multi-source Firebase service implemented
+- Smart cache manager with get-or-fetch logic
+- Testing infrastructure below
+
+---
+
+*Feel free to customize this homepage with your own content, styling, and layout!*
 """)
 
-st.markdown("---")
-
 # =============================================================================
-# DATASET OVERVIEW
+# PHASE 1 TESTING SECTION
 # =============================================================================
 
-st.header("📚 Available Datasets")
+with st.expander("🧪 Phase 1: Firebase & Cache Testing", expanded=False):
+    st.markdown("### Configuration & Connection Tests")
 
-col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-with col1:
-    st.subheader("🏦 Economy")
-    economy_datasets = [d for d in DATASETS.values() if d.category == "Economy"]
-    for dataset in economy_datasets:
-        with st.expander(f"📊 {dataset.name}"):
-            st.markdown(f"**{dataset.description}**")
-            st.caption(f"Tables: {len(dataset.tables)}")
-            for table in dataset.tables:
-                st.markdown(f"- {table.description} ({table.frequency})")
-    
-    st.subheader("🏠 Housing")
-    housing_datasets = [d for d in DATASETS.values() if d.category == "Housing"]
-    for dataset in housing_datasets:
-        with st.expander(f"🏠 {dataset.name}"):
-            st.markdown(f"**{dataset.description}**")
-            st.caption(f"Tables: {len(dataset.tables)}")
-            for table in dataset.tables:
-                st.markdown(f"- {table.description} ({table.frequency})")
-    
-    st.subheader("👥 Demographics")
-    demographics_datasets = [d for d in DATASETS.values() if d.category == "Demographics"]
-    for dataset in demographics_datasets:
-        with st.expander(f"👥 {dataset.name}"):
-            st.markdown(f"**{dataset.description}**")
-            st.caption(f"Tables: {len(dataset.tables)}")
-            for table in dataset.tables:
-                st.markdown(f"- {table.description} ({table.frequency})")
+    with col1:
+        if st.button("Test Configuration Loading"):
+            with st.spinner("Testing configuration..."):
+                try:
+                    from src.config.settings import verify_all_configs
 
-with col2:
-    st.subheader("👷 Labour Market")
-    labour_datasets = [d for d in DATASETS.values() if d.category == "Labour Market"]
-    for dataset in labour_datasets:
-        with st.expander(f"👷 {dataset.name}"):
-            st.markdown(f"**{dataset.description}**")
-            st.caption(f"Tables: {len(dataset.tables)}")
-            for table in dataset.tables:
-                st.markdown(f"- {table.description} ({table.frequency})")
-    
-    st.subheader("🚢 Trade")
-    trade_datasets = [d for d in DATASETS.values() if d.category == "Trade"]
-    for dataset in trade_datasets:
-        with st.expander(f"🚢 {dataset.name}"):
-            st.markdown(f"**{dataset.description}**")
-            st.caption(f"Tables: {len(dataset.tables)}")
-            for table in dataset.tables:
-                st.markdown(f"- {table.description} ({table.frequency})")
-    
-    st.subheader("🏢 Business")
-    business_datasets = [d for d in DATASETS.values() if d.category == "Business"]
-    for dataset in business_datasets:
-        with st.expander(f"🏢 {dataset.name}"):
-            st.markdown(f"**{dataset.description}**")
-            st.caption(f"Tables: {len(dataset.tables)}")
-            for table in dataset.tables:
-                st.markdown(f"- {table.description} ({table.frequency})")
+                    config_status = verify_all_configs()
 
-st.markdown("---")
+                    st.write("**Configuration Status:**")
+                    for section, status in config_status.items():
+                        if status:
+                            st.success(f"✓ {section.title()} configuration loaded")
+                        else:
+                            st.error(f"✗ {section.title()} configuration missing")
+
+                    if all(config_status.values()):
+                        st.success("✅ All configurations valid!")
+                    else:
+                        st.warning("⚠ Some configurations are missing")
+
+                except Exception as e:
+                    st.error(f"Configuration test failed: {str(e)}")
+
+    with col2:
+        if st.button("Test Firebase Connection"):
+            with st.spinner("Testing Firebase connection..."):
+                try:
+                    from src.services.firebase_service import test_firebase_connection
+
+                    results = test_firebase_connection()
+
+                    st.write("**Connection Test Results:**")
+                    if results["credentials"]:
+                        st.success("✓ Credentials valid")
+                    else:
+                        st.error("✗ Credentials invalid")
+
+                    if results["firestore"]:
+                        st.success("✓ Firestore connected")
+                    else:
+                        st.error("✗ Firestore connection failed")
+
+                    if results["storage"]:
+                        st.success("✓ Cloud Storage connected")
+                    else:
+                        st.error("✗ Cloud Storage connection failed")
+
+                    if all(results.values()):
+                        st.success("✅ All connections successful!")
+                    else:
+                        st.error("✗ Some connections failed")
+
+                except Exception as e:
+                    st.error(f"Connection test failed: {str(e)}")
+
+    st.markdown("---")
+    st.markdown("### Data Storage & Retrieval Tests")
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+        if st.button("Test Data Save/Load"):
+            with st.spinner("Testing data operations..."):
+                try:
+                    import polars as pl
+                    from src.services.firebase_service import FirebaseService
+
+                    # Create test data
+                    test_data = pl.DataFrame({
+                        "date": ["2024-01-01", "2024-01-02", "2024-01-03"],
+                        "value": [100.0, 101.5, 99.8]
+                    })
+
+                    firebase = FirebaseService()
+
+                    # Test save
+                    test_metadata = {
+                        "test": True,
+                        "description": "Test dataset"
+                    }
+
+                    result = firebase.save_data_complete(
+                        source="fred",
+                        source_id="_test_series",
+                        data=test_data,
+                        metadata=test_metadata
+                    )
+
+                    if result["status"] == "success":
+                        st.success(f"✓ Data saved: {result['row_count']} rows")
+                        st.code(f"Storage path: {result['storage_path']}")
+
+                        # Test load
+                        loaded_data = firebase.load_data_complete("fred", "_test_series")
+
+                        if loaded_data is not None:
+                            st.success(f"✓ Data loaded: {len(loaded_data)} rows")
+                            st.dataframe(loaded_data, use_container_width=True)
+
+                            # Cleanup
+                            firebase.delete_metadata("fred", "_test_series")
+                            firebase.delete_data_from_storage(result['storage_path'])
+                            st.info("🗑 Test data cleaned up")
+                        else:
+                            st.error("✗ Failed to load data")
+                    else:
+                        st.error(f"✗ Failed to save: {result.get('error')}")
+
+                except Exception as e:
+                    st.error(f"Data operation test failed: {str(e)}")
+
+    with col4:
+        if st.button("Test Cache Manager"):
+            with st.spinner("Testing cache manager..."):
+                try:
+                    import polars as pl
+                    from src.data.cache_manager import CacheManager
+
+                    cache = CacheManager()
+
+                    # Define fetch function
+                    def fetch_test_data():
+                        return pl.DataFrame({
+                            "date": ["2024-01-01", "2024-01-02"],
+                            "value": [42.0, 43.5]
+                        })
+
+                    # Define metadata function
+                    def get_test_metadata():
+                        return {"units": "Test Units", "description": "Cache test"}
+
+                    # First call should fetch
+                    st.info("First call (should fetch)...")
+                    data1 = cache.get_or_fetch(
+                        source="fred",
+                        source_id="_cache_test",
+                        fetch_fn=fetch_test_data,
+                        frequency="daily",
+                        metadata_fn=get_test_metadata,
+                        force_refresh=True
+                    )
+                    st.success(f"✓ Fetched {len(data1)} rows")
+
+                    # Second call should use cache
+                    st.info("Second call (should use cache)...")
+                    data2 = cache.get_or_fetch(
+                        source="fred",
+                        source_id="_cache_test",
+                        fetch_fn=fetch_test_data,
+                        frequency="daily",
+                        metadata_fn=get_test_metadata
+                    )
+                    st.success(f"✓ Retrieved {len(data2)} rows from cache")
+
+                    # Show cache info
+                    cache_info = cache.get_cache_info("fred", "_cache_test")
+                    if cache_info:
+                        st.write("**Cache Info:**")
+                        st.json(cache_info)
+
+                    # Cleanup
+                    cache.invalidate("fred", "_cache_test")
+                    st.info("🗑 Test cache cleaned up")
+
+                except Exception as e:
+                    st.error(f"Cache manager test failed: {str(e)}")
+
+    st.markdown("---")
+    st.markdown("### Cache Statistics")
+
+    if st.button("Show Cache Statistics"):
+        with st.spinner("Loading cache statistics..."):
+            try:
+                from src.data.cache_manager import CacheManager
+
+                cache = CacheManager()
+                stats = cache.get_stats()
+
+                st.write("**Overall Cache Statistics:**")
+
+                col_stats1, col_stats2, col_stats3, col_stats4 = st.columns(4)
+                with col_stats1:
+                    st.metric("Total Datasets", stats.get("total_datasets", 0))
+                with col_stats2:
+                    st.metric("Total Rows", f"{stats.get('total_rows', 0):,}")
+                with col_stats3:
+                    st.metric("Total Files", stats.get("total_files", 0))
+                with col_stats4:
+                    st.metric("Storage Size", f"{stats.get('total_size_mb', 0):.2f} MB")
+
+                # Show per-source breakdown if available
+                if "by_source" in stats:
+                    st.write("**By Data Source:**")
+                    source_df = pl.DataFrame([
+                        {
+                            "Source": source.upper(),
+                            "Datasets": data["datasets"],
+                            "Rows": f"{data['rows']:,}"
+                        }
+                        for source, data in stats["by_source"].items()
+                    ])
+                    st.dataframe(source_df, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Failed to load cache statistics: {str(e)}")
 
 # =============================================================================
-# SYSTEM STATUS
+# PHASE 3 TESTING SECTION
 # =============================================================================
 
-st.header("🔧 System Status")
+with st.expander("🧪 Phase 3: FRED API Integration Testing", expanded=False):
+    st.markdown("### FRED API & Cache Integration Tests")
 
-col1, col2 = st.columns(2)
+    st.info("""
+    **Test Objectives:**
+    - Verify FRED API connectivity and data fetching
+    - Demonstrate intelligent caching with freshness detection
+    - Show timing improvements from caching
+    - Test error handling and fallback mechanisms
+    """)
 
-with col1:
-    st.subheader("Firebase Connection")
-    
-    if st.button("🧪 Test Connection"):
-        with st.spinner("Testing Firebase connection..."):
-            results = test_firebase_connection()
-            
-            if results["credentials"]:
-                st.success("✅ Credentials valid")
-            else:
-                st.error("❌ Credentials invalid")
-            
-            if results["firestore"]:
-                st.success("✅ Firestore connected")
-            else:
-                st.error("❌ Firestore connection failed")
-            
-            if results["storage"]:
-                st.success("✅ Cloud Storage connected")
-            else:
-                st.error("❌ Cloud Storage connection failed")
+    # Test 1: Single Series Fetch
+    st.markdown("#### Test 1: Single Series Fetch (DGS10)")
+    col1, col2 = st.columns(2)
 
-with col2:
-    st.subheader("Data Updates")
-    
-    try:
-        manager = get_data_manager()
-        
-        if st.button("🔍 Check for Updates"):
-            with st.spinner("Checking for updates..."):
-                updates = manager.check_updates_available()
-                
-                if len(updates) > 0:
-                    st.warning(f"⚠️ {len(updates)} table(s) have updates available")
-                    for update in updates[:5]:  # Show first 5
-                        st.caption(f"- {update['product_id']}: {update['reason']}")
+    with col1:
+        if st.button("Fetch DGS10 (Fresh)", key="fetch_dgs10_fresh"):
+            with st.spinner("Fetching 10-Year Treasury data..."):
+                try:
+                    import time
+                    from src.services.fred_api import FredService
+                    from src.data.cache_manager import CacheManager
+
+                    fred = FredService()
+                    cache = CacheManager()
+
+                    # Time the fetch
+                    start_time = time.time()
+
+                    data = cache.get_or_fetch(
+                        source="fred",
+                        source_id="DGS10",
+                        fetch_fn=lambda: fred.get_series("DGS10"),
+                        frequency="daily",
+                        metadata_fn=lambda: fred.get_series_metadata("DGS10"),
+                        force_refresh=True
+                    )
+
+                    elapsed = time.time() - start_time
+
+                    st.success(f"[OK] Fetched {len(data):,} rows in {elapsed:.2f}s")
+                    st.dataframe(data.tail(10))
+
+                    # Show metadata
+                    cache_info = cache.get_cache_info("fred", "DGS10")
+                    if cache_info:
+                        st.json(cache_info)
+
+                except Exception as e:
+                    st.error(f"Fetch failed: {str(e)}")
+
+    with col2:
+        if st.button("Load DGS10 (Cached)", key="fetch_dgs10_cached"):
+            with st.spinner("Loading from cache..."):
+                try:
+                    import time
+                    from src.services.fred_api import FredService
+                    from src.data.cache_manager import CacheManager
+
+                    fred = FredService()
+                    cache = CacheManager()
+
+                    start_time = time.time()
+
+                    data = cache.get_or_fetch(
+                        source="fred",
+                        source_id="DGS10",
+                        fetch_fn=lambda: fred.get_series("DGS10"),
+                        frequency="daily",
+                        metadata_fn=lambda: fred.get_series_metadata("DGS10")
+                    )
+
+                    elapsed = time.time() - start_time
+
+                    st.success(f"[OK] Loaded {len(data):,} rows in {elapsed:.2f}s (from cache)")
+                    if elapsed < 3.0:
+                        st.info(f"**Cache active** - Loading from Firebase Cloud Storage")
+                    else:
+                        st.warning("Slower than expected - check network connection")
+
+                    cache_info = cache.get_cache_info("fred", "DGS10")
+                    if cache_info:
+                        is_fresh = cache_info.get("is_fresh", False)
+                        age = cache_info.get("age_hours", 0)
+                        st.write(f"Cache status: {'[OK] Fresh' if is_fresh else '[WARN] Stale'}")
+                        st.write(f"Cache age: {age:.1f} hours")
+
+                except Exception as e:
+                    st.error(f"Load failed: {str(e)}")
+
+    st.markdown("---")
+
+    # Test 2: Multi-Series Fetch
+    st.markdown("#### Test 2: Treasury Yield Curve")
+
+    if st.button("Fetch Yield Curve (2Y, 5Y, 10Y, 30Y)", key="fetch_yield_curve"):
+        with st.spinner("Fetching treasury yields..."):
+            try:
+                from src.services.fred_api import FredService
+                from src.data.cache_manager import CacheManager
+                from src.data.fred_datasets import get_category
+                import plotly.graph_objects as go
+
+                fred = FredService()
+                cache = CacheManager()
+
+                # Get interest rates category
+                ir_category = get_category("interest_rates")
+                if not ir_category:
+                    st.error("Interest rates category not found")
                 else:
-                    st.success("✅ All cached data is current!")
-    except Exception as e:
-        st.error(f"Error checking updates: {str(e)}")
+                    series_ids = ir_category.get_series_ids()
 
-st.markdown("---")
+                    st.info(f"Fetching {len(series_ids)} series: {', '.join(series_ids)}")
 
-# =============================================================================
-# GETTING STARTED
-# =============================================================================
+                    # Fetch each series through cache
+                    all_data = {}
+                    for series_id in series_ids:
+                        data = cache.get_or_fetch(
+                            source="fred",
+                            source_id=series_id,
+                            fetch_fn=lambda sid=series_id: fred.get_series(sid),
+                            frequency="daily",
+                            metadata_fn=lambda sid=series_id: fred.get_series_metadata(sid)
+                        )
+                        all_data[series_id] = data
 
-st.header("🚀 Getting Started")
+                    st.success(f"[OK] Fetched {len(all_data)} series")
 
-st.markdown("""
-1. **Explore the Data**: Use the sidebar to navigate to different visualization pages
-2. **Interactive Parameters**: Each page allows you to filter by geography, date range, and other dimensions
-3. **Download Data**: Export filtered data as CSV for your own analysis
-4. **Automatic Updates**: Data is checked and updated automatically based on Statistics Canada releases
+                    # Plot yield curve
+                    fig = go.Figure()
 
-**Navigation:**
-- 📊 **Economy Visualization**: GDP, CPI, Interest Rates
-- 👷 **Labour Market**: Employment, unemployment, wages
-- 🏠 **Housing**: Housing starts, prices, construction
-- And more!
+                    for series_id, data in all_data.items():
+                        # Get last 90 days
+                        recent_data = data.tail(90)
+                        fig.add_trace(go.Scatter(
+                            x=recent_data["date"],
+                            y=recent_data["value"],
+                            name=series_id,
+                            mode="lines"
+                        ))
 
-Select a page from the sidebar to begin exploring →
-""")
+                    fig.update_layout(
+                        title="US Treasury Yields (Last 90 Days)",
+                        xaxis_title="Date",
+                        yaxis_title="Yield (%)",
+                        hovermode="x unified",
+                        height=500
+                    )
 
-st.markdown("---")
-st.caption("Data provided by Statistics Canada | Last updated: Statistics Canada releases data daily at 8:30 AM EST")
+                    st.plotly_chart(fig, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Multi-series fetch failed: {str(e)}")
+
+    st.markdown("---")
+
+    # Test 3: Cache Statistics
+    st.markdown("#### Test 3: FRED Cache Statistics")
+
+    if st.button("Show FRED Cache Stats", key="fred_cache_stats"):
+        try:
+            from src.data.cache_manager import CacheManager
+            import polars as pl
+
+            cache = CacheManager()
+
+            # Get all FRED cache info
+            fred_cache_list = cache.get_all_cache_info(source="fred")
+
+            if fred_cache_list:
+                st.success(f"Found {len(fred_cache_list)} cached FRED series")
+
+                # Convert to DataFrame for display
+                cache_df = pl.DataFrame([
+                    {
+                        "Series ID": info["source_id"],
+                        "Rows": info["row_count"],
+                        "Age (hours)": round(info["age_hours"], 1),
+                        "Status": "[OK] Fresh" if info["is_fresh"] else "[WARN] Stale",
+                        "Frequency": info["frequency"]
+                    }
+                    for info in fred_cache_list
+                ])
+
+                st.dataframe(cache_df)
+
+                # Overall stats
+                stats = cache.get_stats(source="fred")
+                col_stat1, col_stat2, col_stat3 = st.columns(3)
+                with col_stat1:
+                    st.metric("Total Series", stats.get("total_datasets", 0))
+                with col_stat2:
+                    st.metric("Total Rows", f"{stats.get('total_rows', 0):,}")
+                with col_stat3:
+                    st.metric("Storage Size", f"{stats.get('total_size_mb', 0):.2f} MB")
+            else:
+                st.info("No FRED data cached yet. Run tests above to populate cache.")
+
+        except Exception as e:
+            st.error(f"Failed to load cache stats: {str(e)}")
+
+# Admin Dashboard Section
+if st.user.is_logged_in and is_admin():
+    st.markdown("---")
+    st.header("👑 Admin Dashboard")
+
+    with st.expander("👥 Registered Users", expanded=False):
+        st.markdown("View all users who have logged into the app.")
+
+        if st.button("🔄 Refresh User List"):
+            st.rerun()
+
+        render_user_list_table()
+
+# Sidebar
+with st.sidebar:
+    # Auth section at top
+    render_auth_sidebar()
+
+    st.markdown("---")
+
+    # Navigation
+    st.header("Navigation")
+    st.info("Use the pages menu above to navigate")
+
+    st.markdown("---")
+    st.caption("Built with Streamlit 🎈")

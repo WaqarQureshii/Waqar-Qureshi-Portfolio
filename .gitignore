@@ -4,6 +4,13 @@ streamlit/functions/scratch_paper.py
 streamlit/functions/scratch_paper.py
 streamlit/functions/.streamlit/secrets.toml
 streamlit/.streamlit/secrets.toml
+.streamlit/secrets.toml
 /.venv
 .qodo
 *.streamlit
+/archive
+CLAUDE.md
+/.claude
+/*__pycache__
+*.pyc
+TASKS.md

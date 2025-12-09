@@ -1,23 +1,159 @@
-# Project Context
-When working with this codebase, prioritize readability over cleverness. Ask clarifying questions before making architectural changes.
+# CLAUDE.md
 
-## About This Project
-- Building a data science webapp on Streamlit to showcase my quantitative and qualitative research.
-- Preference to use Polars to handle database transformations.
-- Use firebase and firestore together to store databases retrieved from API calls.
-- Intelligently store databases and call APIs to update the database if an update exists.
-- Databases to be used:
-    - yfinance python package to get equity information
-    - FRED API to get economic and debt data like yields, inflation, GDP, housing figures, household debt
-    - statscan API to get Canadian economic data such as GDP, inflation by province
-- I want there to be one homepage with an intro at a minimum, and any new pages to be under streamlit/pages with proper number formatting in the title.
-- Include Streamlit's login feature with Google login.
-    - if waqar.qureshi.uoft@gmail.com is logged in, they have special access to manage the databases and update manually as necessary.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Standards
-- Type hints required on all functions to make readability
-- Data and graphs in the streamlit webapp to be interactable
+## Project Overview
 
-## Common Commands
-'''.venv/Scripts/Activate.ps1 ''' #activate virtual environment
-'''streamlit run Home.py''' # run streamlit webapp locally on web browser from root folder.
+This is a Streamlit-based portfolio webapp showcasing quantitative and qualitative financial research. The app integrates multiple data sources (FRED, Stats Canada, yfinance) with Firebase/Firestore for intelligent caching and features interactive equity analysis tools.
+
+**Core Philosophy:** Prioritize readability over cleverness. Ask clarifying questions before making architectural changes.
+
+## Development Commands
+
+```bash
+# Activate virtual environment (Windows)
+.venv/Scripts/activate
+
+# Run Streamlit webapp locally (from project root)
+streamlit run Home.py
+
+# Add packages (use uv package manager)
+uv add <package-name>
+```
+
+## Project Architecture
+
+### Multi-Tier Data Architecture
+
+The app uses a separation of concerns pattern where data storage is split across Firebase services:
+
+- **Firestore**: Stores lightweight metadata only (release dates, schemas, row counts, update timestamps)
+- **Cloud Storage**: Stores actual data files in Parquet format (respects Firestore's 1MB document limit)
+
+This dual-storage pattern must be maintained when extending to new data sources (FRED, yfinance, etc.).
+
+### Configuration and Secrets Management
+
+**Critical:** ALL credentials and API keys MUST be loaded from `.streamlit/secrets.toml` via `st.secrets`. Never hardcode credentials.
+
+```python
+# ✅ CORRECT
+import streamlit as st
+api_key = st.secrets["fred"]["api_key"]
+
+# ❌ WRONG - Never hardcode
+api_key = "abc123xyz"
+```
+
+Expected secrets structure:
+- `[fred]` - FRED API configuration
+- `[gcp_service_account]` - Firebase/GCP service account JSON
+- `[firebase]` - Storage bucket configuration
+- `[google_oauth]` - Google OAuth credentials (Phase 2+)
+- `[app]` - Application config (admin_email: waqar.qureshi.uoft@gmail.com)
+
+Configuration loading should be centralized in `src/config/settings.py` with functions like `get_firebase_config()`, `get_fred_config()`, etc.
+
+### Storage Path Convention
+
+Data files follow this pattern: `{data_source}/{identifier}/{date}.parquet`
+
+Examples:
+- `fred/DGS10/2024-12-01.parquet`
+- `statscan/36100434/2024-11-15.parquet`
+- `yfinance/AAPL/2024-12-08.parquet`
+
+### Smart Caching Strategy
+
+The cache manager (`src/data/cache_manager.py`) implements get-or-fetch logic:
+1. Check Firestore metadata for existing data and last update timestamp
+2. If cached and recent, retrieve from Cloud Storage
+3. If stale or missing, fetch from API, save to Cloud Storage, update Firestore metadata
+4. Return Polars DataFrame
+
+This pattern should be followed for all data sources.
+
+### Authentication & Authorization
+
+- Google OAuth for user authentication (Phase 2+)
+- Admin access: Only `waqar.qureshi.uoft@gmail.com` gets database management controls
+- Admin detection via `src/auth/permissions.py` using `is_admin()` function
+- Session state managed through `src/auth/google_auth.py`
+
+## Code Standards
+
+- **Type hints required** on all function signatures for readability
+- **Polars preferred** for DataFrame operations (over pandas)
+- **Interactive visualizations** using Plotly for all charts
+- Functions should follow single responsibility principle
+
+## Project Structure
+
+```
+portfolio/
+  archive/v1/                 # Previous implementation (reference only)
+  Home.py                     # Entry point
+  pages/                      # Streamlit pages
+    1_Analysis.py             # FRED/Stats Canada/yfinance visualizations
+    2_Equity_Playroom.py      # 4 interactive equity tools (tabs)
+  src/
+    config/                   # settings.py (secrets loader), constants.py
+    services/                 # API clients: firebase_service, fred_api, statscan_api, yfinance_service
+    auth/                     # google_auth.py, permissions.py
+    data/                     # cache_manager.py, *_datasets.py (configs)
+    components/               # Reusable UI: charts.py, sidebar.py, auth_ui.py, admin.py
+    tools/                    # Equity Playroom tools (each is a package with ui.py)
+      strategy_backtester/
+      equity_simulator/
+      returns_explorer/
+      technical_sandbox/
+```
+
+### Archive Pattern
+
+The `archive/v1/` directory contains the previous implementation. Key files to reference when building new features:
+- `functions/firebase_service.py` - Core caching logic and dual-storage pattern
+- `functions/statscan_api.py` - API client pattern to follow
+- `config/datasets.py` - Dataset configuration pattern using dataclasses
+
+Do not modify archived code; extract patterns and refactor into new `src/` structure.
+
+## Phased Implementation Plan
+The project follows a comprehensive 10-phase plan.
+
+Primary Source of Truth: All current task details, status ([ ] or [x]), and next steps are exclusively managed in the TASKS.md file in the project root.
+
+Claude's Instruction: When starting a new session or completing a task, you must READ TASKS.md to determine the current phase, identify the next unchecked item, and when a task is finished, you must UPDATE TASKS.md to mark the item as complete.
+
+Current Status: Phase 0 is in progress.
+
+## Data Source Specifics
+
+### FRED (Federal Reserve Economic Data)
+- Series examples: DGS10 (10Y Treasury), DGS2 (2Y Treasury), CPIAUCSL (CPI), GDPC1 (GDP), HOUST (Housing Starts)
+- Use `fredapi` package
+- API key from `st.secrets["fred"]["api_key"]`
+
+### Stats Canada
+- Uses Product IDs (PIDs) like "36100434"
+- Existing implementation pattern in `archive/v1/functions/statscan_api.py`
+- Returns data with geographic/industry breakdowns
+
+### yfinance
+- Equity market data for ticker symbols
+- Historical price data, company info
+- Cache by ticker symbol and date range
+
+## Firebase Project Details
+
+- Project ID: `portfolio-64bae`
+- Storage bucket: `portfolio-64bae.appspot.com`
+- Firestore in Native mode
+- Service account credentials required in secrets.toml
+
+## Git Workflow
+
+Currently on branch: `0.001.300-claude-assist`
+Main branch for PRs: `main`
+
+Recent changes indicate project restructuring in progress - old components moved to `archive/`, new structure in `src/` and `pages/`.
