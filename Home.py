@@ -492,6 +492,287 @@ with st.expander("🧪 Phase 3: FRED API Integration Testing", expanded=False):
         except Exception as e:
             st.error(f"Failed to load cache stats: {str(e)}")
 
+
+# =============================================================================
+# PHASE 4 TESTING SECTION
+# =============================================================================
+
+with st.expander("🧪 Phase 4: Stats Canada & yfinance Integration Testing", expanded=False):
+    st.markdown("### Stats Canada & yfinance API Integration Tests")
+
+    st.info("""
+    **Test Objectives:**
+    - Verify yfinance integration with cache manager
+    - Test Stats Canada table fetching and data transformation
+    - Demonstrate multi-ticker comparison with visualizations
+    - Confirm unified cache statistics across all three sources
+    """)
+
+    # Test 1: yfinance Stock History
+    st.markdown("#### Test 1: yfinance Stock History (AAPL)")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if st.button("Fetch AAPL (Fresh)", key="fetch_aapl_fresh"):
+            with st.spinner("Fetching Apple stock data..."):
+                try:
+                    import time
+                    from src.services.yfinance_service import YFinanceService
+                    from src.data.cache_manager import CacheManager
+
+                    yf_service = YFinanceService()
+                    cache = CacheManager()
+
+                    # Time the fetch
+                    start_time = time.time()
+
+                    def fetch_aapl():
+                        return yf_service.get_ticker_history("AAPL", period="1y", interval="1d")
+
+                    data = cache.get_or_fetch(
+                        source="yfinance",
+                        source_id="AAPL",
+                        fetch_fn=fetch_aapl,
+                        frequency="1d",
+                        metadata_fn=lambda: {"ticker": "AAPL", "period": "1y"},
+                        force_refresh=True
+                    )
+
+                    elapsed = time.time() - start_time
+
+                    st.success(f"[OK] Fetched {len(data):,} rows in {elapsed:.2f}s")
+                    st.write(f"**Columns:** {', '.join(data.columns)}")
+                    st.dataframe(data.tail(10), use_container_width=True)
+
+                except Exception as e:
+                    st.error(f"Fetch failed: {str(e)}")
+
+    with col2:
+        if st.button("Load AAPL (Cached)", key="fetch_aapl_cached"):
+            with st.spinner("Loading from cache..."):
+                try:
+                    import time
+                    from src.services.yfinance_service import YFinanceService
+                    from src.data.cache_manager import CacheManager
+
+                    yf_service = YFinanceService()
+                    cache = CacheManager()
+
+                    start_time = time.time()
+
+                    def fetch_aapl():
+                        return yf_service.get_ticker_history("AAPL", period="1y", interval="1d")
+
+                    data = cache.get_or_fetch(
+                        source="yfinance",
+                        source_id="AAPL",
+                        fetch_fn=fetch_aapl,
+                        frequency="1d"
+                    )
+
+                    elapsed = time.time() - start_time
+
+                    st.success(f"[OK] Loaded {len(data):,} rows in {elapsed:.2f}s")
+
+                    if elapsed < 3.0:
+                        st.info(f"**Cache active** - Loading from Firebase Cloud Storage")
+
+                    cache_info = cache.get_cache_info("yfinance", "AAPL")
+                    if cache_info:
+                        is_fresh = cache_info.get("is_fresh", False)
+                        age = cache_info.get("age_hours", 0)
+                        st.write(f"Cache status: {'[OK] Fresh' if is_fresh else '[WARN] Stale'}")
+                        st.write(f"Cache age: {age:.1f} hours")
+
+                except Exception as e:
+                    st.error(f"Load failed: {str(e)}")
+
+    st.markdown("---")
+
+    # Test 2: Stats Canada GDP Table
+    st.markdown("#### Test 2: Stats Canada GDP Data (36100434)")
+
+    if st.button("Fetch GDP by Industry (Last 12 Months)", key="fetch_statscan_gdp"):
+        with st.spinner("Fetching Stats Canada GDP data..."):
+            try:
+                import time
+                from src.services.statscan_api import StatsCanService
+                from src.data.cache_manager import CacheManager
+                from src.data.statscan_datasets import get_table_config
+
+                sc_service = StatsCanService()
+                cache = CacheManager()
+
+                # Get table configuration with default vectors
+                table_config = get_table_config("36100434")
+                if not table_config or not table_config.default_vectors:
+                    st.error("GDP table configuration not found or missing default vectors")
+                else:
+                    st.info(f"Using {len(table_config.default_vectors)} default vectors for {table_config.name}")
+
+                    # Fetch metadata first
+                    metadata = sc_service.get_cube_metadata("36100434")
+                    if metadata:
+                        st.write("**Table Metadata:**")
+                        metadata_display = {
+                            "Title": metadata.get("cubeTitleEn"),
+                            "Frequency": metadata.get("frequencyCode"),
+                            "Date Range": f"{metadata.get('cubeStartDate')} to {metadata.get('cubeEndDate')}",
+                            "Series Count": metadata.get("nbSeriesCube")
+                        }
+                        st.json(metadata_display)
+
+                    # Fetch table data with default vectors
+                    start_time = time.time()
+
+                    def fetch_gdp():
+                        return sc_service.get_table_data(
+                            "36100434",
+                            latest_n_periods=12,
+                            vectors=table_config.default_vectors
+                        )
+
+                    data = cache.get_or_fetch(
+                        source="statscan",
+                        source_id="36100434",
+                        fetch_fn=fetch_gdp,
+                        frequency="monthly",
+                        metadata_fn=lambda: {
+                            "product_id": "36100434",
+                            "title": metadata.get("cubeTitleEn") if metadata else "GDP by Industry",
+                            "vectors": table_config.default_vectors
+                        },
+                        force_refresh=True
+                    )
+
+                    elapsed = time.time() - start_time
+
+                    st.success(f"[OK] Fetched in {elapsed:.2f}s")
+                    st.write(f"**Shape:** {data.shape[0]} rows × {data.shape[1]} columns")
+                    st.write(f"**Vector Columns:** {data.shape[1] - 1} (format: v{'{vector_id}'})")
+                    st.write(f"**Vectors:** {', '.join([f'v{v}' for v in table_config.default_vectors])}")
+                    st.dataframe(data.head(10), use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Fetch failed: {str(e)}")
+
+    st.markdown("---")
+
+    # Test 3: Multi-Ticker Comparison
+    st.markdown("#### Test 3: Multi-Ticker Comparison")
+
+    tickers_selected = st.multiselect(
+        "Select tickers to compare",
+        ["AAPL", "MSFT", "GOOGL", "^GSPC", "^VIX"],
+        default=["AAPL", "MSFT"],
+        key="multi_ticker_select"
+    )
+
+    if st.button("Compare Tickers", key="compare_tickers") and tickers_selected:
+        with st.spinner(f"Fetching {len(tickers_selected)} tickers..."):
+            try:
+                from src.services.yfinance_service import YFinanceService
+                from src.data.cache_manager import CacheManager
+                import plotly.graph_objects as go
+
+                yf_service = YFinanceService()
+                cache = CacheManager()
+
+                # Fetch all tickers
+                all_data = {}
+                for ticker in tickers_selected:
+                    data = cache.get_or_fetch(
+                        source="yfinance",
+                        source_id=ticker,
+                        fetch_fn=lambda t=ticker: yf_service.get_ticker_history(t, period="6mo"),
+                        frequency="1d"
+                    )
+                    all_data[ticker] = data
+
+                st.success(f"[OK] Fetched {len(all_data)} tickers")
+
+                # Create normalized comparison chart (base = 100)
+                fig = go.Figure()
+
+                for ticker, data in all_data.items():
+                    # Normalize to base 100 (first closing price)
+                    first_close = data["close"][0]
+                    normalized = (data["close"] / first_close * 100)
+
+                    fig.add_trace(go.Scatter(
+                        x=data["date"],
+                        y=normalized,
+                        mode="lines",
+                        name=ticker
+                    ))
+
+                fig.update_layout(
+                    title="Normalized Price Comparison (Base = 100)",
+                    xaxis_title="Date",
+                    yaxis_title="Normalized Price",
+                    hovermode="x unified",
+                    height=500
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Multi-ticker comparison failed: {str(e)}")
+
+    st.markdown("---")
+
+    # Test 4: Unified Cache Statistics
+    st.markdown("#### Test 4: Unified Cache Statistics")
+
+    if st.button("Show All Cache Stats", key="all_cache_stats"):
+        try:
+            from src.data.cache_manager import CacheManager
+            import polars as pl
+
+            cache = CacheManager()
+
+            # Get stats by source
+            st.write("**Cache Statistics by Source:**")
+
+            for source in ["fred", "yfinance", "statscan"]:
+                st.subheader(f"{source.upper()} Cache")
+                stats = cache.get_stats(source=source)
+
+                col_s1, col_s2, col_s3 = st.columns(3)
+                with col_s1:
+                    st.metric("Datasets", stats.get("total_datasets", 0))
+                with col_s2:
+                    st.metric("Total Rows", f"{stats.get('total_rows', 0):,}")
+                with col_s3:
+                    st.metric("Storage", f"{stats.get('total_size_mb', 0):.2f} MB")
+
+            st.markdown("---")
+
+            # Get detailed cache inventory
+            st.write("**Detailed Cache Inventory:**")
+            all_info = cache.get_all_cache_info()
+
+            if all_info:
+                cache_df = pl.DataFrame([
+                    {
+                        "Source": info["source"].upper(),
+                        "ID": info["source_id"],
+                        "Rows": info["row_count"],
+                        "Age (hrs)": round(info["age_hours"], 1),
+                        "Status": "[OK] Fresh" if info["is_fresh"] else "[WARN] Stale",
+                        "Frequency": info["frequency"]
+                    }
+                    for info in all_info
+                ])
+                st.dataframe(cache_df, use_container_width=True)
+            else:
+                st.info("No cached data found. Run tests above to populate cache.")
+
+        except Exception as e:
+            st.error(f"Failed to load cache stats: {str(e)}")
+
+
 # Admin Dashboard Section
 if st.user.is_logged_in and is_admin():
     st.markdown("---")

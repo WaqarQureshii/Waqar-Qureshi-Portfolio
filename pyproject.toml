@@ -16,4 +16,6 @@ dependencies = [
     "pyarrow>=21.0.0",
     "fredapi>=0.5.2",
     "pandas>=2.2.0",
+    "yfinance>=0.2.40",
+    "requests>=2.32.0",
 ]

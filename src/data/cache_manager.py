@@ -40,7 +40,7 @@ class CacheManager:
             frequency: Data frequency (e.g., "daily", "monthly", "1d")
 
         Returns:
-            True if data is fresh, False if stale
+            True if data is fresh (age in hours < threshold constant in hours), False if stale
         """
         if not metadata or "last_updated" not in metadata:
             return False
