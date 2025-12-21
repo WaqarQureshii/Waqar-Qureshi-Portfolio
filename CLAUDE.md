@@ -12,10 +12,10 @@ This is a Streamlit-based portfolio webapp showcasing quantitative and qualitati
 
 ```bash
 # Activate virtual environment (Windows)
-.venv/Scripts/activate
+Bash(ls .venv/Scripts/
 
 # Run Streamlit webapp locally (from project root)
-streamlit run Home.py
+Bash(.venv/Scripts/streamlit.exe run Home.py)
 
 # Add packages (use uv package manager)
 uv add <package-name>

@@ -120,11 +120,18 @@ FRED_SERIES: Dict[str, Dict[str, str]] = {
     },
 
     # GDP
+    "GDP": {
+        "name": "Gross Domestic Product",
+        "category": "GDP",
+        "frequency": "quarterly",
+        "priority": 1
+    },
+
     "GDPC1": {
         "name": "Real Gross Domestic Product",
         "category": "GDP",
         "frequency": "quarterly",
-        "priority": 1
+        "priority": 2
     },
 
     # Labor Market
@@ -167,6 +174,30 @@ FRED_SERIES: Dict[str, Dict[str, str]] = {
         "category": "Debt",
         "frequency": "quarterly",
         "priority": 2
+    },
+
+    # Money Supply (M2)
+    "M2SL": {
+        "name": "M2 Money Stock",
+        "category": "Money Supply",
+        "frequency": "monthly",
+        "priority": 1
+    },
+
+    # Short-term Rates (for Chart 2)
+    "TB3MS": {
+        "name": "3-Month Treasury Bill Rate",
+        "category": "Interest Rates",
+        "frequency": "monthly",
+        "priority": 1
+    },
+
+    # Money Market Funds for Chart 1
+    "MMMFFAQ027S": {
+        "name": "Money Market Funds: Total Financial Assets, Level",
+        "category": "Money Supply",
+        "frequency": "quarterly",
+        "priority": 1
     }
 }
 
@@ -247,6 +278,22 @@ YFINANCE_TICKERS: Dict[str, Dict[str, str]] = {
         "sector": "Consumer Cyclical",
         "interval": "1d",
         "priority": 2
+    },
+
+    # Bond ETFs (for Chart 3)
+    "HYG": {
+        "name": "iShares iBoxx High Yield Corporate Bond ETF",
+        "category": "ETF",
+        "sector": "Fixed Income",
+        "interval": "1d",
+        "priority": 1
+    },
+    "TLT": {
+        "name": "iShares 20+ Year Treasury Bond ETF",
+        "category": "ETF",
+        "sector": "Fixed Income",
+        "interval": "1d",
+        "priority": 1
     }
 }
 

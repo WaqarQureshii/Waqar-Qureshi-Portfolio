@@ -84,6 +84,7 @@ CATEGORIES: Dict[str, FredCategory] = {
             FRED_SERIES_CONFIGS["DGS5"],
             FRED_SERIES_CONFIGS["DGS10"],
             FRED_SERIES_CONFIGS["DGS30"],
+            FRED_SERIES_CONFIGS["TB3MS"],
         ]
     ),
 
@@ -100,6 +101,7 @@ CATEGORIES: Dict[str, FredCategory] = {
         name="GDP",
         description="Gross Domestic Product measures",
         series=[
+            FRED_SERIES_CONFIGS["GDP"],
             FRED_SERIES_CONFIGS["GDPC1"],
         ]
     ),
@@ -128,6 +130,14 @@ CATEGORIES: Dict[str, FredCategory] = {
         series=[
             FRED_SERIES_CONFIGS["GFDEBTN"],
             FRED_SERIES_CONFIGS["TDSP"],
+        ]
+    ),
+
+    "money_supply": FredCategory(
+        name="Money Supply",
+        description="Monetary aggregates and liquidity measures",
+        series=[
+            FRED_SERIES_CONFIGS["M2SL"],
         ]
     ),
 }
