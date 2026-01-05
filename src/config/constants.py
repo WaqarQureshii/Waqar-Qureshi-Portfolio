@@ -80,6 +80,12 @@ FRESHNESS_THRESHOLDS = {
 # Key economic indicators from FRED
 FRED_SERIES: Dict[str, Dict[str, str]] = {
     # Treasury Yields
+    "DGS1": {
+        "name": "1-Year Treasury Constant Maturity Rate",
+        "category": "Interest Rates",
+        "frequency": "daily",
+        "priority": 1
+    },
     "DGS10": {
         "name": "10-Year Treasury Constant Maturity Rate",
         "category": "Interest Rates",
@@ -198,7 +204,21 @@ FRED_SERIES: Dict[str, Dict[str, str]] = {
         "category": "Money Supply",
         "frequency": "quarterly",
         "priority": 1
-    }
+    },
+
+    # U.S Economy Indicator
+    "SAHMCURRENT": {
+        "name": "Sahm Rule Recession Indicator",
+        "category": "US Economy Indicator",
+        "frequency": "monthly",
+        "priority": 1
+    },
+    "JHDUSRGDPBR": {
+        "name": "Dates of U.S. recessiosn as inferred by GDP-based recession indicator",
+        "category": "US Economy Indicator",
+        "frequency": "quarterly",
+        "priority": 1
+    },
 }
 
 # =============================================================================

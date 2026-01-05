@@ -11,7 +11,7 @@ Supports: FRED, yfinance, Stats Canada
 """
 
 import polars as pl
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Callable, Optional, Literal
 from src.services.firebase_service import FirebaseService, DataSource
 from src.config.constants import get_freshness_threshold
@@ -50,6 +50,9 @@ class CacheManager:
         # Handle Firestore timestamp
         if hasattr(last_updated, 'timestamp'):
             last_updated_dt = datetime.fromtimestamp(last_updated.timestamp())
+        elif isinstance(last_updated, date) and not isinstance(last_updated, datetime):
+            # Convert date to datetime at midnight
+            last_updated_dt = datetime(last_updated.year, last_updated.month, last_updated.day)
         else:
             # Assume it's already a datetime
             last_updated_dt = last_updated
@@ -223,6 +226,9 @@ class CacheManager:
         last_updated = metadata.get("last_updated")
         if hasattr(last_updated, 'timestamp'):
             last_updated_dt = datetime.fromtimestamp(last_updated.timestamp())
+        elif isinstance(last_updated, date) and not isinstance(last_updated, datetime):
+            # Convert date to datetime at midnight
+            last_updated_dt = datetime(last_updated.year, last_updated.month, last_updated.day)
         else:
             last_updated_dt = last_updated
 

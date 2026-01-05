@@ -80,6 +80,7 @@ CATEGORIES: Dict[str, FredCategory] = {
         name="Interest Rates",
         description="Treasury yields and interest rate indicators",
         series=[
+            FRED_SERIES_CONFIGS["DGS1"],
             FRED_SERIES_CONFIGS["DGS2"],
             FRED_SERIES_CONFIGS["DGS5"],
             FRED_SERIES_CONFIGS["DGS10"],
@@ -140,6 +141,15 @@ CATEGORIES: Dict[str, FredCategory] = {
             FRED_SERIES_CONFIGS["M2SL"],
         ]
     ),
+
+    "US Economy Indicator": FredCategory(
+        name="Economic indicators of the U.S. Economy",
+        description="General indicators and sometimes a calculation of other indicators to determine the overall health of the economy.",
+        series=[
+            FRED_SERIES_CONFIGS["SAHMCURRENT"],
+            FRED_SERIES_CONFIGS["JHDUSRGDPBR"]
+        ]
+    )
 }
 
 

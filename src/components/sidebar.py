@@ -45,7 +45,7 @@ def render_date_range_selector(
         max_date = datetime.now()
 
     if min_date is None:
-        min_date = datetime.now() - timedelta(days=365*20)
+        min_date = datetime.now() - timedelta(days=365*50)
 
     default_start = datetime.now() - timedelta(days=365*default_years_back)
 

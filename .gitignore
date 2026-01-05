@@ -14,3 +14,8 @@ CLAUDE.md
 /*__pycache__
 *.pyc
 TASKS.md
+.geminiignore
+CLAUDE.md
+GEMINI.md
+CLAUDE.md
+PLAN.md

@@ -130,6 +130,81 @@ def resample_to_quarterly(
     return quarterly_df
 
 
+def upsample_quarterly_to_monthly(
+    df: pl.DataFrame,
+    date_col: str = "date",
+    value_col: str = "value"
+) -> pl.DataFrame:
+    """
+    Upsample quarterly time series to monthly frequency using forward-fill.
+
+    This function takes quarterly data and expands it to monthly frequency by
+    forward-filling values. Each quarterly value is propagated to all months
+    within that quarter and subsequent months until the next quarterly observation.
+
+    Args:
+        df: Polars DataFrame with quarterly time series data
+        date_col: Name of the date column
+        value_col: Name of the value column to upsample
+
+    Returns:
+        Monthly upsampled DataFrame with forward-filled values
+
+    Example:
+        >>> quarterly_df = pl.DataFrame({
+        ...     "date": [date(2024, 1, 1), date(2024, 4, 1), date(2024, 7, 1)],
+        ...     "value": [100, 110, 120]
+        ... })
+        >>> monthly_df = upsample_quarterly_to_monthly(quarterly_df)
+        >>> # Result: 9 months with forward-filled values
+
+    Note:
+        - Quarterly dates can be at any point in the quarter
+        - Forward-fill strategy means each quarterly value applies to subsequent
+          months until the next quarterly observation
+        - Leading nulls (months before first quarterly observation) are dropped
+    """
+    # Ensure date column is pl.Date type (cast datetime to date if needed)
+    if df[date_col].dtype == pl.Datetime:
+        df = df.with_columns(pl.col(date_col).cast(pl.Date))
+    elif df[date_col].dtype != pl.Date:
+        df = df.with_columns(pl.col(date_col).cast(pl.Date))
+
+    # Sort by date to ensure chronological order
+    df = df.sort(date_col)
+
+    # Generate monthly date range spanning the quarterly data
+    min_date = df[date_col].min()
+    max_date = df[date_col].max()
+
+    monthly_dates = pl.DataFrame({
+        date_col: pl.date_range(
+            start=min_date,
+            end=max_date,
+            interval="1mo",
+            eager=True
+        )
+    })
+
+    # Left join monthly dates with quarterly data
+    # This creates monthly dates with nulls where no quarterly data exists
+    upsampled = monthly_dates.join(
+        df.select([date_col, value_col]),
+        on=date_col,
+        how="left"
+    )
+
+    # Forward-fill null values to propagate quarterly values across months
+    upsampled = upsampled.with_columns([
+        pl.col(value_col).fill_null(strategy="forward")
+    ])
+
+    # Drop any leading nulls (months before first quarterly observation)
+    upsampled = upsampled.drop_nulls()
+
+    return upsampled
+
+
 def calculate_percentage_of_series(
     numerator_df: pl.DataFrame,
     denominator_df: pl.DataFrame,
@@ -155,6 +230,12 @@ def calculate_percentage_of_series(
     Example:
         >>> m2_pct_gdp = calculate_percentage_of_series(m2_df, gdp_df)
     """
+    # Normalize date columns to pl.Date type
+    if numerator_df[date_col].dtype == pl.Datetime:
+        numerator_df = numerator_df.with_columns(pl.col(date_col).cast(pl.Date))
+    if denominator_df[date_col].dtype == pl.Datetime:
+        denominator_df = denominator_df.with_columns(pl.col(date_col).cast(pl.Date))
+
     # Rename columns to avoid conflicts
     num_renamed = numerator_df.select([
         pl.col(date_col),
@@ -204,6 +285,12 @@ def calculate_ratio(
     Example:
         >>> hyg_tlt_ratio = calculate_ratio(hyg_df, tlt_df)
     """
+    # Normalize date columns to pl.Date type
+    if numerator_df[date_col].dtype == pl.Datetime:
+        numerator_df = numerator_df.with_columns(pl.col(date_col).cast(pl.Date))
+    if denominator_df[date_col].dtype == pl.Datetime:
+        denominator_df = denominator_df.with_columns(pl.col(date_col).cast(pl.Date))
+
     # Rename columns to avoid conflicts
     num_renamed = numerator_df.select([
         pl.col(date_col),
@@ -254,13 +341,25 @@ def merge_multiple_series(
     if not series_list:
         raise ValueError("series_list cannot be empty")
 
-    # Start with first series
-    result = series_list[0][0].select([date_col, series_list[0][1]])
+    # Normalize all date columns to pl.Date type to ensure consistent joins
+    normalized_series = []
+    for df, col_name in series_list:
+        # Cast datetime columns to date for consistency
+        if df[date_col].dtype == pl.Datetime:
+            df = df.with_columns(pl.col(date_col).cast(pl.Date))
+        elif df[date_col].dtype != pl.Date:
+            df = df.with_columns(pl.col(date_col).cast(pl.Date))
+        normalized_series.append((df, col_name))
 
-    # Join remaining series
-    for df, col_name in series_list[1:]:
+    # Start with first series
+    result = normalized_series[0][0].select([date_col, normalized_series[0][1]])
+
+    # Join remaining series using outer join to preserve all dates
+    # This ensures we show the full date range even if some series have gaps
+    # Use coalesce=True to merge join key columns (prevents date_right duplicates)
+    for df, col_name in normalized_series[1:]:
         series_df = df.select([date_col, col_name])
-        result = result.join(series_df, on=date_col, how="inner")
+        result = result.join(series_df, on=date_col, how="outer", coalesce=True)
 
     # Sort by date
     result = result.sort(date_col)
@@ -473,6 +572,70 @@ def calculate_signal_metrics(
 # VISUALIZATION FUNCTIONS
 # =============================================================================
 
+def add_recession_overlay(
+    fig: go.Figure,
+    recession_df: pl.DataFrame,
+    date_col: str = "date",
+    recession_col: str = "recession_indicator"
+) -> go.Figure:
+    """
+    Add recession period overlays as vertical rectangles to a Plotly figure.
+
+    Args:
+        fig: Plotly figure object to add overlays to
+        recession_df: DataFrame with recession indicator data
+        date_col: Name of the date column
+        recession_col: Name of the recession indicator column (1 = recession, 0 = no recession)
+
+    Returns:
+        Modified Plotly figure with recession overlays
+
+    Example:
+        >>> fig = create_bar_line_chart(...)
+        >>> fig = add_recession_overlay(fig, recession_df)
+    """
+    # Convert to pandas for iteration
+    pdf = recession_df.to_pandas()
+
+    # Iterate through the dataframe to identify recession periods
+    in_recession = False
+    recession_start = None
+
+    for idx, row in pdf.iterrows():
+        is_recession = row[recession_col] == 1 or row[recession_col] == True
+
+        if is_recession and not in_recession:
+            # Start of a new recession period
+            recession_start = row[date_col]
+            in_recession = True
+        elif not is_recession and in_recession:
+            # End of a recession period
+            recession_end = row[date_col]
+            fig.add_vrect(
+                x0=recession_start,
+                x1=recession_end,
+                fillcolor="grey",
+                opacity=0.2,
+                layer="below",
+                line_width=0
+            )
+            in_recession = False
+            recession_start = None
+
+    # Handle case where recession extends to the end of data
+    if in_recession and recession_start is not None:
+        fig.add_vrect(
+            x0=recession_start,
+            x1=pdf[date_col].iloc[-1],
+            fillcolor="grey",
+            opacity=0.2,
+            layer="below",
+            line_width=0
+        )
+
+    return fig
+
+
 def apply_standard_layout(
     fig: go.Figure,
     title: str = "",
@@ -625,7 +788,9 @@ def create_bar_line_chart(
     bar_y_title: str = "",
     line_y_title: str = "",
     title: str = "",
-    height: int = 500
+    height: int = 500,
+    recession_df: Optional[pl.DataFrame] = None,
+    recession_col: str = "recession_indicator"
 ) -> go.Figure:
     """
     Create a chart with bars on left axis and line on right axis.
@@ -641,6 +806,8 @@ def create_bar_line_chart(
         line_y_title: Title for right y-axis (line)
         title: Chart title
         height: Chart height in pixels
+        recession_df: Optional DataFrame with recession indicator data
+        recession_col: Name of recession indicator column (default: "recession_indicator")
 
     Returns:
         Plotly figure
@@ -651,10 +818,11 @@ def create_bar_line_chart(
         ...     date_col="date",
         ...     bar_col="m2_pct_gdp",
         ...     line_col="sp500",
-        ...     title="M2/GDP vs S&P 500"
+        ...     title="M2/GDP vs S&P 500",
+        ...     recession_df=recession_data
         ... )
     """
-    return create_dual_axis_chart(
+    fig = create_dual_axis_chart(
         df=df,
         date_col=date_col,
         left_y_col=bar_col,
@@ -668,6 +836,17 @@ def create_bar_line_chart(
         title=title,
         height=height
     )
+
+    # Add recession overlay if provided
+    if recession_df is not None:
+        fig = add_recession_overlay(
+            fig=fig,
+            recession_df=recession_df,
+            date_col=date_col,
+            recession_col=recession_col
+        )
+
+    return fig
 
 
 def create_ratio_overlay_chart(
@@ -739,7 +918,9 @@ def create_ratio_overlay_chart_with_signals(
     ratio_y_title: str = "Ratio",
     overlay_y_title: str = "",
     title: str = "",
-    height: int = 500
+    height: int = 500,
+    recession_df: Optional[pl.DataFrame] = None,
+    recession_col: str = "recession_indicator"
 ) -> go.Figure:
     """
     Create dual-axis chart with scatter markers on signal occurrences.
@@ -762,6 +943,8 @@ def create_ratio_overlay_chart_with_signals(
         overlay_y_title: Title for right y-axis (overlay)
         title: Chart title
         height: Chart height in pixels
+        recession_df: Optional DataFrame with recession indicator data
+        recession_col: Name of recession indicator column (default: "recession_indicator")
 
     Returns:
         Plotly figure with dual axes and signal markers
@@ -773,7 +956,8 @@ def create_ratio_overlay_chart_with_signals(
         ...     ratio_col="hyg_tlt_ratio",
         ...     overlay_col="sp500",
         ...     signal_col="signal",
-        ...     title="Risk Signals: HYG/TLT vs S&P 500"
+        ...     title="Risk Signals: HYG/TLT vs S&P 500",
+        ...     recession_df=recession_data
         ... )
     """
     # Convert to pandas for Plotly compatibility
@@ -848,6 +1032,15 @@ def create_ratio_overlay_chart_with_signals(
     # Apply standard layout
     fig = apply_standard_layout(fig, title=title, height=height)
 
+    # Add recession overlay if provided
+    if recession_df is not None:
+        fig = add_recession_overlay(
+            fig=fig,
+            recession_df=recession_df,
+            date_col=date_col,
+            recession_col=recession_col
+        )
+
     return fig
 
 
@@ -874,7 +1067,9 @@ def create_dual_subplot_chart(
     bottom_right_type: str = "line",
     # General params
     title: str = "",
-    height: int = 900
+    height: int = 900,
+    recession_df: Optional[pl.DataFrame] = None,
+    recession_col: str = "recession_indicator"
 ) -> go.Figure:
     """
     Create a 2-row subplot chart with dual y-axes for each row.
@@ -900,6 +1095,8 @@ def create_dual_subplot_chart(
         bottom_right_type: Type of trace for bottom right ("line" or "bar")
         title: Overall chart title
         height: Total chart height in pixels
+        recession_df: Optional DataFrame with recession indicator data
+        recession_col: Name of recession indicator column (default: "recession_indicator")
 
     Returns:
         Plotly figure with 2-row subplots
@@ -920,7 +1117,8 @@ def create_dual_subplot_chart(
         ...     bottom_right_name="M2 Supply",
         ...     bottom_left_title="Real Rate (%)",
         ...     bottom_right_title="M2 (Billions)",
-        ...     bottom_right_type="bar"
+        ...     bottom_right_type="bar",
+        ...     recession_df=recession_data
         ... )
     """
     # Create 2-row subplot with secondary y-axes for both rows
@@ -1030,5 +1228,150 @@ def create_dual_subplot_chart(
         ),
         margin=dict(l=80, r=80, t=120, b=60)
     )
+
+    # Add recession overlay if provided (applies to both subplots)
+    if recession_df is not None:
+        fig = add_recession_overlay(
+            fig=fig,
+            recession_df=recession_df,
+            date_col=date_col,
+            recession_col=recession_col
+        )
+
+    return fig
+
+
+def create_recessionary_chart(
+    df: pl.DataFrame,
+    date_col: str,
+    unemployment_col: str,
+    treasury_spread_col: str,
+    sp500_col: str,
+    recession_col: str,
+    unemployment_name: str = "Unemployment Rate",
+    treasury_spread_name: str = "Treasury Spread (10Y-1Y)",
+    sp500_name: str = "S&P 500",
+    left_y_title: str = "Percentage / Spread (%)",
+    right_y_title: str = "S&P 500 Index",
+    title: str = "Recessionary Indicators Analysis",
+    height: int = 600
+) -> go.Figure:
+    """
+    Create a chart with unemployment rate, treasury spread, S&P 500, and recession overlays.
+
+    Args:
+        df: Polars DataFrame with aligned monthly data
+        date_col: Name of the date column
+        unemployment_col: Column for unemployment rate (left axis)
+        treasury_spread_col: Column for treasury spread (left axis)
+        sp500_col: Column for S&P 500 (right axis)
+        recession_col: Boolean/binary column indicating recession periods (1 = recession, 0 = no recession)
+        unemployment_name: Name for unemployment trace (legend)
+        treasury_spread_name: Name for treasury spread trace (legend)
+        sp500_name: Name for S&P 500 trace (legend)
+        left_y_title: Title for left y-axis
+        right_y_title: Title for right y-axis
+        title: Chart title
+        height: Chart height in pixels
+
+    Returns:
+        Plotly figure with dual axes and recession overlays
+
+    Example:
+        >>> fig = create_recessionary_chart(
+        ...     df=merged_df,
+        ...     date_col="date",
+        ...     unemployment_col="unemployment_rate",
+        ...     treasury_spread_col="treasury_spread",
+        ...     sp500_col="sp500_close",
+        ...     recession_col="recession_indicator"
+        ... )
+    """
+    # Convert to pandas for Plotly compatibility
+    pdf = df.to_pandas()
+
+    # Create figure with secondary y-axis
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Add unemployment rate line (left axis)
+    fig.add_trace(
+        go.Scatter(
+            x=pdf[date_col],
+            y=pdf[unemployment_col],
+            name=unemployment_name,
+            line=dict(color="#1f77b4", width=2),
+            mode="lines"
+        ),
+        secondary_y=False
+    )
+
+    # Add treasury spread line (left axis)
+    fig.add_trace(
+        go.Scatter(
+            x=pdf[date_col],
+            y=pdf[treasury_spread_col],
+            name=treasury_spread_name,
+            line=dict(color="#2ca02c", width=2),
+            mode="lines"
+        ),
+        secondary_y=False
+    )
+
+    # Add S&P 500 line (right axis)
+    fig.add_trace(
+        go.Scatter(
+            x=pdf[date_col],
+            y=pdf[sp500_col],
+            name=sp500_name,
+            line=dict(color="#ff7f0e", width=2),
+            mode="lines"
+        ),
+        secondary_y=True
+    )
+
+    # Add recession period overlays as vertical rectangles
+    # Iterate through the dataframe to identify recession periods
+    in_recession = False
+    recession_start = None
+
+    for idx, row in pdf.iterrows():
+        is_recession = row[recession_col] == 1 or row[recession_col] == True
+
+        if is_recession and not in_recession:
+            # Start of a new recession period
+            recession_start = row[date_col]
+            in_recession = True
+        elif not is_recession and in_recession:
+            # End of a recession period
+            recession_end = row[date_col]
+            fig.add_vrect(
+                x0=recession_start,
+                x1=recession_end,
+                fillcolor="grey",
+                opacity=0.2,
+                layer="below",
+                line_width=0
+            )
+            in_recession = False
+            recession_start = None
+
+    # Handle case where recession extends to the end of data
+    if in_recession and recession_start is not None:
+        fig.add_vrect(
+            x0=recession_start,
+            x1=pdf[date_col].iloc[-1],
+            fillcolor="grey",
+            opacity=0.2,
+            layer="below",
+            line_width=0
+        )
+
+    # Set axis titles
+    fig.update_xaxes(title_text="Date")
+    fig.update_yaxes(title_text=left_y_title, secondary_y=False)
+    fig.update_yaxes(title_text=right_y_title, secondary_y=True)
+
+    # Apply standard layout
+    fig = apply_standard_layout(fig, title=title, height=height)
 
     return fig

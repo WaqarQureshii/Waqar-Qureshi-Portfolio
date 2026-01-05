@@ -4,6 +4,7 @@ FRED, Stats Canada, and yfinance data visualization
 """
 import streamlit as st
 import polars as pl
+from datetime import datetime
 
 from src.data.cache_manager import CacheManager
 from src.services.fred_api import FredService
@@ -13,6 +14,7 @@ from src.config.constants import YFINANCE_TICKERS
 from src.components.charts import (
     resample_to_monthly,
     resample_to_quarterly,
+    upsample_quarterly_to_monthly,
     calculate_percentage_of_series,
     calculate_ratio,
     calculate_pct_change,
@@ -24,7 +26,8 @@ from src.components.charts import (
     calculate_forward_returns,
     detect_signal_occurrences,
     calculate_signal_metrics,
-    create_ratio_overlay_chart_with_signals
+    create_ratio_overlay_chart_with_signals,
+    create_recessionary_chart
 )
 from src.components.sidebar import (
     render_date_range_selector,
@@ -70,6 +73,44 @@ yf_service = get_yfinance_service()
 
 
 # =============================================================================
+# RECESSION DATA FETCHER
+# =============================================================================
+
+@st.cache_data(show_spinner=False)
+def get_recession_data(start_date, end_date):
+    """
+    Fetch and process JHDUSRGDPBR recession indicator data.
+
+    Returns monthly upsampled DataFrame with recession indicator column.
+    This data can be passed to chart functions to add recession overlays.
+    """
+    # Fetch JHDUSRGDPBR from FRED (quarterly)
+    recession_config = get_series_config("JHDUSRGDPBR")
+    recession_df = cache.get_or_fetch(
+        source="fred",
+        source_id="JHDUSRGDPBR",
+        fetch_fn=lambda: fred.get_series("JHDUSRGDPBR"),
+        frequency=recession_config.frequency,
+        metadata_fn=lambda: fred.get_series_metadata("JHDUSRGDPBR"),
+        force_refresh=False
+    )
+
+    # Filter to date range
+    recession_df = recession_df.filter(
+        (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+    )
+
+    # Upsample quarterly to monthly
+    recession_monthly = upsample_quarterly_to_monthly(
+        recession_df,
+        date_col="date",
+        value_col="value"
+    ).rename({"value": "recession_indicator"})
+
+    return recession_monthly
+
+
+# =============================================================================
 # SIDEBAR CONTROLS
 # =============================================================================
 
@@ -79,7 +120,7 @@ with st.sidebar:
     # Date range selector
     start_date, end_date = render_date_range_selector(
         key_prefix="analysis",
-        default_years_back=20
+        default_years_back=40
     )
 
     # Preset date ranges
@@ -161,8 +202,8 @@ def render_chart1_money_supply_vs_sp500():
                     frequency=moneymarket_fund_config.frequency,
                     metadata_fn=lambda: fred.get_series_metadata("MMMFFAQ027S"),
                     force_refresh=False
-                )
-                
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
                 # Fetch GDP from FRED (all historical data)
                 gdp_config = get_series_config("GDP")
                 gdp_df = cache.get_or_fetch(
@@ -172,7 +213,7 @@ def render_chart1_money_supply_vs_sp500():
                         frequency=gdp_config.frequency,
                         metadata_fn=lambda: fred.get_series_metadata("GDP"),
                         force_refresh=False
-                    )
+                    ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
 
                 # Fetch S&P 500 from yfinance (all historical data)
                 sp500_df = cache.get_or_fetch(
@@ -182,28 +223,50 @@ def render_chart1_money_supply_vs_sp500():
                     frequency="daily",
                     metadata_fn=lambda: {"ticker": "^GSPC", "name": "S&P 500"},
                     force_refresh=False
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Calculate max date across all fetched series
+                max_date_across_all_series = max(
+                    moneymarket_fund_df["date"].max(),
+                    gdp_df["date"].max(),
+                    sp500_df["date"].max()
                 )
+
+                # Determine final chart end date (use the later of sidebar end_date or actual data max)
+                # Convert end_date to datetime for comparison
+                end_date_dt = datetime.combine(end_date, datetime.min.time())
+                final_chart_end_date = max(end_date_dt, max_date_across_all_series)
 
                 # Filter ALL data to selected date range (client-side filtering)
                 moneymarket_fund_df = moneymarket_fund_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
 
                 gdp_df = gdp_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
 
                 sp500_df = sp500_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
 
                 # Transform data
-                # 1. MMMFFAQ027S is already quarterly
-                
-                # 2. GDP is already quarterly
+                # 1. Upsample quarterly MMMFFAQ027S to monthly (forward-fill)
+                moneymarket_fund_df = upsample_quarterly_to_monthly(
+                    moneymarket_fund_df,
+                    date_col="date",
+                    value_col="value"
+                )
 
-                # 3. Resample S&P 500 to quarterly
-                sp500_df = resample_to_quarterly(
+                # 2. Upsample quarterly GDP to monthly (forward-fill)
+                gdp_df = upsample_quarterly_to_monthly(
+                    gdp_df,
+                    date_col="date",
+                    value_col="value"
+                )
+
+                # 3. Resample S&P 500 to monthly
+                sp500_df = resample_to_monthly(
                     sp500_df.select(["date", "close"]),
                     date_col="date",
                     value_col="close",
@@ -216,7 +279,7 @@ def render_chart1_money_supply_vs_sp500():
                 ])
 
                 # 5. Money Market Fund as a % of GDP
-                moneymarket_fund_df = calculate_percentage_of_series(
+                moneymarket_fund_pct_gdp_df = calculate_percentage_of_series(
                     numerator_df=moneymarket_fund_df.rename({"value": "numerator"}),
                     denominator_df=gdp_df.rename({"value": "denominator"}),
                     date_col="date",
@@ -227,14 +290,17 @@ def render_chart1_money_supply_vs_sp500():
 
                 # 6. Merge Money Market Fund % of GDP with S&P 500
                 merged_df = merge_multiple_series([
-                    (moneymarket_fund_df, "moneymarket_fund_pct_gdp"),
+                    (moneymarket_fund_pct_gdp_df, "moneymarket_fund_pct_gdp"),
                     (sp500_df, "close")
                 ], date_col="date")
 
                 # 7. Rename S&P 500 close column for clarity
                 merged_df = merged_df.rename({"close": "sp500"})
 
-                # 8. Visualize
+                # 8. Get recession data
+                recession_df = get_recession_data(start_date, final_chart_end_date)
+
+                # 9. Visualize
                 fig = create_bar_line_chart(
                     df=merged_df,
                     date_col="date",
@@ -244,8 +310,10 @@ def render_chart1_money_supply_vs_sp500():
                     line_name="S&P 500",
                     bar_y_title="Money Market Fund % of GDP",
                     line_y_title="S&P 500 Index",
-                    title="Money Market Fund as a % of GDP vs Market Performance (Quarterly)",
-                    height=600
+                    title="Money Market Fund as a % of GDP vs Market Performance (Monthly)",
+                    height=600,
+                    recession_df=recession_df,
+                    recession_col="recession_indicator"
                 )
 
                 with col1:
@@ -312,7 +380,7 @@ def render_chart2_tbill_vs_inflation():
                     frequency=tbill_config.frequency,
                     metadata_fn=lambda: fred.get_series_metadata("TB3MS"),
                     force_refresh=False
-                )
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
 
                 # Fetch CPIAUCSL from FRED (all historical data)
                 cpi_config = get_series_config("CPIAUCSL")
@@ -323,7 +391,7 @@ def render_chart2_tbill_vs_inflation():
                     frequency=cpi_config.frequency,
                     metadata_fn=lambda: fred.get_series_metadata("CPIAUCSL"),
                     force_refresh=False
-                )
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
 
                 # Fetch M2SL from FRED (all historical data)
                 moneymarket_fund_config = get_series_config("MMMFFAQ027S")
@@ -334,7 +402,7 @@ def render_chart2_tbill_vs_inflation():
                     frequency=moneymarket_fund_config.frequency,
                     metadata_fn=lambda: fred.get_series_metadata("MMMFFAQ027S"),
                     force_refresh=False
-                )
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
                 # Fetch GDP from FRED (all historical data)
                 gdp_config = get_series_config("GDP")
                 gdp_df = cache.get_or_fetch(
@@ -344,29 +412,41 @@ def render_chart2_tbill_vs_inflation():
                         frequency=gdp_config.frequency,
                         metadata_fn=lambda: fred.get_series_metadata("GDP"),
                         force_refresh=False
-                    )
+                    ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Calculate max date across all fetched series
+                max_date_across_all_series = max(
+                    tbill_df["date"].max(),
+                    cpi_df["date"].max(),
+                    mmFund_df["date"].max(),
+                    gdp_df["date"].max()
+                )
+
+                # Determine final chart end date (use the later of sidebar end_date or actual data max)
+                # Convert end_date to datetime for comparison
+                end_date_dt = datetime.combine(end_date, datetime.min.time())
+                final_chart_end_date = max(end_date_dt, max_date_across_all_series)
 
                 # Filter data to selected date range (client-side filtering)
                 tbill_df = tbill_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
                 cpi_df = cpi_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
                 mmFund_df = mmFund_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
                 gdp_df = gdp_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
 
                 # Transform data
-                # 1. Resample T-Bill to quarterly
-                tbill_quarterly = resample_to_quarterly(tbill_df, date_col="date", value_col="value", agg_method="last")
-                tbill_quarterly = tbill_quarterly.select(["date", "value"]).rename({"value": "tbill_rate"})
+                # 1. Keep T-Bill at monthly frequency (no resampling needed)
+                tbill_monthly = tbill_df.select(["date", "value"]).rename({"value": "tbill_rate"})
                 
 
-                # 2. Calculate YoY inflation from CPI
+                # 2. Calculate YoY inflation from CPI (stays monthly)
                 inflation_df = calculate_pct_change(
                     cpi_df,
                     date_col="date",
@@ -374,69 +454,86 @@ def render_chart2_tbill_vs_inflation():
                     result_col="inflation_rate",
                     noPeriods=12
                 )
+                # inflation_df is already monthly - no resampling needed
 
-                # 3. Resample inflation to quarterly
-                cpi_quarterly = resample_to_quarterly(inflation_df, date_col="date", value_col="inflation_rate", agg_method="last")
+                # 3. Upsample quarterly GDP to monthly (forward-fill)
+                gdp_monthly = upsample_quarterly_to_monthly(
+                    gdp_df,
+                    date_col="date",
+                    value_col="value"
+                )
 
-                # 4. Merge T-Bill and Inflation to calculate real rate
-                temp_merged = merge_multiple_series([
-                    (tbill_quarterly, "tbill_rate"),
-                    (cpi_quarterly, "inflation_rate")
-                ], date_col="date")
+                # 4. Upsample quarterly Money Market Fund to monthly (forward-fill)
+                mmFund_monthly = upsample_quarterly_to_monthly(
+                    mmFund_df,
+                    date_col="date",
+                    value_col="value"
+                )
 
-                # 5. Calculate real rate (T-Bill - Inflation)
-                temp_merged = temp_merged.with_columns([
-                    (pl.col("tbill_rate") - pl.col("inflation_rate")).alias("real_rate")
+                # 5. Convert Money Market Fund to billions
+                mmFund_monthly = mmFund_monthly.with_columns([
+                    (pl.col("value") / 1000).alias("value")
                 ])
 
-                # 6. Prepare Money Market Fund (rename value column)
-                mmFund_df = mmFund_df.with_columns([
-                    (pl.col("value") / 1000).alias("value (in Billions)")
-                ])
-
-                # 7. Create Money Market Fund as % of GDP
-                mmFund_df = calculate_percentage_of_series(
-                    numerator_df=mmFund_df.rename({"value (in Billions)": "numerator"}),
-                    denominator_df=gdp_df.rename({"value": "denominator"}),
+                # 6. Create Money Market Fund as % of GDP (both now monthly)
+                mmFund_pct_gdp = calculate_percentage_of_series(
+                    numerator_df=mmFund_monthly.rename({"value": "numerator"}),
+                    denominator_df=gdp_monthly.rename({"value": "denominator"}),
                     date_col="date",
                     num_value_col="numerator",
                     denom_value_col="denominator",
                     result_col="mmFund_pct_gdp"
                 )
 
-                # 6. Final merge: T-Bill, Inflation, Real Rate, M2
+                # 7. Merge T-Bill and Inflation to calculate real rate (both monthly)
+                temp_merged = merge_multiple_series([
+                    (tbill_monthly, "tbill_rate"),
+                    (inflation_df.select(["date", "inflation_rate"]), "inflation_rate")
+                ], date_col="date")
+
+                # 8. Calculate real rate (T-Bill - Inflation)
+                temp_merged = temp_merged.with_columns([
+                    (pl.col("tbill_rate") - pl.col("inflation_rate")).alias("real_rate")
+                ])
+
+                # 9. Final merge: T-Bill, Inflation, Real Rate, Money Market Fund % GDP (all monthly)
                 merged_df = merge_multiple_series([
                     (temp_merged.select(["date", "tbill_rate"]), "tbill_rate"),
                     (temp_merged.select(["date", "inflation_rate"]), "inflation_rate"),
                     (temp_merged.select(["date", "real_rate"]), "real_rate"),
-                    (mmFund_df, "mmFund_pct_gdp")
+                    (mmFund_pct_gdp, "mmFund_pct_gdp")
                 ], date_col="date")
 
-                # 7. Visualize with subplot chart
+                # 10. Get recession data
+                recession_df = get_recession_data(start_date, final_chart_end_date)
+
+                # 11. Visualize with subplot chart
                 fig = create_dual_subplot_chart(
                     df=merged_df,
                     date_col="date",
                     # Top subplot - T-Bill vs Inflation
                     top_chart_title="T-Bill Rate vs Inflation",
                     top_left_col="tbill_rate",
-                    top_left_name="T-Bill Rate",
+                    top_left_name="T-Bill Rate (LHS)",
                     top_left_title="3-Month T-Bill Rate (%)",
                     top_right_col="inflation_rate",
-                    top_right_name="Inflation",
+                    top_right_name="Inflation (RHS)",
                     top_right_title="Inflation YoY (%)",
                     # Bottom subplot - Real Rate vs Money Market Fund
                     bottom_chart_title="Real Rate vs Money Market Fund",
                     bottom_right_col="real_rate",
-                    bottom_right_name="Real Rate",
+                    bottom_right_name="Real Rate Spread (RHS)",
                     bottom_right_title="Real Rate (Spread) (%)",
                     bottom_right_type="line",
                     bottom_left_col="mmFund_pct_gdp",
-                    bottom_left_name="MM Fund/GDP",
+                    bottom_left_name="MM Fund/GDP (LHS)",
                     bottom_left_title="Money Market Fund as % of GDP (%)",
                     bottom_left_type="bar",
                     # General
                     title="Risk-Free Rates vs Inflation with Real Rate & Money Market Funds Analysis",
-                    height=900
+                    height=900,
+                    recession_df=recession_df,
+                    recession_col="recession_indicator"
                 )
 
                 with col1:
@@ -451,19 +548,19 @@ def render_chart2_tbill_vs_inflation():
                 with metric_cols[0]:
                     st.metric(
                         "Latest T-Bill Rate",
-                        f"{latest_row['tbill_rate']:.2f}%"
+                        f"{latest_row['tbill_rate']:.2f}%" if latest_row['tbill_rate'] is not None else "N/A"
                     )
 
                 with metric_cols[1]:
                     st.metric(
                         "Latest Inflation",
-                        f"{latest_row['inflation_rate']:.2f}%"
+                        f"{latest_row['inflation_rate']:.2f}%" if latest_row['inflation_rate'] is not None else "N/A"
                     )
 
                 with metric_cols[2]:
                     st.metric(
                         "Real Rate (Spread)",
-                        f"{latest_row['real_rate']:.2f}%",
+                        f"{latest_row['real_rate']:.2f}%" if latest_row['real_rate'] is not None else "N/A",
                         delta=None,
                         help="T-Bill Rate minus Inflation"
                     )
@@ -471,7 +568,7 @@ def render_chart2_tbill_vs_inflation():
                 with metric_cols[3]:
                     st.metric(
                         "Money Market Fund as % of GDP",
-                        f"{latest_row['mmFund_pct_gdp']:.2f}%"
+                        f"{latest_row['mmFund_pct_gdp']:.2f}%" if latest_row['mmFund_pct_gdp'] is not None else "N/A"
                     )
 
                 st.success("✅ Data loaded successfully!")
@@ -490,7 +587,7 @@ def render_chart2_tbill_vs_inflation():
 @st.fragment
 def render_chart1_hyg_tlt_vs_sp500():
     """
-    Chart 3: HYG/TLT Ratio (risk-on/risk-off) vs S&P 500.
+    Chart 1: HYG/TLT Ratio (risk-on/risk-off) vs S&P 500.
 
     Data Flow:
     1. Fetch HYG, TLT, ^GSPC (all daily close prices)
@@ -646,7 +743,7 @@ def render_chart1_hyg_tlt_vs_sp500():
                     frequency="daily",
                     metadata_fn=lambda: {"ticker": "HYG", "name": YFINANCE_TICKERS["HYG"]["name"]},
                     force_refresh=True
-                )
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
 
                 # Fetch TLT from yfinance
                 # force_refresh=True to invalidate old date-limited cache
@@ -657,7 +754,7 @@ def render_chart1_hyg_tlt_vs_sp500():
                     frequency="daily",
                     metadata_fn=lambda: {"ticker": "TLT", "name": YFINANCE_TICKERS["TLT"]["name"]},
                     force_refresh=True
-                )
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
 
                 # Fetch S&P 500 from yfinance
                 # force_refresh=True to invalidate old date-limited cache
@@ -668,17 +765,29 @@ def render_chart1_hyg_tlt_vs_sp500():
                     frequency="daily",
                     metadata_fn=lambda: {"ticker": "^GSPC", "name": "S&P 500"},
                     force_refresh=True
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Calculate max date across all fetched series
+                max_date_across_all_series = max(
+                    hyg_df["date"].max(),
+                    tlt_df["date"].max(),
+                    sp500_df["date"].max()
                 )
+
+                # Determine final chart end date (use the later of sidebar end_date or actual data max)
+                # Convert end_date to datetime for comparison
+                end_date_dt = datetime.combine(end_date, datetime.min.time())
+                final_chart_end_date = max(end_date_dt, max_date_across_all_series)
 
                 # Filter all data to date range
                 hyg_df = hyg_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
                 tlt_df = tlt_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
                 sp500_df = sp500_df.filter(
-                    (pl.col("date") >= start_date) & (pl.col("date") <= end_date)
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
                 )
 
                 # Transform data
@@ -753,7 +862,10 @@ def render_chart1_hyg_tlt_vs_sp500():
                     forward_return_col=f"sp500_forward_{forward_period}d"
                 )
 
-                # 8. Visualize with signal markers
+                # 8. Get recession data
+                recession_df = get_recession_data(start_date, final_chart_end_date)
+
+                # 9. Visualize with signal markers
                 fig = create_ratio_overlay_chart_with_signals(
                     df=merged_df,
                     date_col="date",
@@ -768,7 +880,9 @@ def render_chart1_hyg_tlt_vs_sp500():
                     ratio_y_title="HYG/TLT Ratio",
                     overlay_y_title="S&P 500 Index",
                     title=f"Risk-On/Risk-Off Indicator vs Market - {signal_metrics['count']} Signals Detected",
-                    height=600
+                    height=600,
+                    recession_df=recession_df,
+                    recession_col="recession_indicator"
                 )
 
                 with col1:
@@ -783,13 +897,13 @@ def render_chart1_hyg_tlt_vs_sp500():
                 with metric_cols[0]:
                     st.metric(
                         "Latest HYG/TLT Ratio",
-                        f"{latest_row['hyg_tlt_ratio']:.4f}"
+                        f"{latest_row['hyg_tlt_ratio']:.4f}" if latest_row['hyg_tlt_ratio'] is not None else "N/A"
                     )
 
                 with metric_cols[1]:
                     st.metric(
                         "Latest S&P 500",
-                        f"${latest_row['sp500']:,.2f}"
+                        f"${latest_row['sp500']:,.2f}" if latest_row['sp500'] is not None else "N/A"
                     )
 
                 with metric_cols[2]:
@@ -819,46 +933,47 @@ def render_chart1_hyg_tlt_vs_sp500():
                     with signal_metric_cols[0]:
                         st.metric(
                             "Total Signals",
-                            f"{signal_metrics['count']}"
+                            f"{signal_metrics['count']}" if signal_metrics.get('count') is not None else "N/A"
                         )
 
                     with signal_metric_cols[1]:
-                        avg_return = signal_metrics['avg_return']
+                        avg_return = signal_metrics.get('avg_return')
                         st.metric(
                             "Avg Return",
-                            f"{avg_return:+.2f}%",
-                            delta=f"{avg_return:+.2f}%"
+                            f"{avg_return:+.2f}%" if avg_return is not None else "N/A",
+                            delta=f"{avg_return:+.2f}%" if avg_return is not None else None
                         )
 
                     with signal_metric_cols[2]:
                         st.metric(
                             "Min Return",
-                            f"{signal_metrics['min_return']:+.2f}%"
+                            f"{signal_metrics['min_return']:+.2f}%" if signal_metrics.get('min_return') is not None else "N/A"
                         )
 
                     with signal_metric_cols[3]:
                         st.metric(
                             "Max Return",
-                            f"{signal_metrics['max_return']:+.2f}%"
+                            f"{signal_metrics['max_return']:+.2f}%" if signal_metrics.get('max_return') is not None else "N/A"
                         )
 
                     with signal_metric_cols[4]:
                         st.metric(
                             "Win Rate",
-                            f"{signal_metrics['win_rate']:.1f}%",
+                            f"{signal_metrics['win_rate']:.1f}%" if signal_metrics.get('win_rate') is not None else "N/A",
                             help="Percentage of signals that had positive returns"
                         )
 
                     # Add interpretation guidance
-                    if signal_metrics['avg_return'] > 0:
+                    avg_return_val = signal_metrics.get('avg_return')
+                    if avg_return_val is not None and avg_return_val > 0:
                         st.success(
                             f"✅ On average, when these conditions occurred, S&P 500 rose "
-                            f"{signal_metrics['avg_return']:.2f}% over the next {forward_period} days."
+                            f"{avg_return_val:.2f}% over the next {forward_period} days."
                         )
-                    else:
+                    elif avg_return_val is not None:
                         st.warning(
                             f"⚠️ On average, when these conditions occurred, S&P 500 fell "
-                            f"{abs(signal_metrics['avg_return']):.2f}% over the next {forward_period} days."
+                            f"{abs(avg_return_val):.2f}% over the next {forward_period} days."
                         )
                 else:
                     st.info(
@@ -878,6 +993,245 @@ def render_chart1_hyg_tlt_vs_sp500():
 
 
 # =============================================================================
+# RECESSIONARY INDICATORS AND THE MARKET
+# =============================================================================
+
+@st.fragment
+def render_chart1_recessionary_indicators():
+    """
+    Chart 1: Recessionary Indicators - Unemployment, Treasury Spread, S&P 500, and Recession Periods.
+
+    Data Flow:
+    1. Fetch UNRATE (monthly), DGS10 (daily), DGS1 (daily), JHDUSRGDPBR (quarterly), and ^GSPC (daily)
+    2. Resample all to monthly frequency
+    3. Calculate 10Y-1Y Treasury spread
+    4. Merge all series and visualize with recession overlays
+    """
+    st.subheader("📉 Economic Indicators and Market Performance Through Recessions")
+
+    st.markdown("""
+    This chart analyzes key economic indicators alongside S&P 500 performance, with recession periods highlighted.
+
+    **Key Indicators:**
+    - **Unemployment Rate**: Typically rises during recessions as businesses lay off workers
+    - **Treasury Spread (10Y-1Y)**: The difference between 10-year and 1-year Treasury yields; inversion (negative spread) often precedes recessions
+    - **S&P 500**: Market performance through economic cycles
+    - **Recession Periods**: Shaded grey areas mark official NBER recession periods
+
+    **What to Look For:**
+    - Yield curve inversions (negative treasury spread) often precede recessions by 6-18 months
+    - Unemployment typically lags at the start of a recession but rises sharply during the downturn
+    - The S&P 500 often bottoms before recessions officially end, as markets are forward-looking
+    """)
+
+    col1, col2 = st.columns([5, 1])
+
+    with col2:
+        if st.button("Fetch Data", key="chart_rec_fetch", type="primary", use_container_width=True):
+            st.session_state.chart_rec_fetched = True
+
+        if st.button("Clear Chart", key="chart_rec_clear", use_container_width=True):
+            st.session_state.chart_rec_fetched = False
+            st.rerun()
+
+    if st.session_state.get("chart_rec_fetched", False):
+        try:
+            with st.spinner("Fetching unemployment, treasury rates, S&P 500, and recession data..."):
+                # Fetch UNRATE from FRED (monthly)
+                unrate_config = get_series_config("UNRATE")
+                unrate_df = cache.get_or_fetch(
+                    source="fred",
+                    source_id="UNRATE",
+                    fetch_fn=lambda: fred.get_series("UNRATE"),
+                    frequency=unrate_config.frequency,
+                    metadata_fn=lambda: fred.get_series_metadata("UNRATE"),
+                    force_refresh=False
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Fetch DGS10 from FRED (daily)
+                dgs10_config = get_series_config("DGS10")
+                dgs10_df = cache.get_or_fetch(
+                    source="fred",
+                    source_id="DGS10",
+                    fetch_fn=lambda: fred.get_series("DGS10"),
+                    frequency=dgs10_config.frequency,
+                    metadata_fn=lambda: fred.get_series_metadata("DGS10"),
+                    force_refresh=False
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Fetch DGS1 from FRED (daily)
+                dgs1_config = get_series_config("DGS1")
+                dgs1_df = cache.get_or_fetch(
+                    source="fred",
+                    source_id="DGS1",
+                    fetch_fn=lambda: fred.get_series("DGS1"),
+                    frequency=dgs1_config.frequency,
+                    metadata_fn=lambda: fred.get_series_metadata("DGS1"),
+                    force_refresh=False
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Fetch JHDUSRGDPBR from FRED (quarterly)
+                recession_config = get_series_config("JHDUSRGDPBR")
+                recession_df = cache.get_or_fetch(
+                    source="fred",
+                    source_id="JHDUSRGDPBR",
+                    fetch_fn=lambda: fred.get_series("JHDUSRGDPBR"),
+                    frequency=recession_config.frequency,
+                    metadata_fn=lambda: fred.get_series_metadata("JHDUSRGDPBR"),
+                    force_refresh=False
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Fetch S&P 500 from yfinance (daily)
+                sp500_df = cache.get_or_fetch(
+                    source="yfinance",
+                    source_id="^GSPC",
+                    fetch_fn=lambda: yf_service.get_ticker_history("^GSPC", period="max", interval="1d"),
+                    frequency="daily",
+                    metadata_fn=lambda: {"ticker": "^GSPC", "name": "S&P 500"},
+                    force_refresh=False
+                ).with_columns(pl.col("date").cast(pl.Datetime)) # Cast to datetime
+
+                # Calculate max date across all fetched series
+                max_date_across_all_series = max(
+                    unrate_df["date"].max(),
+                    dgs10_df["date"].max(),
+                    dgs1_df["date"].max(),
+                    recession_df["date"].max(),
+                    sp500_df["date"].max()
+                )
+
+                # Determine final chart end date (use the later of sidebar end_date or actual data max)
+                # Convert end_date to datetime for comparison
+                end_date_dt = datetime.combine(end_date, datetime.min.time())
+                final_chart_end_date = max(end_date_dt, max_date_across_all_series)
+
+                # Filter all data to selected date range
+                unrate_df = unrate_df.filter(
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
+                )
+                dgs10_df = dgs10_df.filter(
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
+                )
+                dgs1_df = dgs1_df.filter(
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
+                )
+                recession_df = recession_df.filter(
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
+                )
+                sp500_df = sp500_df.filter(
+                    (pl.col("date") >= start_date) & (pl.col("date") <= final_chart_end_date)
+                )
+
+                # Transform data to monthly frequency
+                # 1. UNRATE is already monthly - keep as is
+                unrate_monthly = unrate_df.select(["date", "value"]).rename({"value": "unemployment_rate"})
+
+                # 2. Resample DGS10 (daily) to monthly
+                dgs10_monthly = resample_to_monthly(
+                    dgs10_df,
+                    date_col="date",
+                    value_col="value",
+                    agg_method="last"
+                ).rename({"value": "dgs10"})
+
+                # 3. Resample DGS1 (daily) to monthly
+                dgs1_monthly = resample_to_monthly(
+                    dgs1_df,
+                    date_col="date",
+                    value_col="value",
+                    agg_method="last"
+                ).rename({"value": "dgs1"})
+
+                # 4. Upsample recession indicator (quarterly) to monthly
+                recession_monthly = upsample_quarterly_to_monthly(
+                    recession_df,
+                    date_col="date",
+                    value_col="value"
+                ).rename({"value": "recession_indicator"})
+
+                # 5. Resample S&P 500 (daily) to monthly
+                sp500_monthly = resample_to_monthly(
+                    sp500_df.select(["date", "close"]),
+                    date_col="date",
+                    value_col="close",
+                    agg_method="last"
+                ).rename({"close": "sp500_close"})
+
+                # 6. Calculate Treasury spread (10Y - 1Y)
+                # First merge DGS10 and DGS1
+                treasury_spread_df = merge_multiple_series([
+                    (dgs10_monthly, "dgs10"),
+                    (dgs1_monthly, "dgs1")
+                ], date_col="date")
+
+                # Calculate spread
+                treasury_spread_df = treasury_spread_df.with_columns([
+                    (pl.col("dgs10") - pl.col("dgs1")).alias("treasury_spread")
+                ])
+
+                # 7. Merge all series together
+                merged_df = merge_multiple_series([
+                    (unrate_monthly, "unemployment_rate"),
+                    (treasury_spread_df.select(["date", "treasury_spread"]), "treasury_spread"),
+                    (sp500_monthly, "sp500_close"),
+                    (recession_monthly, "recession_indicator")
+                ], date_col="date")
+
+                # 8. Create the recessionary chart
+                fig = create_recessionary_chart(
+                    df=merged_df,
+                    date_col="date",
+                    unemployment_col="unemployment_rate",
+                    treasury_spread_col="treasury_spread",
+                    sp500_col="sp500_close",
+                    recession_col="recession_indicator",
+                    unemployment_name="Unemployment Rate (LHS)",
+                    treasury_spread_name="Treasury Spread (10Y-1Y) (LHS)",
+                    sp500_name="S&P 500 (RHS)",
+                    left_y_title="Percentage / Spread (%)",
+                    right_y_title="S&P 500 Index",
+                    title="Recessionary Indicators: Unemployment, Treasury Spread & Market Performance",
+                    height=600
+                )
+
+                with col1:
+                    st.plotly_chart(fig, use_container_width=True)
+
+                # Display current metrics
+                st.subheader("Current Metrics")
+                metric_cols = st.columns(3)
+
+                latest_row = merged_df.tail(1).to_dicts()[0]
+
+                with metric_cols[0]:
+                    st.metric(
+                        "Latest Unemployment Rate",
+                        f"{latest_row['unemployment_rate']:.1f}%" if latest_row['unemployment_rate'] is not None else "N/A"
+                    )
+
+                with metric_cols[1]:
+                    spread_value = latest_row['treasury_spread']
+                    st.metric(
+                        "Treasury Spread (10Y-1Y)",
+                        f"{spread_value:+.2f}%" if spread_value is not None else "N/A",
+                        help="Negative values indicate yield curve inversion"
+                    )
+
+                with metric_cols[2]:
+                    st.metric(
+                        "Latest S&P 500",
+                        f"${latest_row['sp500_close']:,.2f}" if latest_row['sp500_close'] is not None else "N/A"
+                    )
+
+                st.success("✅ Data loaded successfully!")
+
+        except Exception as e:
+            st.error(f"❌ Error fetching data: {str(e)}")
+            st.exception(e)
+    else:
+        st.info("👆 Click 'Fetch Data' to load the chart")
+
+# =============================================================================
 # MAIN PAGE LAYOUT
 # =============================================================================
 
@@ -885,7 +1239,7 @@ st.divider()
 
 # Create tabs for different analysis sections
 
-with st.expander("April 2025: 💰 U.S. Liquid Money Supply vs S&P500", True):
+with st.expander("April 2025: 💰 U.S. Liquid Money Supply vs S&P500"):
     render_chart1_money_supply_vs_sp500()
 
     st.divider()
@@ -894,6 +1248,9 @@ with st.expander("April 2025: 💰 U.S. Liquid Money Supply vs S&P500", True):
         
 with st.expander("🎲 Signals That Determine if the Market is Risk-On/Risk-Off"):
     render_chart1_hyg_tlt_vs_sp500()
+
+with st.expander("Recessionary Indicators and the Overall Market"):
+    render_chart1_recessionary_indicators()
 
 # Footer
 st.divider()
