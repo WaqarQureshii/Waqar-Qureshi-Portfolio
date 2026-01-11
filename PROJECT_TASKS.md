@@ -243,44 +243,47 @@ Goal: Build the user interface for the Strategy Backtester.
 ## Phase 7: Equity Playroom - Strategy Backtester (Engine & Calculations)
 Goal: Build the back-end engine for the Strategy Backtester.
 
-[ ] 7.1: Create a new file `src/tools/strategy_backtester/engine.py`. This will be the core of the backtester.
-[ ] 7.2: In `engine.py`, implement the logic to:
+[x] 7.1: Create a new file `src/tools/strategy_backtester/engine.py`. This will be the core of the backtester.
+[x] 7.2: In `engine.py`, implement the logic to:
     - Fetch the equity data.
     - Fetch the data for the selected signal indicators.
     - Align the data by date.
     - Identify the dates where the signal conditions are met.
     - For each signal date, calculate the forward return over the user-specified period.
-[ ] 7.3: Implement the calculation for the equity curve based on the strategy.
-[ ] 7.4: Implement backtesting metrics (Sharpe, Sortino, etc.) in `src/tools/strategy_backtester/metrics.py`.
+[x] 7.3: Implement the calculation for the equity curve based on the strategy.
+[x] 7.4: Implement backtesting metrics (Sharpe, Sortino, etc.) in `src/tools/strategy_backtester/metrics.py`.
 
 ## Phase 8: Equity Playroom - Strategy Backtester (Visualization)
 Goal: Visualize the results of the backtest.
 
-[ ] 8.1: In `src/tools/strategy_backtester/ui.py`, create the functions to display the outputs.
-[ ] 8.2: Implement the equity curve chart using Plotly.
-[ ] 8.3: Implement the table to display the backtester metrics.
-[ ] 8.4: Implement the main signal chart: a price chart of the equity with green and red dots indicating the signal occurrences and the forward return outcome. This will likely be a new function in `src/components/charts.py`.
-[ ] 8.5: Integrate the engine and UI. A "Run Backtest" button in the UI will trigger the engine, and the results will be displayed in the output components.
+[x] 8.1: In `src/tools/strategy_backtester/ui.py`, create the functions to display the outputs.
+[x] 8.2: Implement the equity curve chart using Plotly.
+[x] 8.3: Implement the table to display the backtester metrics.
+[x] 8.4: Implement the main signal chart: a price chart of the equity with green and red dots indicating the signal occurrences and the forward return outcome. This will likely be a new function in `src/components/charts.py`.
+[x] 8.5: Integrate the engine and UI. A "Run Backtest" button in the UI will trigger the engine, and the results will be displayed in the output components.
 
 ## Phase 9: Technical Sandbox
+
 Goal: Interactive indicator playground.
 
-[ ] 9.1: Implement src/tools/technical_sandbox/indicators.py (SMA, EMA, RSI, MACD, etc.).
 
-[ ] 9.2: Implement src/tools/technical_sandbox/ui.py (Dynamic indicator selector).
 
-[ ] 9.3: Test: Load a ticker, add and remove multiple indicators dynamically, and verify the chart updates.
+[x] 9.1: Implement src/tools/technical_sandbox/indicators.py (SMA, EMA, RSI, MACD, etc.).
+
+[x] 9.2: Implement src/tools/technical_sandbox/ui.py (Dynamic indicator selector).
+
+[x] 9.3: Test: Load a ticker, add and remove multiple indicators dynamically, and verify the chart updates.
 
 ## Phase 10: Admin Dashboard & Polish
 Goal: Admin controls and final cleanup.
 
-[ ] 10.1: Create src/components/admin.py (Cache stats, force refresh functions).
+[x] 10.1: Create src/components/admin.py (Cache stats, force refresh functions).
 
 [ ] 10.2: Integrate Admin Dashboard into Home.py (Conditional rendering via is_admin()).
 
-[ ] 10.3: Update pyproject.toml with all final dependencies.
+[x] 10.3: Update pyproject.toml with all final dependencies.
 
-[ ] 10.4: Final Test: Complete full-system QA and cleanup.
+[x] 10.4: Final Test: Complete full-system QA and cleanup.
 
 ---
 

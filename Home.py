@@ -10,6 +10,49 @@ from src.auth.google_auth import initialize_auth_state
 from src.auth.permissions import is_admin
 from src.components.auth_ui import render_auth_sidebar, render_user_list_table
 
+# Service imports for admin dashboard
+from src.data.cache_manager import CacheManager
+from src.services.fred_api import FredService
+from src.services.yfinance_service import YFinanceService
+# from src.services.statscan_api import StatscanService # Uncomment if needed
+from src.components.admin import render_admin_dashboard # New import
+
+# Page configuration
+st.set_page_config(
+    page_title="Portfolio | Home",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Initialize authentication state
+initialize_auth_state()
+
+# Initialize services (these are used by the admin dashboard)
+@st.cache_resource
+def get_cache_manager():
+    return CacheManager()
+
+@st.cache_resource
+def get_fred_service():
+    return FredService()
+
+@st.cache_resource
+def get_yfinance_service():
+    return YFinanceService()
+
+# @st.cache_resource
+# def get_statscan_service(): # Uncomment if StatsCanService is needed
+#     return StatscanService()
+
+cache = get_cache_manager()
+fred = get_fred_service()
+yf_service = get_yfinance_service()
+# statscan_service = get_statscan_service() # Uncomment if StatsCanService is needed
+
+from src.auth.permissions import is_admin
+from src.components.auth_ui import render_auth_sidebar, render_user_list_table
+
 # Page configuration
 st.set_page_config(
     page_title="Portfolio | Home",
@@ -774,16 +817,16 @@ with st.expander("🧪 Phase 4: Stats Canada & yfinance Integration Testing", ex
 
 
 # Admin Dashboard Section
-if st.user.is_logged_in and is_admin():
+if st.session_state.get("authenticated") and is_admin(): # Check if user is authenticated and admin
     st.markdown("---")
-    st.header("👑 Admin Dashboard")
-
-    with st.expander("👥 Registered Users", expanded=False):
-        st.markdown("View all users who have logged into the app.")
-
-        if st.button("🔄 Refresh User List"):
+    # Using a expander for the admin dashboard to keep the homepage clean
+    with st.expander("👑 Admin Dashboard", expanded=False):
+        render_admin_dashboard(cache_manager=cache, fred_service=fred, yf_service=yf_service) #, statscan_service=statscan_service)
+        # Optionally display registered users within the admin dashboard
+        st.markdown("---")
+        st.subheader("👥 Registered Users")
+        if st.button("🔄 Refresh User List", key="admin_refresh_users"):
             st.rerun()
-
         render_user_list_table()
 
 # Sidebar

@@ -114,9 +114,7 @@ The project follows a comprehensive 10-phase plan.
 
 Primary Source of Truth: All current task details, status ([ ] or [x]), and next steps are exclusively managed in the PROJECT_TASKS.md file in the project root.
 
-Claude's Instruction: When starting a new session or completing a task, you must READ TASKS.md to determine the current phase, identify the next unchecked item, and when a task is finished, you must UPDATE TASKS.md to mark the item as complete.
-
-Current Status: Phase 0 is in progress.
+PLease refer to /conductor/tracks to see the various plans in play with the relevant tasks that need to be completed and marked as completed.
 
 ## Data Source Specifics
 
