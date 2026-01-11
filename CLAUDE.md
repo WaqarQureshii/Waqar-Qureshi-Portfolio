@@ -109,19 +109,10 @@ portfolio/
       technical_sandbox/
 ```
 
-### Archive Pattern
-
-The `archive/v1/` directory contains the previous implementation. Key files to reference when building new features:
-- `functions/firebase_service.py` - Core caching logic and dual-storage pattern
-- `functions/statscan_api.py` - API client pattern to follow
-- `config/datasets.py` - Dataset configuration pattern using dataclasses
-
-Do not modify archived code; extract patterns and refactor into new `src/` structure.
-
 ## Phased Implementation Plan
 The project follows a comprehensive 10-phase plan.
 
-Primary Source of Truth: All current task details, status ([ ] or [x]), and next steps are exclusively managed in the TASKS.md file in the project root.
+Primary Source of Truth: All current task details, status ([ ] or [x]), and next steps are exclusively managed in the PROJECT_TASKS.md file in the project root.
 
 Claude's Instruction: When starting a new session or completing a task, you must READ TASKS.md to determine the current phase, identify the next unchecked item, and when a task is finished, you must UPDATE TASKS.md to mark the item as complete.
 
@@ -150,10 +141,3 @@ Current Status: Phase 0 is in progress.
 - Storage bucket: `portfolio-64bae.appspot.com`
 - Firestore in Native mode
 - Service account credentials required in secrets.toml
-
-## Git Workflow
-
-Currently on branch: `0.001.300-claude-assist`
-Main branch for PRs: `main`
-
-Recent changes indicate project restructuring in progress - old components moved to `archive/`, new structure in `src/` and `pages/`.
